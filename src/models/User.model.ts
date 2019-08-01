@@ -16,7 +16,10 @@ const UserSchema: Schema = new Schema({
     email: {type: String, required: true},
     password: {type: String, required: true},
     phoneNumber: {type: Number},
+    visits: {type: Number, default: 0},
     userProfile: UserProfileSchema,
+    followers: [{type: Schema.Types.ObjectId, ref: 'Follower'}],
+    followings: [{type: Schema.Types.ObjectId, ref: 'Following'}],
 });
 
 // Export the model and return IUser interface

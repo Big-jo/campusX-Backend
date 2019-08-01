@@ -30,13 +30,13 @@ router.post(getUsersPath, async (req: Request, res: Response) => {
             });
         } else {
             const userProfile: IUserProfile = {
-                level: req.body.level,
-                university: req.body.university,
-                department: req.body.department,
-                gender: req.body.gender,
+                level: req.body.userProfile.level,
+                university: req.body.userProfile.university,
+                department: req.body.userProfile.department,
+                gender: req.body.userProfile.gender,
             };
             const user: IUser = new User({
-                name: req.body.name.toLowerCase(),
+                name: req.body.name,
                 userTag: req.body.userTag,
                 email: req.body.email,
                 password: req.body.password,
@@ -58,13 +58,13 @@ router.post(getUsersPath, async (req: Request, res: Response) => {
                 userID: user._id,
                 jwt: token,
                 // tslint:disable-next-line: max-line-length
-                success: `Your account has been created ${req.body.name.split(' ')[0].charAt(0).toUpperCase()}  Welcome`,
+                success: `Your account has been created ${req.body.name.split(' ').slice(0, -1).join(' ')}  Welcome`,
             });
         }
 
     } catch (error) {
-        res.status(INTERNAL_SERVER_ERROR).json({ err: 'Oops, an error occurred' });
         logger.error(error, error.message);
+        return res.status(INTERNAL_SERVER_ERROR).json({ err: 'Oops, an error occurred' });
     }
 });
 
@@ -72,20 +72,21 @@ router.post(getUsersPath, async (req: Request, res: Response) => {
  *                                Login
  ******************************************************************************/
 
-export const addUserPath = '/login';
+export const loginPath = '/login';
 
 export const errorMessage = 'Oops sorry, error logging you in';
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post(loginPath, async (req: Request, res: Response) => {
     try {
-        const user = await UserModel.findOne({ _id: req.body._id });
+        const user = await UserModel.findOne({ email: req.body.email });
 
         if (user) {
             const userPassword = user.password;
             const requestPassword = req.body.password;
             const samePassword = await bcrypt.compare(requestPassword, userPassword);
             if (samePassword) {
-                if (req.session!.view) {
+                if (req.session!.view >= 0) {
+                    UserModel.findOneAndUpdate({_id: req.session!.userID}, {$inc: {visits: 1}}).exec();
                     req.session!.view++;
                 } else {
                     req.session!.view = 0;
@@ -94,17 +95,26 @@ router.post('/login', async (req: Request, res: Response) => {
                 const secret = process.env.JWT_SECRET as string;
                 const token = jwt.sign(payload, secret);
                 req.session!.userID = user._id;
-                // Split full name and capitalize the first name
-                req.session!.name = user.name.split(' ')[0].charAt(0).toUpperCase();
-                res.status(OK).json({
+                // Split full name into first an last name
+                req.session!.name = user.name.split(' ').slice(0, -1).join(' ');
+                return  res.status(OK).json({
                     token,
                     userID: user._id,
-                    success: `Welcome back ${req.body.name.split(' ')[0].charAt(0).toUpperCase()}`,
+                    success: `Welcome back ${user.name.split(' ').slice(0, -1).join(' ')}`,
+                });
+            } else {
+                return res.status(BAD_REQUEST).json({
+                    err: 'Oops, Your Details don\'t match what we have ',
                 });
             }
         }
     } catch (error) {
-
+        logger.error(error, error.message);
+        res.status(INTERNAL_SERVER_ERROR).json({
+            error: errorMessage,
+        });
     }
 
 });
+
+export default {router, path};
