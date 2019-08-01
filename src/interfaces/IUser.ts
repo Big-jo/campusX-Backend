@@ -1,6 +1,6 @@
 import {Document} from 'mongoose';
 
-export interface IUserProfile{
+export interface IUserProfile {
     avatar?: string; // If Male, set avatar to a male placeholder image
     level: number;
     university: string;
@@ -11,9 +11,9 @@ export interface IUserProfile{
 
 export interface IUser extends Document {
     name: string;
-    userTag: string,
+    userTag: string;
     email: string;
     password: string;
-    user_profile: IUserProfile;
-    phone_number: number;
+    userProfile: IUserProfile;
+    phone_number: string;
 }
