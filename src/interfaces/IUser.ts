@@ -7,6 +7,7 @@ export interface IUserProfile {
     department: string;
     gender: string;
     rep_points?: string;
+    bio: string;
 }
 
 export interface IUser extends Document {
@@ -16,4 +17,6 @@ export interface IUser extends Document {
     password: string;
     userProfile: IUserProfile;
     phone_number: string;
+    followings: string[];
+    followers: string[];
 }
