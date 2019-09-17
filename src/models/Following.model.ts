@@ -1,8 +1,8 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
 
 interface IFollowing extends Document {
-    name: string;
-    avatar: string;
+    follower: string;
+    target: string;
 }
 
 const FollowingSchema: Schema = new Schema({
@@ -14,4 +14,4 @@ const FollowingSchema: Schema = new Schema({
 
 });
 
-export default mongoose.model<IFollowing>('Follower', FollowingSchema);
+export default mongoose.model<IFollowing>('Following', FollowingSchema);
