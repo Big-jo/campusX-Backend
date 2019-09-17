@@ -3,11 +3,14 @@ import express from 'express';
 import { Request, Response } from 'express';
 import logger from 'morgan';
 import path from 'path';
-import BaseRouter from './routes/Base';
 import mongoose from 'mongoose';
+import BaseRouter from './routes/Base';
 import session = require('express-session');
 import connectMongo from 'connect-mongo';
 import uuid from 'uuid';
+import cors from 'cors';
+import socketIO from 'socket.io';
+import {Server, createServer} from 'http';
 
 // Create mongo store
 const mongoDBStore = connectMongo(session);
@@ -27,6 +30,15 @@ Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
 // Init express
 const app = express();
+app.use(cors());
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+  });
+// Setup socket.io
+const server: Server = createServer(app);
+const io = socketIO.listen(server);
 
 // Add middleware/settings/routes to express.
 app.use(logger('dev'));
@@ -59,4 +71,4 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 // Export express instance
-export default app;
+export default server;
