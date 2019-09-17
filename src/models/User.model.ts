@@ -1,13 +1,16 @@
 import mongoose, {Schema, Document} from 'mongoose';
 import { IUser } from 'src/interfaces/IUser';
 
+
+
 const UserProfileSchema: Schema = new Schema({
     avatar: {type: String},
     level: {type: Number},
     university: {type: String},
-    department: {type: String},
     gender: {type: String, required: true},
     rep_points: {type: Number, default: 0},
+    bio: {type: String},
+    course: {type: String},
 });
 
 const UserSchema: Schema = new Schema({
@@ -18,7 +21,7 @@ const UserSchema: Schema = new Schema({
     phoneNumber: {type: Number},
     visits: {type: Number, default: 0},
     userProfile: UserProfileSchema,
-    followers: [{type: Schema.Types.ObjectId, ref: 'Follower'}],
+    followers: [{type: Schema.Types.ObjectId, ref: 'Follows'}],
     followings: [{type: Schema.Types.ObjectId, ref: 'Following'}],
 });
 
