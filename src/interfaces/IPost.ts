@@ -4,6 +4,6 @@ export interface IPost extends Document {
     author: string;
     post: string;
     tag?: string;
-    createAt: string;
+    createdAt: string;
     likes: number;
 }
