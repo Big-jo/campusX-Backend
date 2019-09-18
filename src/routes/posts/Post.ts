@@ -16,6 +16,8 @@ router.post(createPostPath, async (req: Request, res: Response) => {
     // TODO: Move to post lib .
     // Add option for annonymous posts.
     try {
+        // TODO: Move this to lib dir
+        // TODO: Add Annonymous feature
         const post = await new PostModel({
             author: req.body.userID,
             post: req.body.post,
@@ -38,7 +40,7 @@ router.post(createPostPath, async (req: Request, res: Response) => {
 /*******************************************************
  *              Get Post
  *********************************************************/
-export const getPostsPath = '/getposts/:id';
+export const getPostsPath = '/getposts/:key/:id';
 
 // tslint:disable-next-line: no-shadowed-variable
 router.get(getPostsPath, async (req: Request, res: Response) => {
@@ -54,6 +56,10 @@ router.get(getPostsPath, async (req: Request, res: Response) => {
         });
     }
 });
+
+/*******************************************************
+ *              Like Post
+ *********************************************************/
 
 export const likePostPath = '/like';
 
