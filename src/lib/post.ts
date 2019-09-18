@@ -15,51 +15,51 @@ interface IOptions {
     };
 }
 
-export async function GetPosts(req: Request, res: Response, options: IOptions): Promise<IPost[]> {
-   if (options.sortOptions.mostRecent === true) {
-    try {
-        /*
-        * Get recent posts from all followings
-        */
+export async function GetPosts(req: Request, res: Response, options: IOptions) {
+    if (options.sortOptions.mostRecent === true) {
+        //  To get self-post, key is set to 0, to get others key is set to one
+        switch (req.params.key) {
+            case '0':
+                try {
+                    const posts = await PostModel.find({ author: req.params.id })
+                        .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
+                        .exec();
+                    return posts;
+                } catch (error) {
+                    return error;
+                }
+            case '1':
+                try {
+                    /*
+                    * Get recent posts from all followings
+                    */
 
-        // Get followings
-        // const followings = await FollowingModel.find({follower: req.params.id}).exec();
-        const followings = await FollowingModel.find({follower: req.params.id}, {target: 1}).lean().exec();
-        const targetObjectIDs: string[] = [];
-        for (const following of followings) {
-            targetObjectIDs.push(following.target);
+                    // Get followings
+                    // const followings = await FollowingModel.find({follower: req.params.id}).exec();
+                    // tslint:disable-next-line: max-line-length
+                    const followings = await FollowingModel.find({ follower: req.params.id }, { target: 1 }).lean().exec();
+                    const targetObjectIDs: string[] = [];
+                    for (const following of followings) {
+                        targetObjectIDs.push(following.target);
+                    }
+                    // Get post from each following
+                    const posts = await PostModel.find({ author: { $in: targetObjectIDs } })
+                        .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
+                        .exec();
+                    return posts;
+                } catch (error) {
+                    return error;
+                }
+            default:
+                return new Error('Sorry, unrecognizable key');
         }
-        // Get post from each following
-        const posts = await PostModel.find({author: {$in: targetObjectIDs}})
-            .populate({path: 'author', select: {name: 1, userProfile: 1}})
-            .exec();
-        return posts;
-    } catch (error) {
-        return error;
     }
-
-   } else {
-    try {
-        /*
-        * Get recent posts from all followings
-        */
-
-        // Get followings
-        const followings = await FollowingModel.find({follower: req.params.id}).exec();
-        // Get post from each following
-        const posts = await PostModel.find({_id: {$in: followings}}).exec();
-
-        return posts;
-    } catch (error) {
-        return error;
-    }
-   }
 }
 
 export async function LikePost(req: Request, res: Response) {
     try {
-        PostModel.findByIdAndUpdate(req.body.id, {$inc: {likes: 1}});
-        UserModel.findByIdAndUpdate(req.body.id, {$inc: {'userProfile.rep_points': 0.25}});
+        PostModel.findByIdAndUpdate(req.body.id, { $inc: { likes: 1 } });
+        UserModel.findByIdAndUpdate(req.body.id, { $inc: { 'userProfile.rep_points': 0.25 } });
     } catch (error) {
         return error;
     }
