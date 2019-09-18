@@ -158,9 +158,11 @@ router.post(followUser, async (req: Request, res: Response) => {
     }
 });
 
-// Generic get route for getting related stuff--- Just a test
+/**************************************************************
+ *   Generic get route for getting user related data
+ *************************************************************/
 
-export const getUserInfo = '/getUser/:id/:searchKey';  /** Accepted info search Keys: followers, followings, */
+export const getUserInfo = '/getUser/:id//:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, async (req: Request, res: Response) => {
     try {
@@ -199,7 +201,9 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
     }
 });
 
-// Create a route for updating user info
+/*****************************************************************
+ *                Update User Info
+ *****************************************************************/
 export const updateUserPath = '/update';
 export const  errMessage = 'Oops could not update';
 router.post(updateUserPath, async (req: Request, res: Response) => {
