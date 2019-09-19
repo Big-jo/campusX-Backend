@@ -56,6 +56,23 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
     }
 }
 
+/**
+ * Searches for users in a particular campus and then searches for their posts, would be really expensive,
+ * the solution would be to cache the universities and their users.
+ */
+export async function GetCampusPosts(req: Request, res: Response) {
+    try {
+        const users = await UserModel.find({'userProfile.university': req.params.campusID});
+        const posts = [];
+        for (const user of users) {
+           posts.push(await PostModel.find({author: user._id}));
+        }
+        return posts;
+    } catch (error) {
+        return error;
+    }
+}
+
 export async function LikePost(req: Request, res: Response) {
     try {
         PostModel.findByIdAndUpdate(req.body.id, { $inc: { likes: 1 } });

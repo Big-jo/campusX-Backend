@@ -3,7 +3,7 @@ import PostModel from '../../models/Post.model';
 import moment from 'moment';
 import { CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import { logger } from '../../shared/Logger';
-import { GetPosts, LikePost } from '../../lib/post';
+import { GetPosts, LikePost, GetCampusPosts } from '../../lib/post';
 const router = Router();
 const path = '/post';
 
@@ -38,7 +38,7 @@ router.post(createPostPath, async (req: Request, res: Response) => {
 });
 
 /*******************************************************
- *              Get Post
+ *              Get Posts
  *********************************************************/
 export const getPostsPath = '/getposts/:key/:id';
 
@@ -57,7 +57,25 @@ router.get(getPostsPath, async (req: Request, res: Response) => {
     }
 });
 
-/*******************************************************
+/*********************************************************
+ *              Get Posts From A Campus
+ *********************************************************/
+export const getCampusPostPath = '/getposts/:campusID';
+
+router.get(getCampusPostPath, async (req: Request, res: Response) => {
+    try {
+        const posts = await GetCampusPosts(req, res);
+        res.status(OK).json({
+            posts,
+        });
+    } catch (error) {
+        res.status(INTERNAL_SERVER_ERROR).json({
+            err: 'Oops an error occured',
+        });
+    }
+});
+
+/*********************************************************
  *              Like Post
  *********************************************************/
 

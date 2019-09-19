@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import UserModel from '../../models/User.model';
 import FollowsModel from '../../models/Follow.model';
 import FollowingModel from '../../models/Following.model';
+import { GetCampuses } from 'src/lib/campuses';
 // Init router and path
 const router = Router();
 const path = '/users';
@@ -122,11 +123,9 @@ router.post(loginPath, async (req: Request, res: Response) => {
     }
 
 });
-/**********************************************************
- * 
- *                      Follow A User
- * 
- *********************************************************/
+/******************************************************************************
+ *                                Follow A User
+ ******************************************************************************/
 
 export const followUser = '/follow';
 export const followErrorMessage = 'Oops, something went wrong';
@@ -158,9 +157,9 @@ router.post(followUser, async (req: Request, res: Response) => {
     }
 });
 
-/**************************************************************
- *   Generic get route for getting user related data
- *************************************************************/
+/******************************************************************************
+ *                   Generic get route for getting user related data
+ ******************************************************************************/
 
 export const getUserInfo = '/getUser/:id//:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
@@ -201,9 +200,9 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
     }
 });
 
-/*****************************************************************
- *                Update User Info
- *****************************************************************/
+/******************************************************************************
+ *                              Update User Info
+ ******************************************************************************/
 export const updateUserPath = '/update';
 export const  errMessage = 'Oops could not update';
 router.post(updateUserPath, async (req: Request, res: Response) => {
@@ -224,5 +223,23 @@ router.post(updateUserPath, async (req: Request, res: Response) => {
         err: errMessage,
     })
    }
-})
+});
+
+/******************************************************************************
+ *                                  Get Campuses
+ ******************************************************************************/
+export const getCampusesPath = '/getcampuses';
+router.get(getCampusesPath, async (req: Request, res: Response) => {
+   try {
+    const campuses = await GetCampuses(req, res);
+    res.status(OK).json({
+        campuses,
+    });
+   } catch (error) {
+       res.status(INTERNAL_SERVER_ERROR).json({
+           err: 'Oops an error occured',
+       });
+   }
+});
+
 export default { router, path };
