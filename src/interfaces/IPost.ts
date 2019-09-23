@@ -6,4 +6,7 @@ export interface IPost extends Document {
     tag?: string;
     createdAt: string;
     likes: number;
+    dislikes: number;
+    trash: number;
+    scorePost(): number;
 }
