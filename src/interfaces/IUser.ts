@@ -2,7 +2,6 @@ import {Document} from 'mongoose';
 
 export interface IUserProfile {
     avatar?: string; // If Male, set avatar to a male placeholder image
-    level: number;
     university: string;
     department: string;
     gender: string;
