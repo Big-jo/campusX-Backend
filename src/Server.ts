@@ -1,32 +1,46 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import { Request, Response } from 'express';
+import {
+    Request,
+    Response,
+} from 'express';
 import logger from 'morgan';
 import path from 'path';
-import mongoose from 'mongoose';
+import mongoose, { Collection } from 'mongoose';
 import BaseRouter from './routes/Base';
 import session = require('express-session');
 import connectMongo from 'connect-mongo';
 import uuid from 'uuid';
 import cors from 'cors';
 import socketIO from 'socket.io';
-import {Server, createServer} from 'http';
+import {
+    Server,
+    createServer,
+} from 'http';
+import {
+    Campus,
+} from './lib/campuses';
+import { DBRef } from 'bson';
 
 // Create mongo store
 const mongoDBStore = connectMongo(session);
 // Setup MongoDB
 const URI = 'mongodb://localhost:27017/campusX';
 
-mongoose.connect(URI, {useNewUrlParser: true});
+mongoose.connect(URI, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+});
 
 // Connection Instance
 const Db = mongoose.connection;
-// Bind connection to error event
 
 // tslint:disable-next-line: no-console
 Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', console.log.bind(console, 'MongoDB connected'));
+// Load campuses into DB
+Campus();
 
 // Init express
 const app = express();
@@ -35,7 +49,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
-  });
+});
 // Setup socket.io
 const server: Server = createServer(app);
 const io = socketIO.listen(server);
@@ -45,12 +59,16 @@ app.use(logger('dev'));
 app.use(session({
     genid: () => uuid(),
     secret: process.env.SESSION_SECRET as string,
-    store:  new mongoDBStore({mongooseConnection: Db}),
+    store: new mongoDBStore({
+        mongooseConnection: Db,
+    }),
     resave: false,
     saveUninitialized: false,
 }));
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({
+    extended: true,
+}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(BaseRouter.path, BaseRouter.router);
