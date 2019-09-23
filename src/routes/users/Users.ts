@@ -24,21 +24,20 @@ export const createUserPath = '/create';
  * Create a new user and add to DB
  * Full Path: "GET campusx/api/v1/users/create"
  */
-router.post(createUserPath, async (req: Request, res: Response) => {    
+router.post(createUserPath, async (req: Request, res: Response) => {
     try {
-        const foundUser = await User.findOne({ email: req.body.email });
+        const foundUser = await User.findOne({ email: req.body.user.email });
         if (foundUser) {
             res.status(OK).json({
-                exists: `Sorry, ${req.body.name} you have an account already, try logging in`,
+                exists: `Sorry, ${req.body.user.name} you have an account already, try logging in`,
             });
         } else {
             const userProfile: IUserProfile = {
-                level: req.body.userProfile.level,
-                university: req.body.userProfile.university,
-                department: req.body.userProfile.department,
-                gender: req.body.userProfile.gender,
-                avatar: req.body.userProfile.avatar,
-                bio: req.body.userProfile.bio,
+                university: req.body.user.userProfile.university,
+                department: req.body.user.userProfile.department,
+                gender: req.body.user.userProfile.gender,
+                avatar: req.body.user.userProfile.avatar,
+                bio: req.body.user.userProfile.bio,
             };
             const user: IUser = new User({
                 name: req.body.user.name,
