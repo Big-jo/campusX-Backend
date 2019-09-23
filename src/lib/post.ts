@@ -5,7 +5,7 @@ import UserModel from '../models/User.model';
 import { IPost } from 'src/interfaces/IPost';
 import { logger } from '../shared/Logger';
 import { IUserProfile } from 'src/interfaces/IUser';
-
+import sort from 'array-sort';
 interface IOptions {
     sortOptions: {
         first_100?: boolean, // Returns first 100
@@ -17,14 +17,14 @@ interface IOptions {
 
 export async function GetPosts(req: Request, res: Response, options: IOptions) {
     if (options.sortOptions.mostRecent === true) {
-        //  To get self-post, key is set to 0, to get others key is set to one
+        //  To get self-post, key is set to 0, to get others key is set to 1
         switch (req.params.key) {
             case '0':
                 try {
                     const posts = await PostModel.find({ author: req.params.id })
                         .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
                         .exec();
-                    return posts;
+                    return posts.reverse();
                 } catch (error) {
                     return error;
                 }
@@ -43,9 +43,13 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
                         targetObjectIDs.push(following.target);
                     }
                     // Get post from each following
-                    const posts = await PostModel.find({ author: { $in: targetObjectIDs } })
+                    let posts = await PostModel.find({ author: { $in: targetObjectIDs } })
                         .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
                         .exec();
+                    // Sort posts by date and time
+                    posts = await sort(posts, (a: IPost, b: IPost) => {
+                        return Date.parse(a.createdAt) - Date.parse(b.createdAt);
+                    }, { reverse: true });
                     return posts;
                 } catch (error) {
                     return error;
@@ -57,16 +61,31 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
 }
 
 /**
+ * PIS - POST INTERACTION SCORE
+ */
+interface IScoredPost {
+    post: IPost;
+    PIS: number;
+}
+
+/**
  * Searches for users in a particular campus and then searches for their posts, would be really expensive,
  * the solution would be to cache the universities and their users.
  */
 export async function GetCampusPosts(req: Request, res: Response) {
     try {
-        const users = await UserModel.find({'userProfile.university': req.params.campusID});
-        const posts = [];
+        const users = await UserModel.find({ 'userProfile.university': req.params.campusID });
+        let posts: IScoredPost[] = [];
+
         for (const user of users) {
-           posts.push(await PostModel.find({author: user._id}));
+            const Posts = await PostModel.find({ author: user._id }).exec();
+            for (const post of Posts) {
+                const scoredPost: IScoredPost = { post, PIS: post.scorePost() };
+                posts.push(scoredPost);
+            }
         }
+        // Sort post in order of reducing PIS
+        posts = sort(posts, 'PIS', { reverse: true });
         return posts;
     } catch (error) {
         return error;
@@ -75,8 +94,26 @@ export async function GetCampusPosts(req: Request, res: Response) {
 
 export async function LikePost(req: Request, res: Response) {
     try {
-        PostModel.findByIdAndUpdate(req.body.id, { $inc: { likes: 1 } });
-        UserModel.findByIdAndUpdate(req.body.id, { $inc: { 'userProfile.rep_points': 0.25 } });
+        PostModel.findByIdAndUpdate(req.body.postID, { $inc: { likes: 1 }, likedBy: req.params.userID }).exec();
+        UserModel.findByIdAndUpdate(req.body.authorID, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
+    } catch (error) {
+        return error;
+    }
+}
+
+export async function DislikePost(req: Request, res: Response) {
+    try {
+        PostModel.findByIdAndUpdate(req.body.postID, { $inc: { dislikes: 1 } }).exec();
+        UserModel.findByIdAndUpdate(req.body.authorID, { $inc: { 'userProfile.rep_points': 0.13 } }).exec();
+    } catch (error) {
+        return error;
+    }
+}
+
+export async function TrashPost(req: Request, res: Response) {
+    try {
+        PostModel.findByIdAndUpdate(req.body.postID, { $inc: { trash: 1 } }).exec();
+        UserModel.findByIdAndUpdate(req.body.authorID, { $inc: { 'userProfile.rep_points': 0.9 } }).exec();
     } catch (error) {
         return error;
     }
