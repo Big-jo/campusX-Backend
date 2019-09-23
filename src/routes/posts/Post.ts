@@ -3,7 +3,7 @@ import PostModel from '../../models/Post.model';
 import moment from 'moment';
 import { CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import { logger } from '../../shared/Logger';
-import { GetPosts, LikePost, GetCampusPosts } from '../../lib/post';
+import { GetPosts, LikePost, GetCampusPosts, DislikePost, TrashPost } from '../../lib/post';
 const router = Router();
 const path = '/post';
 
@@ -21,7 +21,7 @@ router.post(createPostPath, async (req: Request, res: Response) => {
         const post = await new PostModel({
             author: req.body.userID,
             post: req.body.post,
-            createdAt: moment().format('MMM Do YYYY h:mm:ss a'),
+            createdAt: moment().format('lll'),
         });
 
         post.save();
@@ -37,15 +37,15 @@ router.post(createPostPath, async (req: Request, res: Response) => {
 
 });
 
-/*******************************************************
- *              Get Posts
+/*********************************************************
+ *                          Get Posts
  *********************************************************/
 export const getPostsPath = '/getposts/:key/:id';
 
 // tslint:disable-next-line: no-shadowed-variable
 router.get(getPostsPath, async (req: Request, res: Response) => {
     try {
-        const posts = await GetPosts(req, res, {sortOptions: {mostRecent: true} });
+        const posts = await GetPosts(req, res, { sortOptions: { mostRecent: true } });
         res.status(OK).json({
             posts,
         });
@@ -83,7 +83,7 @@ export const likePostPath = '/like';
 
 router.post(likePostPath, async (req: Request, res: Response) => {
     try {
-        LikePost(req, res); 
+        LikePost(req, res);
         res.status(OK).json({
             success: 'Liked',
         });
@@ -95,4 +95,37 @@ router.post(likePostPath, async (req: Request, res: Response) => {
     }
 });
 
+/******************************************************************************
+*                                 Dislike Post
+/******************************************************************************/
+export const dislikePostPath = '/dislike';
+router.post(dislikePostPath, async (req: Request, res: Response) => {
+    try {
+        DislikePost(req, res);
+        res.status(OK).json({
+            success: 'Disliked',
+        });
+    } catch (error) {
+        res.status(INTERNAL_SERVER_ERROR).json({
+            err: 'Oops an error occured',
+        });
+    }
+});
+
+/******************************************************************************
+*                                 Trash Post
+/******************************************************************************/
+export const trashPostPath = '/trash';
+router.post(trashPostPath, async (req: Request, res: Response) => {
+    try {
+        TrashPost(req, res);
+        res.status(OK).json({
+            success: 'Trashed',
+        });
+    } catch (error) {
+        res.status(INTERNAL_SERVER_ERROR).json({
+            err: 'Oops an error occured',
+        })
+    }
+})
 export default { router, path };
