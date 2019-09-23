@@ -78,7 +78,8 @@ export async function GetCampusPosts(req: Request, res: Response) {
         let posts: IScoredPost[] = [];
 
         for (const user of users) {
-            const Posts = await PostModel.find({ author: user._id }).exec();
+            const Posts = await PostModel.find({ author: user._id })
+                .populate({ path: 'author', select: { name: 1, userProfile: 1 } }).exec();
             for (const post of Posts) {
                 const scoredPost: IScoredPost = { post, PIS: post.scorePost() };
                 posts.push(scoredPost);
