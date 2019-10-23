@@ -24,7 +24,7 @@ import { DBRef } from 'bson';
 
 
 // Setup MongoDB
-const URI = process.env.MONGO_URI;
+const URI = process.env.MONGO_URI as string;
 
 mongoose.connect(URI, {
     useNewUrlParser: true,
