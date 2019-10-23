@@ -22,10 +22,9 @@ import {
 } from './controllers/campuses';
 import { DBRef } from 'bson';
 
-// Create mongo store
-const mongoDBStore = connectMongo(session);
+
 // Setup MongoDB
-const URI = 'mongodb://localhost:27017/campusX';
+const URI = process.env.MONGO_URI;
 
 mongoose.connect(URI, {
     useNewUrlParser: true,
@@ -56,15 +55,6 @@ const io = socketIO.listen(server);
 
 // Add middleware/settings/routes to express.
 app.use(logger('dev'));
-app.use(session({
-    genid: () => uuid(),
-    secret: process.env.SESSION_SECRET as string,
-    store: new mongoDBStore({
-        mongooseConnection: Db,
-    }),
-    resave: false,
-    saveUninitialized: false,
-}));
 app.use(express.json());
 app.use(express.urlencoded({
     extended: true,
