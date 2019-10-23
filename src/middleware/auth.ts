@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { IAuth } from '../interfaces/IAuth';
-import { NextFunction, Response } from 'express';
+import { NextFunction, Response, Request } from 'express';
 import { OK, UNAUTHORIZED } from 'http-status-codes';
 
 const validation = {
-    validateToken: (req: IAuth, res: Response, next: NextFunction) => {
+    validateToken: (req: Request, res: Response, next: NextFunction) => {
         const authorizationHeader = req.headers.authorization;
         let result: object | string;
         if (authorizationHeader) {
@@ -13,7 +13,7 @@ const validation = {
                 // Verify the token
                 const secret = process.env.JWT_SECRET as string;
                 result = jwt.verify(token, secret);
-                req.decoded = result;
+                req.token = result as object;
 
                 next();
             } catch (error) {

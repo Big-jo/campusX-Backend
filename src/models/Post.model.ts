@@ -1,17 +1,19 @@
-import mongoose, {Schema, Document, mongo} from 'mongoose';
+import mongoose, { Schema, Document, mongo } from 'mongoose';
 import { IPost } from 'src/interfaces/IPost';
 
 const PostSchema: Schema = new Schema({
-    author: {type: Schema.Types.ObjectId, ref: 'User'},
-    post: {type: String},
-    likes: {type: Number, default: 0},
-    dislikes: {type: Number, default: 0},
-    trash: {type: Number, default: 0},
-    likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
-    createdAt: {type: String},
+    author: { type: Schema.Types.ObjectId, ref: 'User' },
+    text: { type: String },
+    video: { type: String, default: null },
+    image: { type: String, default: null },
+    likes: { type: Number, default: 0 },
+    dislikes: { type: Number, default: 0 },
+    trash: { type: Number, default: 0 },
+    likedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    createdAt: { type: String },
 });
 
-PostSchema.methods.scorePost = function() {
+PostSchema.methods.scorePost = function () {
     // if ((this.dislikes + this. trash) === 0) {
     //     return this.likes;
     // } else {

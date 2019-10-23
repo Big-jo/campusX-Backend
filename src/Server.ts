@@ -19,7 +19,7 @@ import {
 } from 'http';
 import {
     Campus,
-} from './lib/campuses';
+} from './controllers/campuses';
 import { DBRef } from 'bson';
 
 // Create mongo store
@@ -85,7 +85,7 @@ app.set('views', viewsDir);
 const staticDir = path.join(__dirname, 'public');
 app.use(express.static(staticDir));
 app.get('*', (req: Request, res: Response) => {
-    res.send('HII');
+    res.send('Oops the resource does not exist');
 });
 
 // Export express instance

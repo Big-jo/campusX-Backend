@@ -8,11 +8,38 @@ import jwt from 'jsonwebtoken';
 import UserModel from '../../models/User.model';
 import FollowsModel from '../../models/Follow.model';
 import FollowingModel from '../../models/Following.model';
-import { GetCampuses } from 'src/lib/campuses';
+import { GetCampuses } from 'src/controllers/campuses';
+import aws from 'aws-sdk';
+import multer from 'multer';
+import multers3 from 'multer-s3';
+import validation from 'src/middleware/auth';
 // Init router and path
 const router = Router();
 const path = '/users';
+const auth = validation.validateToken;
+/******************************************************************************
+*                                 Configuring S3
+/******************************************************************************/
+// aws.config.update({
+//     secretAccessKey: 'abcdefghijklmnopqrstuvwxyz',
+//     accessKeyId: 'antigha',
+//     region: 'us-east(ohio)',
+// });
 
+// const s3 = new aws.S3();
+// const upload = multer ({
+//     storage: multers3({
+//         s3,
+//         bucket: 'campusx',
+//         key: (req, file, cb) => {
+//             console.log(file);
+//             cb(null, file.originalname);
+//         }
+//     }),
+// });
+
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 /******************************************************************************
  *                                Create New User
  ******************************************************************************/
@@ -33,11 +60,11 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             });
         } else {
             const userProfile: IUserProfile = {
-                university: req.body.user.userProfile.university,
-                department: req.body.user.userProfile.department,
-                gender: req.body.user.userProfile.gender,
-                avatar: req.body.user.userProfile.avatar,
-                bio: req.body.user.userProfile.bio,
+                university: req.body.userProfile.university,
+                department: req.body.userProfile.department,
+                gender: req.body.userProfile.gender,
+                avatar: req.body.userProfile.avatar,
+                bio: req.body.userProfile.bio,
             };
             const user: IUser = new User({
                 name: req.body.user.name,
@@ -47,6 +74,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
                 phone_number: req.body.user.number,
                 userProfile,
             });
+
             // Hash Password
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(user.password, saltRounds);
@@ -82,11 +110,9 @@ export const loginPath = '/login';
 export const errorMessage = 'Oops sorry, error logging you in';
 
 router.post(loginPath, async (req: Request, res: Response) => {
-
     try {
         const user = await UserModel.findOne({ email: req.body.email });
-
-        if (user) {
+        if (user !== null) {
             const userPassword = user.password;
             const requestPassword = req.body.password;
             const samePassword = await bcrypt.compare(requestPassword, userPassword);
@@ -113,6 +139,10 @@ router.post(loginPath, async (req: Request, res: Response) => {
                     err: 'Oops, Your Details don\'t match what we have ',
                 });
             }
+        } else {
+            return res.status(BAD_REQUEST).json({
+                err: 'Oops, Your Details don\'t match what we have ',
+            });
         }
     } catch (error) {
         logger.error(error, error.message);
@@ -160,7 +190,7 @@ router.post(followUser, async (req: Request, res: Response) => {
  *                   Generic get route for getting user related data
  ******************************************************************************/
 
-export const getUserInfo = '/getUser/:id//:searchKey';  /** Accepted info search Keys: followers, followings, */
+export const getUserInfo = '/getUser/:user/:id/:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, async (req: Request, res: Response) => {
     try {
@@ -168,7 +198,7 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
             case 'followers':
                 const followers = await UserModel.findById(req.params.id, { followers: 1 })
                     // tslint:disable-next-line: max-line-length
-                    .populate({path: 'followers', populate: {path: 'target', select: {name: 1, userProfile: 1, userTag: 1}}})
+                    .populate({ path: 'followers', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                     .exec();
                 res.status(OK).json({
                     followers,
@@ -178,14 +208,24 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
             case 'followings':
                 const followings = await UserModel.findById(req.params.id, { folllowings: 1 })
                     // tslint:disable-next-line: max-line-length
-                    .populate({path: 'followings', populate: {path: 'target', select: {name: 1, userProfile: 1, userTag: 1}}})
+                    .populate({ path: 'followings', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                     .exec();
                 res.status(OK).json({
                     followings,
                 });
                 break;
+            // Get a particular user
+            case 'user':
+                const particularUser = await UserModel.findById(req.params.user, {password: 0}).exec();
+                res.status(OK).json({
+                    particularUser,
+                    // This user is  following  model owner
+                    following: particularUser!.checkFollowed(req.params.user),
+                    // This user is being followed by model owner
+                    followed:  particularUser!.checkFollowing(req.params.user),
+                });
             default:
-                const user = await User.findById(req.params.id, {password: 0}).exec();
+                const user = await User.findById(req.params.id, { password: 0 }).exec();
                 res.status(OK).json({
                     user,
                 });
@@ -203,25 +243,25 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
  *                              Update User Info
  ******************************************************************************/
 export const updateUserPath = '/update';
-export const  errMessage = 'Oops could not update';
+export const errMessage = 'Oops could not update';
 router.post(updateUserPath, async (req: Request, res: Response) => {
-   try {
-    // Field: Field to update in database
-    // Update: Data to update the field with
-    const field = req.body.field;
-    const id = req.body.id;
-    const update = req.body.update;
-    User.findOneAndUpdate({_id: id}, {[field]: update}, (err)=>{
-        res.json({
-            success: 'Your Profile Has Been Updated',
+    try {
+        // Field: Field to update in database
+        // Update: Data to update the field with
+        const field = req.body.field;
+        const id = req.body.id;
+        const update = req.body.update;
+        User.findOneAndUpdate({ _id: id }, { [field]: update }, (err) => {
+            res.json({
+                success: 'Your Profile Has Been Updated',
+            });
         });
-    });
 
-   } catch (error) {
-    res.status(INTERNAL_SERVER_ERROR).json({
-        err: errMessage,
-    })
-   }
+    } catch (error) {
+        res.status(INTERNAL_SERVER_ERROR).json({
+            err: errMessage,
+        });
+    }
 });
 
 /******************************************************************************
@@ -229,16 +269,63 @@ router.post(updateUserPath, async (req: Request, res: Response) => {
  ******************************************************************************/
 export const getCampusesPath = '/getcampuses';
 router.get(getCampusesPath, async (req: Request, res: Response) => {
-   try {
-    const campuses = await GetCampuses(req, res);
-    res.status(OK).json({
-        campuses,
-    });
-   } catch (error) {
-       res.status(INTERNAL_SERVER_ERROR).json({
-           err: 'Oops an error occured',
-       });
-   }
+    try {
+        const campuses = await GetCampuses(req, res);
+        res.status(OK).json({
+            campuses,
+        });
+    } catch (error) {
+        res.status(INTERNAL_SERVER_ERROR).json({
+            err: 'Oops an error occured',
+        });
+    }
+});
+
+/******************************************************************************
+*                     Get Users From Same And Different Campuses
+/******************************************************************************/
+// export const explorePath = '/explore/:id';
+// router.get(explorePath, async (req: Request, res: Response) => {
+//     try {
+//         const onCampus = 
+//     } catch (error) {
+        
+//     }
+// })
+/******************************************************************************
+*                                 Upload Avatar
+/******************************************************************************/
+export const uploadAvatarPath = '/avatar/upload';
+router.post(uploadAvatarPath, auth, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+        const file = req.file;
+        const s3FileURL = process.env.AWS_UvalidationPLOADED_FILE_URL_LINK;
+
+        const s3Bucket = new aws.S3({
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.SECRET_ACCESS_KEY,
+            region: process.env.AWS_REGION,
+        });
+
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME as string,
+            Key: req.token.userID as string,
+            Body: file.buffer,
+            contentType: file.mimetype,
+            ACL: 'public-read',
+        };
+        s3Bucket.upload(params, (err: any, data: any) => {
+            if (err) {
+                res.status(500).json({ error: 'Oops an error occured'});
+                logger.error(err);
+            } else {
+                UserModel.findByIdAndUpdate(req.body.id, {'userProfile.avatar': data.Location}).exec();
+                res.status(OK).json({data});
+            }
+        });
+    } catch (error) {
+        logger.error(error, error.message);
+    }
 });
 
 export default { router, path };

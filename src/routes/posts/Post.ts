@@ -3,16 +3,18 @@ import PostModel from '../../models/Post.model';
 import moment from 'moment';
 import { CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import { logger } from '../../shared/Logger';
-import { GetPosts, LikePost, GetCampusPosts, DislikePost, TrashPost } from '../../lib/post';
+import { GetPosts, LikePost, GetCampusPosts, DislikePost, TrashPost } from '../../controllers/post';
+import validation from 'src/middleware/auth';
 const router = Router();
 const path = '/post';
 
+const auth = validation.validateToken;
 /*******************************************************
  *              Create New Post
  *********************************************************/
 export const createPostPath = '/create';
 // TODO: Remove exported error messages in other routes;
-router.post(createPostPath, async (req: Request, res: Response) => {
+router.post(createPostPath, auth, async (req: Request, res: Response) => {
     // TODO: Move to post lib .
     // Add option for annonymous posts.
     try {
@@ -20,7 +22,9 @@ router.post(createPostPath, async (req: Request, res: Response) => {
         // TODO: Add Annonymous feature
         const post = await new PostModel({
             author: req.body.userID,
-            post: req.body.post,
+            text: req.body.text,
+            video: req.body.video,
+            image: req.body.image,
             createdAt: moment().format('lll'),
         });
 
@@ -125,7 +129,7 @@ router.post(trashPostPath, async (req: Request, res: Response) => {
     } catch (error) {
         res.status(INTERNAL_SERVER_ERROR).json({
             err: 'Oops an error occured',
-        })
+        });
     }
 })
 export default { router, path };

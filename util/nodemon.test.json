@@ -2,5 +2,5 @@
   "watch": ["src"],
   "ext": "ts",
   "ignore": ["src/public"],
-  "exec": "ENV_FILE=testing ts-node -r ./env -r tsconfig-paths/register src/Start.test.ts"
+  "exec": "ENV_FILE=testing mocha -r ts-node/register -r ./env  -r tsconfig-paths/register   src/**/*.test.ts"
 }
