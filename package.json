@@ -7,7 +7,7 @@
     "start": "ENV_FILE=production node -r ./env -r module-alias/register dist/Start.js",
     "start-dev": "nodemon --config \"./util/nodemon.json\"",
     "test": "nodemon --config \"./util/nodemon.test.json\"",
-    "heroku-postbuild": "build"
+    "heroku-postbuild": "node ./util/build.js"
     },
   "_moduleAliases": {
     "@daos": "dist/daos",
