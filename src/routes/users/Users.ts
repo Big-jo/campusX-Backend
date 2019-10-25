@@ -8,11 +8,11 @@ import jwt from 'jsonwebtoken';
 import UserModel from '../../models/User.model';
 import FollowsModel from '../../models/Follow.model';
 import FollowingModel from '../../models/Following.model';
-import { GetCampuses } from 'src/controllers/campuses';
+import { GetCampuses } from '../../controllers/campuses';
 import aws from 'aws-sdk';
 import multer from 'multer';
 import multers3 from 'multer-s3';
-import validation from 'src/middleware/auth';
+import validation from '../../middleware/auth';
 // Init router and path
 const router = Router();
 const path = '/users';

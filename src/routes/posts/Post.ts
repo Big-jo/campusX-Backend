@@ -4,7 +4,7 @@ import moment from 'moment';
 import { CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import { logger } from '../../shared/Logger';
 import { GetPosts, LikePost, GetCampusPosts, DislikePost, TrashPost } from '../../controllers/post';
-import validation from 'src/middleware/auth';
+import validation from '../../middleware/auth';
 const router = Router();
 const path = '/post';
 

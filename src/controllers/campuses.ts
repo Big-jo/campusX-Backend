@@ -1,4 +1,4 @@
-import CampusModel from 'src/models/Campus.model';
+import CampusModel from '../models/Campus.model';
 import { Request, Response } from 'express';
 
 // tslint:disable-next-line: no-unused-expression
