@@ -1,1 +1,1 @@
-web: npm bulid, npm start
+web: npm start

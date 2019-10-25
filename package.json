@@ -6,8 +6,9 @@
     "lint": "tslint --project \"tsconfig.json\"",
     "start": "ENV_FILE=production node -r ./env -r module-alias/register dist/Start.js",
     "start-dev": "nodemon --config \"./util/nodemon.json\"",
-    "test": "nodemon --config \"./util/nodemon.test.json\""
-  },
+    "test": "nodemon --config \"./util/nodemon.test.json\"",
+    "heroku-postbuild": "build"
+    },
   "_moduleAliases": {
     "@daos": "dist/daos",
     "@entities": "dist/entities",
