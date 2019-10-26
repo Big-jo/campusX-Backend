@@ -3,7 +3,7 @@ import UserRouter from './users/Users';
 import PostRouter from './posts/Post';
 // Init router and path
 const router = Router();
-const path = '/campusx/api/v1';
+const path = '/api/v1';
 
 // Add sub-routes
 router.use(UserRouter.path, UserRouter.router);
