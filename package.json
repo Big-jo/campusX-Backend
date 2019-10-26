@@ -9,7 +9,7 @@
     "test": "nodemon --config \"./util/nodemon.test.json\"",
     "heroku-prebuild": "",
     "heroku-postbuild": "node ./util/build.js"
-    },
+  },
   "_moduleAliases": {
     "@daos": "dist/daos",
     "@entities": "dist/entities",
@@ -40,7 +40,8 @@
     "socket.io": "^2.2.0",
     "ts-node": "^8.3.0",
     "uuid": "^3.3.2",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "typescript": "^3.6.4"
   },
   "devDependencies": {
     "@types/array-sort": "^1.0.0",

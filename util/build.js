@@ -3,7 +3,7 @@ const childProcess = require('child_process');
 
 
 // remove current build, and create new one
-// fs.removeSync('./dist/');
+fs.removeSync('./dist/');
 
 
 // transpile the typescript files
