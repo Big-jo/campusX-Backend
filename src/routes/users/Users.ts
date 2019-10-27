@@ -39,7 +39,7 @@ const auth = validation.validateToken;
 // });
 
 const storage = multer.memoryStorage();
-const upload = multer({storage});
+const upload = multer({ storage });
 /******************************************************************************
  *                                Create New User
  ******************************************************************************/
@@ -60,11 +60,11 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             });
         } else {
             const userProfile: IUserProfile = {
-                university: req.body.userProfile.university,
-                department: req.body.userProfile.department,
-                gender: req.body.userProfile.gender,
-                avatar: req.body.userProfile.avatar,
-                bio: req.body.userProfile.bio,
+                university: req.body.user.userProfile.university,
+                department: req.body.user.userProfile.department,
+                gender: req.body.user.userProfile.gender,
+                avatar: req.body.user.userProfile.avatar,
+                bio: req.body.user.userProfile.bio,
             };
             const user: IUser = new User({
                 name: req.body.user.name,
@@ -82,7 +82,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             const saved = await user.save();
 
             // jwt
-            const payload = { userID: user._id };
+            const payload = { user };
             const secret = process.env.JWT_SECRET as string;
             const token = jwt.sign(payload, secret);
 
@@ -90,7 +90,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
                 userID: user._id,
                 token,
                 // tslint:disable-next-line: max-line-length
-                success: `Your account has been created ${req.body.user.name.split(' ').slice(0, -1).join(' ')}  Welcome`,
+                success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
                 // FIX-ME: The name split
             });
         }
@@ -117,18 +117,15 @@ router.post(loginPath, async (req: Request, res: Response) => {
             const requestPassword = req.body.password;
             const samePassword = await bcrypt.compare(requestPassword, userPassword);
             if (samePassword) {
-                if (req.session!.view >= 0) {
-                    UserModel.findOneAndUpdate({ _id: req.session!.userID }, { $inc: { visits: 1 } }).exec();
-                    req.session!.view++;
-                } else {
-                    req.session!.view = 0;
-                }
-                const payload = { userID: user._id };
+                // if (req.session!.view >= 0) {
+                //     UserModel.findOneAndUpdate({ _id: req.session!.userID }, { $inc: { visits: 1 } }).exec();
+                //     req.session!.view++;
+                // } else {
+                //     req.session!.view = 0;
+                // }
+                const payload = { user };
                 const secret = process.env.JWT_SECRET as string;
                 const token = jwt.sign(payload, secret);
-                req.session!.userID = user._id;
-                // Split full name into first an last name
-                req.session!.name = user.name.split(' ').slice(0, -1).join(' ');
                 return res.status(OK).json({
                     token,
                     userID: user._id,
@@ -159,25 +156,24 @@ router.post(loginPath, async (req: Request, res: Response) => {
 export const followUser = '/follow';
 export const followErrorMessage = 'Oops, something went wrong';
 
-router.post(followUser, async (req: Request, res: Response) => {
+router.post(followUser, auth, async (req: Request, res: Response) => {
     try {
         const follow = await new FollowsModel({
-            target: req.body.target,
-            follower: req.body.follower,
+            target: req.body.targetID,
+            follower: req.token.user._id,
         });
         const following = await new FollowingModel({
-            follower: req.body.follower,
-            target: req.body.target,
+            follower: req.token.user._id,
+            target: req.body.targetID,
         });
-
         // Update both target and follower documents
-        User.findByIdAndUpdate(req.body.target, { $push: { followers: follow._id } }).exec();
-        User.findByIdAndUpdate(req.body.follower, { $push: { followings: following._id } }).exec();
+        User.findByIdAndUpdate(req.body.targetID, { $push: { followers: follow._id } }).exec();
+        User.findByIdAndUpdate(req.token.user._id, { $push: { followings: following._id } }).exec();
 
         following.save();
         follow.save();
         return res.status(OK).json({
-            status: 'following',
+            status: `You/re now following` ,
         });
         // Send a notification to the target, informing about the follow
     } catch (error) {
@@ -190,13 +186,13 @@ router.post(followUser, async (req: Request, res: Response) => {
  *                   Generic get route for getting user related data
  ******************************************************************************/
 
-export const getUserInfo = '/getUser/:user/:id/:searchKey';  /** Accepted info search Keys: followers, followings, */
+export const getUserInfo = '/getUser/:user/:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
-router.get(getUserInfo, async (req: Request, res: Response) => {
+router.get(getUserInfo, auth, async (req: Request, res: Response) => {
     try {
         switch (req.params.searchKey) {
             case 'followers':
-                const followers = await UserModel.findById(req.params.id, { followers: 1 })
+                const followers = await UserModel.findById(req.token.user._id, { followers: 1 })
                     // tslint:disable-next-line: max-line-length
                     .populate({ path: 'followers', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                     .exec();
@@ -206,7 +202,7 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
                 break;
 
             case 'followings':
-                const followings = await UserModel.findById(req.params.id, { folllowings: 1 })
+                const followings = await UserModel.findById(req.token.user._id, { folllowings: 1 })
                     // tslint:disable-next-line: max-line-length
                     .populate({ path: 'followings', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                     .exec();
@@ -216,16 +212,16 @@ router.get(getUserInfo, async (req: Request, res: Response) => {
                 break;
             // Get a particular user
             case 'user':
-                const particularUser = await UserModel.findById(req.params.user, {password: 0}).exec();
+                const particularUser = await UserModel.findById(req.params.user, { password: 0 }).exec();
                 res.status(OK).json({
                     particularUser,
                     // This user is  following  model owner
                     following: particularUser!.checkFollowed(req.params.user),
                     // This user is being followed by model owner
-                    followed:  particularUser!.checkFollowing(req.params.user),
+                    followed: particularUser!.checkFollowing(req.params.user),
                 });
             default:
-                const user = await User.findById(req.params.id, { password: 0 }).exec();
+                const user = await User.findById(req.token.user._id, { password: 0 }).exec();
                 res.status(OK).json({
                     user,
                 });
@@ -284,14 +280,35 @@ router.get(getCampusesPath, async (req: Request, res: Response) => {
 /******************************************************************************
 *                     Get Users From Same And Different Campuses
 /******************************************************************************/
-// export const explorePath = '/explore/:id';
-// router.get(explorePath, async (req: Request, res: Response) => {
-//     try {
-//         const onCampus = 
-//     } catch (error) {
-        
-//     }
-// })
+export const explorePath = '/explore';
+router.get(explorePath, auth, async (req: Request, res: Response) => {
+    try {
+        const onCampus = await UserModel.find({
+            'userProfile.university': req.token.user.userProfile.university,
+        },
+            {
+                password: 0,
+                followings: 0,
+                followers: 0,
+            }).exec();
+        const otherCampuses = await UserModel.find({
+            'userProfile.university': { $ne: req.token.user.userProfile.university },
+        }, {
+            password: 0,
+            followings: 0,
+            followers: 0,
+        }).exec();
+        res.status(OK).send({
+            onCampus,
+            otherCampuses,
+        });
+    } catch (error) {
+        logger.error(error);
+        res.status(INTERNAL_SERVER_ERROR).send({
+            err: 'Oops an error just occured',
+        });
+    }
+});
 /******************************************************************************
 *                                 Upload Avatar
 /******************************************************************************/
@@ -309,18 +326,18 @@ router.post(uploadAvatarPath, auth, upload.single('file'), async (req: Request, 
 
         const params = {
             Bucket: process.env.AWS_BUCKET_NAME as string,
-            Key: req.token.userID as string,
+            Key: req.token.user._id as string,
             Body: file.buffer,
             contentType: file.mimetype,
             ACL: 'public-read',
         };
         s3Bucket.upload(params, (err: any, data: any) => {
             if (err) {
-                res.status(500).json({ error: 'Oops an error occured'});
+                res.status(500).json({ error: 'Oops an error occured' });
                 logger.error(err);
             } else {
-                UserModel.findByIdAndUpdate(req.body.id, {'userProfile.avatar': data.Location}).exec();
-                res.status(OK).json({data});
+                UserModel.findByIdAndUpdate(req.body.id, { 'userProfile.avatar': data.Location }).exec();
+                res.status(OK).json({ data });
             }
         });
     } catch (error) {
