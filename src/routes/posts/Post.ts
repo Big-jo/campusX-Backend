@@ -21,7 +21,7 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
         // TODO: Move this to lib dir
         // TODO: Add Annonymous feature
         const post = await new PostModel({
-            author: req.body.userID,
+            author: req.token.user._id,
             text: req.body.text,
             video: req.body.video,
             image: req.body.image,
