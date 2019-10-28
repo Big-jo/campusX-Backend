@@ -15,7 +15,7 @@ exports.createPostPath = '/create';
 router.post(exports.createPostPath, auth, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
         const post = yield new Post_model_1.default({
-            author: req.body.userID,
+            author: req.token.user._id,
             text: req.body.text,
             video: req.body.video,
             image: req.body.image,

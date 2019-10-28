@@ -142,9 +142,10 @@ router.post(loginPath, async (req: Request, res: Response) => {
             });
         }
     } catch (error) {
+
         logger.error(error, error.message);
         res.status(INTERNAL_SERVER_ERROR).json({
-            error,
+            error: errorMessage,
         });
     }
 

@@ -38,7 +38,7 @@ router.post(exports.createUserPath, (req, res) => tslib_1.__awaiter(void 0, void
             };
             const user = new User_model_1.default({
                 name: req.body.user.name,
-                userTag: `@${req.body.user.userTag}`,
+                userTag: `${req.body.user.userTag}`,
                 email: req.body.user.email,
                 password: req.body.user.password,
                 phone_number: req.body.user.number,
@@ -48,13 +48,13 @@ router.post(exports.createUserPath, (req, res) => tslib_1.__awaiter(void 0, void
             const hashedPassword = yield bcrypt_1.default.hash(user.password, saltRounds);
             user.password = hashedPassword;
             const saved = yield user.save();
-            const payload = { userID: user._id };
+            const payload = { user };
             const secret = process.env.JWT_SECRET;
             const token = jsonwebtoken_1.default.sign(payload, secret);
             return res.status(http_status_codes_1.CREATED).json({
                 userID: user._id,
                 token,
-                success: `Your account has been created ${req.body.user.name.split(' ').slice(0, -1).join(' ')}  Welcome`,
+                success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
             });
         }
     }
@@ -73,18 +73,9 @@ router.post(exports.loginPath, (req, res) => tslib_1.__awaiter(void 0, void 0, v
             const requestPassword = req.body.password;
             const samePassword = yield bcrypt_1.default.compare(requestPassword, userPassword);
             if (samePassword) {
-                if (req.session.view >= 0) {
-                    User_model_2.default.findOneAndUpdate({ _id: req.session.userID }, { $inc: { visits: 1 } }).exec();
-                    req.session.view++;
-                }
-                else {
-                    req.session.view = 0;
-                }
-                const payload = { userID: user._id };
+                const payload = { user };
                 const secret = process.env.JWT_SECRET;
                 const token = jsonwebtoken_1.default.sign(payload, secret);
-                req.session.userID = user._id;
-                req.session.name = user.name.split(' ').slice(0, -1).join(' ');
                 return res.status(http_status_codes_1.OK).json({
                     token,
                     userID: user._id,
@@ -112,22 +103,22 @@ router.post(exports.loginPath, (req, res) => tslib_1.__awaiter(void 0, void 0, v
 }));
 exports.followUser = '/follow';
 exports.followErrorMessage = 'Oops, something went wrong';
-router.post(exports.followUser, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+router.post(exports.followUser, auth, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
         const follow = yield new Follow_model_1.default({
-            target: req.body.target,
-            follower: req.body.follower,
+            target: req.body.targetID,
+            follower: req.token.user._id,
         });
         const following = yield new Following_model_1.default({
-            follower: req.body.follower,
-            target: req.body.target,
+            follower: req.token.user._id,
+            target: req.body.targetID,
         });
-        User_model_1.default.findByIdAndUpdate(req.body.target, { $push: { followers: follow._id } }).exec();
-        User_model_1.default.findByIdAndUpdate(req.body.follower, { $push: { followings: following._id } }).exec();
+        User_model_1.default.findByIdAndUpdate(req.body.targetID, { $push: { followers: follow._id } }).exec();
+        User_model_1.default.findByIdAndUpdate(req.token.user._id, { $push: { followings: following._id } }).exec();
         following.save();
         follow.save();
         return res.status(http_status_codes_1.OK).json({
-            status: 'following',
+            status: `You/re now following`,
         });
     }
     catch (error) {
@@ -135,13 +126,13 @@ router.post(exports.followUser, (req, res) => tslib_1.__awaiter(void 0, void 0, 
         res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({ err: exports.followErrorMessage });
     }
 }));
-exports.getUserInfo = '/getUser/:user/:id/:searchKey';
+exports.getUserInfo = '/getUser/:user/:searchKey';
 exports.getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
-router.get(exports.getUserInfo, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+router.get(exports.getUserInfo, auth, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
         switch (req.params.searchKey) {
             case 'followers':
-                const followers = yield User_model_2.default.findById(req.params.id, { followers: 1 })
+                const followers = yield User_model_2.default.findById(req.token.user._id, { followers: 1 })
                     .populate({ path: 'followers', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                     .exec();
                 res.status(http_status_codes_1.OK).json({
@@ -149,7 +140,7 @@ router.get(exports.getUserInfo, (req, res) => tslib_1.__awaiter(void 0, void 0, 
                 });
                 break;
             case 'followings':
-                const followings = yield User_model_2.default.findById(req.params.id, { folllowings: 1 })
+                const followings = yield User_model_2.default.findById(req.token.user._id, { folllowings: 1 })
                     .populate({ path: 'followings', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                     .exec();
                 res.status(http_status_codes_1.OK).json({
@@ -159,12 +150,13 @@ router.get(exports.getUserInfo, (req, res) => tslib_1.__awaiter(void 0, void 0, 
             case 'user':
                 const particularUser = yield User_model_2.default.findById(req.params.user, { password: 0 }).exec();
                 res.status(http_status_codes_1.OK).json({
-                    particularUser,
+                    user: particularUser,
                     following: particularUser.checkFollowed(req.params.user),
                     followed: particularUser.checkFollowing(req.params.user),
                 });
+                break;
             default:
-                const user = yield User_model_1.default.findById(req.params.id, { password: 0 }).exec();
+                const user = yield User_model_2.default.findById(req.token.user._id, { password: 0 }).exec();
                 res.status(http_status_codes_1.OK).json({
                     user,
                 });
@@ -211,6 +203,35 @@ router.get(exports.getCampusesPath, (req, res) => tslib_1.__awaiter(void 0, void
         });
     }
 }));
+exports.explorePath = '/explore';
+router.get(exports.explorePath, auth, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const onCampus = yield User_model_2.default.find({
+            'userProfile.university': req.token.user.userProfile.university,
+        }, {
+            password: 0,
+            followings: 0,
+            followers: 0,
+        }).exec();
+        const otherCampuses = yield User_model_2.default.find({
+            'userProfile.university': { $ne: req.token.user.userProfile.university },
+        }, {
+            password: 0,
+            followings: 0,
+            followers: 0,
+        }).exec();
+        res.status(http_status_codes_1.OK).send({
+            onCampus,
+            otherCampuses,
+        });
+    }
+    catch (error) {
+        Logger_1.logger.error(error);
+        res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).send({
+            err: 'Oops an error just occured',
+        });
+    }
+}));
 exports.uploadAvatarPath = '/avatar/upload';
 router.post(exports.uploadAvatarPath, auth, upload.single('file'), (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -223,7 +244,7 @@ router.post(exports.uploadAvatarPath, auth, upload.single('file'), (req, res) =>
         });
         const params = {
             Bucket: process.env.AWS_BUCKET_NAME,
-            Key: req.token.userID,
+            Key: req.token.user._id,
             Body: file.buffer,
             contentType: file.mimetype,
             ACL: 'public-read',
