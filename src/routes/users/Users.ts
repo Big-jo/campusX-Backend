@@ -60,15 +60,15 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             });
         } else {
             const userProfile: IUserProfile = {
-                university: req.body.user.userProfile.university,
-                department: req.body.user.userProfile.department,
-                gender: req.body.user.userProfile.gender,
-                avatar: req.body.user.userProfile.avatar,
-                bio: req.body.user.userProfile.bio,
+                university: req.body.userProfile.university,
+                department: req.body.userProfile.department,
+                gender: req.body.userProfile.gender,
+                avatar: req.body.userProfile.avatar,
+                bio: req.body.userProfile.bio,
             };
             const user: IUser = new User({
                 name: req.body.user.name,
-                userTag: `@${req.body.user.userTag}`,
+                userTag: `${req.body.user.userTag}`,
                 email: req.body.user.email,
                 password: req.body.user.password,
                 phone_number: req.body.user.number,
@@ -214,14 +214,15 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
             case 'user':
                 const particularUser = await UserModel.findById(req.params.user, { password: 0 }).exec();
                 res.status(OK).json({
-                    particularUser,
+                    user: particularUser,
                     // This user is  following  model owner
                     following: particularUser!.checkFollowed(req.params.user),
                     // This user is being followed by model owner
                     followed: particularUser!.checkFollowing(req.params.user),
                 });
+                break;
             default:
-                const user = await User.findById(req.token.user._id, { password: 0 }).exec();
+                const user = await UserModel.findById(req.token.user._id, { password: 0 }).exec();
                 res.status(OK).json({
                     user,
                 });
