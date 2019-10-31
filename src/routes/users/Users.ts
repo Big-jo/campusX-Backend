@@ -59,45 +59,53 @@ router.post(createUserPath, async (req: Request, res: Response) => {
                 exists: `Sorry, ${req.body.user.name} you have an account already, try logging in`,
             });
         } else {
-            const userProfile: IUserProfile = {
-                university: req.body.userProfile.university,
-                department: req.body.userProfile.department,
-                gender: req.body.userProfile.gender,
-                avatar: req.body.userProfile.avatar,
-                bio: req.body.userProfile.bio,
-            };
-            const user: IUser = new User({
-                name: req.body.user.name,
-                userTag: `${req.body.user.userTag}`,
-                email: req.body.user.email,
-                password: req.body.user.password,
-                phone_number: req.body.user.number,
-                userProfile,
-            });
+            console.log(req.body);
+            
+            if (req.body !== '') {
+                const userProfile: IUserProfile = {
+                    university: req.body.userProfile.university,
+                    department: req.body.userProfile.department,
+                    gender: req.body.userProfile.gender,
+                    avatar: req.body.userProfile.avatar,
+                    bio: req.body.userProfile.bio,
+                };
+                const user: IUser = new User({
+                    name: req.body.user.name,
+                    userTag: `${req.body.user.userTag}`,
+                    email: req.body.user.email,
+                    password: req.body.user.password,
+                    phone_number: req.body.user.number,
+                    userProfile,
+                });
 
-            // Hash Password
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(user.password, saltRounds);
-            user.password = hashedPassword;
-            const saved = await user.save();
+                // Hash Password
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(user.password, saltRounds);
+                user.password = hashedPassword;
+                const saved = await user.save();
 
-            // jwt
-            const payload = { user };
-            const secret = process.env.JWT_SECRET as string;
-            const token = jwt.sign(payload, secret);
+                // jwt
+                const payload = { user };
+                const secret = process.env.JWT_SECRET as string;
+                const token = jwt.sign(payload, secret);
 
-            return res.status(CREATED).json({
-                userID: user._id,
-                token,
-                // tslint:disable-next-line: max-line-length
-                success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
-                // FIX-ME: The name split
-            });
+                return res.status(CREATED).json({
+                    userID: user._id,
+                    token,
+                    // tslint:disable-next-line: max-line-length
+                    success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
+                    // FIX-ME: The name split
+                });
+            } else {
+                res.status(BAD_REQUEST).json({
+                    error: 'Empty request',
+                });
+            }
         }
 
     } catch (error) {
         logger.error(error, error.message);
-        return res.status(INTERNAL_SERVER_ERROR).json({ err: 'Oops, an error occurred' });
+        return res.status(INTERNAL_SERVER_ERROR).json({ error: 'Oops, an error occurred' });
     }
 });
 
@@ -133,12 +141,12 @@ router.post(loginPath, async (req: Request, res: Response) => {
                 });
             } else {
                 return res.status(BAD_REQUEST).json({
-                    err: 'Oops, Your Details don\'t match what we have ',
+                    error: 'Oops, Your Details don\'t match what we have ',
                 });
             }
         } else {
             return res.status(BAD_REQUEST).json({
-                err: 'Oops, Your Details don\'t match what we have ',
+                error: 'Oops, Your Details don\'t match what we have ',
             });
         }
     } catch (error) {
@@ -178,7 +186,7 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
         // Send a notification to the target, informing about the follow
     } catch (error) {
         logger.error(error, error.message);
-        res.status(INTERNAL_SERVER_ERROR).json({ err: followErrorMessage });
+        res.status(INTERNAL_SERVER_ERROR).json({ error: followErrorMessage });
     }
 });
 
@@ -231,7 +239,7 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
     } catch (error) {
         logger.error(error, error.message);
         res.status(INTERNAL_SERVER_ERROR).json({
-            err: getUserInfoErrMessage,
+            error: getUserInfoErrMessage,
         });
     }
 });
@@ -256,7 +264,7 @@ router.post(updateUserPath, async (req: Request, res: Response) => {
 
     } catch (error) {
         res.status(INTERNAL_SERVER_ERROR).json({
-            err: errMessage,
+            error: errMessage,
         });
     }
 });
@@ -273,7 +281,7 @@ router.get(getCampusesPath, async (req: Request, res: Response) => {
         });
     } catch (error) {
         res.status(INTERNAL_SERVER_ERROR).json({
-            err: 'Oops an error occured',
+            error: 'Oops an error occured',
         });
     }
 });
@@ -306,7 +314,7 @@ router.get(explorePath, auth, async (req: Request, res: Response) => {
     } catch (error) {
         logger.error(error);
         res.status(INTERNAL_SERVER_ERROR).send({
-            err: 'Oops an error just occured',
+            error: 'Oops an error just occured',
         });
     }
 });
@@ -314,7 +322,7 @@ router.get(explorePath, auth, async (req: Request, res: Response) => {
 *                                 Upload Avatar
 /******************************************************************************/
 export const uploadAvatarPath = '/avatar/upload';
-router.post(uploadAvatarPath, auth, upload.single('file'), async (req: Request, res: Response) => {
+router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request, res: Response) => {
     try {
         const file = req.file;
         const s3FileURL = process.env.AWS_UvalidationPLOADED_FILE_URL_LINK;
@@ -337,7 +345,7 @@ router.post(uploadAvatarPath, auth, upload.single('file'), async (req: Request, 
                 res.status(500).json({ error: 'Oops an error occured' });
                 logger.error(err);
             } else {
-                UserModel.findByIdAndUpdate(req.body.id, { 'userProfile.avatar': data.Location }).exec();
+                UserModel.findByIdAndUpdate(req.token.user._id, { 'userProfile.avatar': data.Location }).exec();
                 res.status(OK).json({ data });
             }
         });
