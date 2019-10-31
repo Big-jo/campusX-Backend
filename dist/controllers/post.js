@@ -12,7 +12,7 @@ function GetPosts(req, res, options) {
                 case '0':
                     try {
                         const posts = yield Post_model_1.default.find({ author: req.params.id })
-                            .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
+                            .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1 } })
                             .exec();
                         return posts.reverse();
                     }
@@ -27,7 +27,7 @@ function GetPosts(req, res, options) {
                             targetObjectIDs.push(following.target);
                         }
                         let posts = yield Post_model_1.default.find({ author: { $in: targetObjectIDs } })
-                            .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
+                            .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1 } })
                             .exec();
                         posts = yield array_sort_1.default(posts, (a, b) => {
                             return Date.parse(a.createdAt) - Date.parse(b.createdAt);

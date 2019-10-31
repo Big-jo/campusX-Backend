@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const jsonwebtoken_1 = tslib_1.__importDefault(require("jsonwebtoken"));
 const http_status_codes_1 = require("http-status-codes");
+const _shared_1 = require("@shared");
 const validation = {
     validateToken: (req, res, next) => {
         const authorizationHeader = req.headers.authorization;
@@ -16,6 +17,7 @@ const validation = {
                 next();
             }
             catch (error) {
+                _shared_1.logger.error(error.error);
                 throw new Error(error);
             }
         }

@@ -29,38 +29,46 @@ router.post(exports.createUserPath, (req, res) => tslib_1.__awaiter(void 0, void
             });
         }
         else {
-            const userProfile = {
-                university: req.body.userProfile.university,
-                department: req.body.userProfile.department,
-                gender: req.body.userProfile.gender,
-                avatar: req.body.userProfile.avatar,
-                bio: req.body.userProfile.bio,
-            };
-            const user = new User_model_1.default({
-                name: req.body.user.name,
-                userTag: `${req.body.user.userTag}`,
-                email: req.body.user.email,
-                password: req.body.user.password,
-                phone_number: req.body.user.number,
-                userProfile,
-            });
-            const saltRounds = 10;
-            const hashedPassword = yield bcrypt_1.default.hash(user.password, saltRounds);
-            user.password = hashedPassword;
-            const saved = yield user.save();
-            const payload = { user };
-            const secret = process.env.JWT_SECRET;
-            const token = jsonwebtoken_1.default.sign(payload, secret);
-            return res.status(http_status_codes_1.CREATED).json({
-                userID: user._id,
-                token,
-                success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
-            });
+            console.log(req.body);
+            if (req.body !== '') {
+                const userProfile = {
+                    university: req.body.userProfile.university,
+                    department: req.body.userProfile.department,
+                    gender: req.body.userProfile.gender,
+                    avatar: req.body.userProfile.avatar,
+                    bio: req.body.userProfile.bio,
+                };
+                const user = new User_model_1.default({
+                    name: req.body.user.name,
+                    userTag: `${req.body.user.userTag}`,
+                    email: req.body.user.email,
+                    password: req.body.user.password,
+                    phone_number: req.body.user.number,
+                    userProfile,
+                });
+                const saltRounds = 10;
+                const hashedPassword = yield bcrypt_1.default.hash(user.password, saltRounds);
+                user.password = hashedPassword;
+                const saved = yield user.save();
+                const payload = { user };
+                const secret = process.env.JWT_SECRET;
+                const token = jsonwebtoken_1.default.sign(payload, secret);
+                return res.status(http_status_codes_1.CREATED).json({
+                    userID: user._id,
+                    token,
+                    success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
+                });
+            }
+            else {
+                res.status(http_status_codes_1.BAD_REQUEST).json({
+                    error: 'Empty request',
+                });
+            }
         }
     }
     catch (error) {
         Logger_1.logger.error(error, error.message);
-        return res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({ err: 'Oops, an error occurred' });
+        return res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({ error: 'Oops, an error occurred' });
     }
 }));
 exports.loginPath = '/login';
@@ -84,13 +92,13 @@ router.post(exports.loginPath, (req, res) => tslib_1.__awaiter(void 0, void 0, v
             }
             else {
                 return res.status(http_status_codes_1.BAD_REQUEST).json({
-                    err: 'Oops, Your Details don\'t match what we have ',
+                    error: 'Oops, Your Details don\'t match what we have ',
                 });
             }
         }
         else {
             return res.status(http_status_codes_1.BAD_REQUEST).json({
-                err: 'Oops, Your Details don\'t match what we have ',
+                error: 'Oops, Your Details don\'t match what we have ',
             });
         }
     }
@@ -123,7 +131,7 @@ router.post(exports.followUser, auth, (req, res) => tslib_1.__awaiter(void 0, vo
     }
     catch (error) {
         Logger_1.logger.error(error, error.message);
-        res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({ err: exports.followErrorMessage });
+        res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({ error: exports.followErrorMessage });
     }
 }));
 exports.getUserInfo = '/getUser/:user/:searchKey';
@@ -166,7 +174,7 @@ router.get(exports.getUserInfo, auth, (req, res) => tslib_1.__awaiter(void 0, vo
     catch (error) {
         Logger_1.logger.error(error, error.message);
         res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({
-            err: exports.getUserInfoErrMessage,
+            error: exports.getUserInfoErrMessage,
         });
     }
 }));
@@ -185,7 +193,7 @@ router.post(exports.updateUserPath, (req, res) => tslib_1.__awaiter(void 0, void
     }
     catch (error) {
         res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({
-            err: exports.errMessage,
+            error: exports.errMessage,
         });
     }
 }));
@@ -199,7 +207,7 @@ router.get(exports.getCampusesPath, (req, res) => tslib_1.__awaiter(void 0, void
     }
     catch (error) {
         res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({
-            err: 'Oops an error occured',
+            error: 'Oops an error occured',
         });
     }
 }));
@@ -228,12 +236,12 @@ router.get(exports.explorePath, auth, (req, res) => tslib_1.__awaiter(void 0, vo
     catch (error) {
         Logger_1.logger.error(error);
         res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).send({
-            err: 'Oops an error just occured',
+            error: 'Oops an error just occured',
         });
     }
 }));
 exports.uploadAvatarPath = '/avatar/upload';
-router.post(exports.uploadAvatarPath, auth, upload.single('file'), (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+router.post(exports.uploadAvatarPath, auth, upload.single('image'), (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
         const file = req.file;
         const s3FileURL = process.env.AWS_UvalidationPLOADED_FILE_URL_LINK;
@@ -255,7 +263,7 @@ router.post(exports.uploadAvatarPath, auth, upload.single('file'), (req, res) =>
                 Logger_1.logger.error(err);
             }
             else {
-                User_model_2.default.findByIdAndUpdate(req.body.id, { 'userProfile.avatar': data.Location }).exec();
+                User_model_2.default.findByIdAndUpdate(req.token.user._id, { 'userProfile.avatar': data.Location }).exec();
                 res.status(http_status_codes_1.OK).json({ data });
             }
         });
