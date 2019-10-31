@@ -3,6 +3,7 @@ import { IAuth } from '../interfaces/IAuth';
 import { NextFunction, Response, Request } from 'express';
 import { OK, UNAUTHORIZED } from 'http-status-codes';
 import { IUser } from 'src/interfaces/IUser';
+import { logger } from '@shared';
 
 const validation = {
     validateToken: (req: Request, res: Response, next: NextFunction) => {
@@ -18,6 +19,7 @@ const validation = {
 
                 next();
             } catch (error) {
+                logger.error(error.error);
                 // Throw an error if anything goes wrong with verification
                 throw new Error(error);
             }
