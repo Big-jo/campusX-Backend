@@ -22,7 +22,7 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
             case '0':
                 try {
                     const posts = await PostModel.find({ author: req.params.id })
-                        .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
+                        .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1} })
                         .exec();
                     return posts.reverse();
                 } catch (error) {
@@ -44,7 +44,7 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
                     }
                     // Get post from each following
                     let posts = await PostModel.find({ author: { $in: targetObjectIDs } })
-                        .populate({ path: 'author', select: { name: 1, userProfile: 1 } })
+                        .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1    } })
                         .exec();
                     // Sort posts by date and time
                     posts = await sort(posts, (a: IPost, b: IPost) => {
