@@ -18,6 +18,6 @@ export interface IUser extends Document {
     phone_number: string;
     followings: string[];
     followers: string[];
-    checkFollowed(id: string): boolean;
-    checkFollowing(id: string): boolean;
+    checkIsFollowed(id: string): boolean;
+    checkIsFollowing(id: string): boolean;
 }
