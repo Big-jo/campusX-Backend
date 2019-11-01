@@ -60,7 +60,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             });
         } else {
             console.log(req.body);
-            
+
             if (req.body !== '') {
                 const userProfile: IUserProfile = {
                     university: req.body.userProfile.university,
@@ -182,7 +182,7 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
         following.save();
         follow.save();
         return res.status(OK).json({
-            status: `You/re now following` ,
+            status: `You/re now following`,
         });
         // Send a notification to the target, informing about the follow
     } catch (error) {
@@ -221,13 +221,15 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
                 break;
             // Get a particular user
             case 'user':
-                const particularUser = await UserModel.findById(req.params.user, { password: 0 }).exec();
+                const particularUser = await UserModel.findById(req.params.user, { password: 0 })
+                .populate([{path: 'followings'}, {path: 'followers'}]).exec();
+
                 res.status(OK).json({
                     user: particularUser,
-                    // This user is  following  model owner
-                    following: particularUser!.checkFollowed(req.params.user),
-                    // This user is being followed by model owner
-                    followed: particularUser!.checkFollowing(req.params.user),
+                    // Check if the user making the request follows the model owner
+                    following: particularUser!.checkIsFollowed(req.token.user._id),
+                    // Check if the user making the request is following the model owner
+                    followed: particularUser!.checkIsFollowing(req.token.user._id),
                 });
                 break;
             default:
@@ -257,7 +259,7 @@ router.post(updateUserPath, async (req: Request, res: Response) => {
         const field = req.body.field;
         const id = req.body.id;
         const update = req.body.update;
-        User.findOneAndUpdate({ _id: id }, { [field]: update }, (err) => {
+        User.findOneAndUpdate({ _id: id }, { [field]: update }, (err: any) => {
             res.json({
                 success: 'Your Profile Has Been Updated',
             });
@@ -293,21 +295,42 @@ router.get(getCampusesPath, async (req: Request, res: Response) => {
 export const explorePath = '/explore';
 router.get(explorePath, auth, async (req: Request, res: Response) => {
     try {
-        const onCampus = await UserModel.find({
+        const onCampus = [];
+        const otherCampuses = [];
+
+        // On campus
+        const sameCampus = await UserModel.find({
             'userProfile.university': req.token.user.userProfile.university,
         },
             {
-                password: 0,
-                followings: 0,
-                followers: 0,
-            }).exec();
-        const otherCampuses = await UserModel.find({
+                followings: 1,
+                followers: 1,
+                name: 1,
+                userProfile: 1,
+                userTag: 1,
+            }).populate([{path: 'followings'}, {path: 'followers'}]).exec();
+
+        for (const user of sameCampus) {
+            // tslint:disable-next-line: max-line-length
+            onCampus.push({ user, isFollowed: user.checkIsFollowed(req.token.user._id), isFollowing: user.checkIsFollowing(req.token.user._id) });
+        }
+
+        // Other campuses
+        const diffCampuses = await UserModel.find({
             'userProfile.university': { $ne: req.token.user.userProfile.university },
         }, {
-            password: 0,
-            followings: 0,
-            followers: 0,
-        }).exec();
+            followings: 1,
+            followers: 1,
+            name: 1,
+            userProfile: 1,
+            userTag: 1,
+        }).populate([{path: 'followings'}, {path: 'followers'}]).exec();
+
+        for (const user of diffCampuses) {
+            // tslint:disable-next-line: max-line-length
+            otherCampuses.push({ user, isFollowed: user.checkIsFollowed(req.token.user._id), isFollowing: user.checkIsFollowing(req.token.user._id) });
+        }
+
         res.status(OK).send({
             onCampus,
             otherCampuses,
