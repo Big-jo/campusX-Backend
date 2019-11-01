@@ -25,21 +25,37 @@ const UserSchema: Schema = new Schema({
     followings: [{type: Schema.Types.ObjectId, ref: 'Following'}],
 });
 
-// Check if this user is followed by another user
+// Check if this user is followed by the user making the request
 
-// FIXME: Fix this
-UserSchema.methods.checkFollowed = function(id: string) {
-    if (this.followers.includes(id)) {
+UserSchema.methods.checkIsFollowed = function(id: string) {
+    if (check(this.followers, id, 'follower')) {
         return true;
-    } else {return false; }
+    } else {
+        return false;
+     }
 };
 
-UserSchema.methods.checkFollowing = function(id: string) {
-    if (this.followings.includes(id)) {
+// Check if this user is following the user making the request
+UserSchema.methods.checkIsFollowing = function(id: string) {
+    if (check(this.followings, id, 'target')) {
         return true;
     } else {
         return false;
     }
 };
+
+// Check object in an array if a particular value is present
+function check(array: [], value: string, field: string) {
+    for (const obj of array) {
+        let value1 = obj[field] as string;
+        value1 = value1.toString();
+
+        if (value1 === value) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
 // Export the model and return IUser interface
 export default mongoose.model<IUser>('User', UserSchema);
