@@ -378,4 +378,24 @@ router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request,
     }
 });
 
+/******************************************************************************
+*                          Get Follower Notification
+/******************************************************************************/
+export const followingNotificationPath = '/notification/follower';
+router.get(followingNotificationPath, auth, async (req: Request, res: Response) => {
+    try {
+        const followers =  await FollowsModel.find({target: req.token.user._id})
+            .populate('follower', {'name': 1, 'userTag': 1, 'userProfile.avatar': 1}).exec();
+        await followers.reverse();
+        res.status(OK).json({
+            followers,
+        });
+    } catch (error) {
+        logger.error(error);
+        res.status(INTERNAL_SERVER_ERROR).json({
+            error: 'Oops an error just occured',
+        });
+    }
+});
+
 export default { router, path };
