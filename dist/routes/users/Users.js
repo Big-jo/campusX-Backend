@@ -156,11 +156,12 @@ router.get(exports.getUserInfo, auth, (req, res) => tslib_1.__awaiter(void 0, vo
                 });
                 break;
             case 'user':
-                const particularUser = yield User_model_2.default.findById(req.params.user, { password: 0 }).exec();
+                const particularUser = yield User_model_2.default.findById(req.params.user, { password: 0 })
+                    .populate([{ path: 'followings' }, { path: 'followers' }]).exec();
                 res.status(http_status_codes_1.OK).json({
                     user: particularUser,
-                    following: particularUser.checkFollowed(req.params.user),
-                    followed: particularUser.checkFollowing(req.params.user),
+                    following: particularUser.checkIsFollowed(req.token.user._id),
+                    followed: particularUser.checkIsFollowing(req.token.user._id),
                 });
                 break;
             default:
@@ -214,20 +215,32 @@ router.get(exports.getCampusesPath, (req, res) => tslib_1.__awaiter(void 0, void
 exports.explorePath = '/explore';
 router.get(exports.explorePath, auth, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
     try {
-        const onCampus = yield User_model_2.default.find({
+        const onCampus = [];
+        const otherCampuses = [];
+        const sameCampus = yield User_model_2.default.find({
             'userProfile.university': req.token.user.userProfile.university,
         }, {
-            password: 0,
-            followings: 0,
-            followers: 0,
-        }).exec();
-        const otherCampuses = yield User_model_2.default.find({
+            followings: 1,
+            followers: 1,
+            name: 1,
+            userProfile: 1,
+            userTag: 1,
+        }).populate([{ path: 'followings' }, { path: 'followers' }]).exec();
+        for (const user of sameCampus) {
+            onCampus.push({ user, isFollowed: user.checkIsFollowed(req.token.user._id), isFollowing: user.checkIsFollowing(req.token.user._id) });
+        }
+        const diffCampuses = yield User_model_2.default.find({
             'userProfile.university': { $ne: req.token.user.userProfile.university },
         }, {
-            password: 0,
-            followings: 0,
-            followers: 0,
-        }).exec();
+            followings: 1,
+            followers: 1,
+            name: 1,
+            userProfile: 1,
+            userTag: 1,
+        }).populate([{ path: 'followings' }, { path: 'followers' }]).exec();
+        for (const user of diffCampuses) {
+            otherCampuses.push({ user, isFollowed: user.checkIsFollowed(req.token.user._id), isFollowing: user.checkIsFollowing(req.token.user._id) });
+        }
         res.status(http_status_codes_1.OK).send({
             onCampus,
             otherCampuses,

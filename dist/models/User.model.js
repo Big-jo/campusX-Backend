@@ -22,20 +22,32 @@ const UserSchema = new mongoose_1.Schema({
     followers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Follows' }],
     followings: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Following' }],
 });
-UserSchema.methods.checkFollowed = function (id) {
-    if (this.followers.includes(id)) {
+UserSchema.methods.checkIsFollowed = function (id) {
+    if (check(this.followers, id, 'follower')) {
         return true;
     }
     else {
         return false;
     }
 };
-UserSchema.methods.checkFollowing = function (id) {
-    if (this.followings.includes(id)) {
+UserSchema.methods.checkIsFollowing = function (id) {
+    if (check(this.followings, id, 'target')) {
         return true;
     }
     else {
         return false;
     }
 };
+function check(array, value, field) {
+    for (const obj of array) {
+        let value1 = obj[field];
+        value1 = value1.toString();
+        if (value1 === value) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
 exports.default = mongoose_1.default.model('User', UserSchema);
