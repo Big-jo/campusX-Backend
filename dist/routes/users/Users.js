@@ -285,4 +285,21 @@ router.post(exports.uploadAvatarPath, auth, upload.single('image'), (req, res) =
         Logger_1.logger.error(error, error.message);
     }
 }));
+exports.followingNotificationPath = '/notification/follower';
+router.get(exports.followingNotificationPath, auth, (req, res) => tslib_1.__awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const followers = yield Follow_model_1.default.find({ target: req.token.user._id })
+            .populate('follower', { 'name': 1, 'userTag': 1, 'userProfile.avatar': 1 }).exec();
+        yield followers.reverse();
+        res.status(http_status_codes_1.OK).json({
+            followers,
+        });
+    }
+    catch (error) {
+        Logger_1.logger.error(error);
+        res.status(http_status_codes_1.INTERNAL_SERVER_ERROR).json({
+            error: 'Oops an error just occured',
+        });
+    }
+}));
 exports.default = { router, path };
