@@ -37,7 +37,7 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
                     // Get followings
                     // const followings = await FollowingModel.find({follower: req.params.id}).exec();
                     // tslint:disable-next-line: max-line-length
-                    const followings = await FollowingModel.find({ follower: req.params.id }, { target: 1 }).lean().exec();
+                    const followings = await FollowingModel.find({ follower: req.token.user._id}, { target: 1 }).lean().exec();
                     const targetObjectIDs: string[] = [];
                     for (const following of followings) {
                         targetObjectIDs.push(following.target);
@@ -66,6 +66,7 @@ export async function GetPosts(req: Request, res: Response, options: IOptions) {
 interface IScoredPost {
     post: IPost;
     PIS: number;
+    liked: boolean;
 }
 
 /**
@@ -81,7 +82,8 @@ export async function GetCampusPosts(req: Request, res: Response) {
             const Posts = await PostModel.find({ author: user._id })
                 .populate({ path: 'author', select: { name: 1, userProfile: 1 } }).exec();
             for (const post of Posts) {
-                const scoredPost: IScoredPost = { post, PIS: post.scorePost() };
+                // tslint:disable-next-line: max-line-length
+                const scoredPost: IScoredPost = { post, PIS: post.scorePost(), liked: post.checkLiked(req.token.user._id) };
                 posts.push(scoredPost);
             }
         }
@@ -95,27 +97,30 @@ export async function GetCampusPosts(req: Request, res: Response) {
 
 export async function LikePost(req: Request, res: Response) {
     try {
-        PostModel.findByIdAndUpdate(req.body.postID, { $inc: { likes: 1 }, likedBy: req.params.userID }).exec();
-        UserModel.findByIdAndUpdate(req.body.authorID, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
+        /** 
+         *  Increment Post likes and update the likedBy field
+        */
+        PostModel.findByIdAndUpdate(req.body.postID, { $inc: { likes: 1 }, likedBy: req.token.user._id }).exec();
+        UserModel.findByIdAndUpdate(req.token.user._id, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
 export async function DislikePost(req: Request, res: Response) {
     try {
         PostModel.findByIdAndUpdate(req.body.postID, { $inc: { dislikes: 1 } }).exec();
-        UserModel.findByIdAndUpdate(req.body.authorID, { $inc: { 'userProfile.rep_points': 0.13 } }).exec();
+        UserModel.findByIdAndUpdate(req.token.user._id, { $inc: { 'userProfile.rep_points': 0.13 } }).exec();
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
 export async function TrashPost(req: Request, res: Response) {
     try {
         PostModel.findByIdAndUpdate(req.body.postID, { $inc: { trash: 1 } }).exec();
-        UserModel.findByIdAndUpdate(req.body.authorID, { $inc: { 'userProfile.rep_points': 0.9 } }).exec();
+        UserModel.findByIdAndUpdate(req.token.user._id, { $inc: { 'userProfile.rep_points': 0.9 } }).exec();
     } catch (error) {
-        return error;
+        throw error;
     }
 }

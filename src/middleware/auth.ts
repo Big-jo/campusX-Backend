@@ -3,7 +3,7 @@ import { IAuth } from '../interfaces/IAuth';
 import { NextFunction, Response, Request } from 'express';
 import { OK, UNAUTHORIZED } from 'http-status-codes';
 import { IUser } from 'src/interfaces/IUser';
-import { logger } from '@shared';
+import { logger } from '../shared/Logger';
 
 const validation = {
     validateToken: (req: Request, res: Response, next: NextFunction) => {

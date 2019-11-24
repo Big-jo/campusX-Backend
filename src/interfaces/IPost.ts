@@ -10,5 +10,7 @@ export interface IPost extends Document {
     likes: number;
     dislikes: number;
     trash: number;
+    comments: IPost[];
     scorePost(): number;
+    checkLiked(id: string): boolean;
 }

@@ -17,6 +17,8 @@ import validation from '../../middleware/auth';
 const router = Router();
 const path = '/users';
 const auth = validation.validateToken;
+// tslint:disable-next-line:no-var-requires
+const Notification = require('../../lib/notifications');
 /******************************************************************************
 *                                 Configuring S3
 /******************************************************************************/
@@ -32,7 +34,6 @@ const auth = validation.validateToken;
 //         s3,
 //         bucket: 'campusx',
 //         key: (req, file, cb) => {
-//             console.log(file);
 //             cb(null, file.originalname);
 //         }
 //     }),
@@ -59,8 +60,6 @@ router.post(createUserPath, async (req: Request, res: Response) => {
                 exists: `Sorry, ${req.body.user.name} you have an account already, try logging in`,
             });
         } else {
-            console.log(req.body);
-
             if (req.body !== '') {
                 const userProfile: IUserProfile = {
                     university: req.body.userProfile.university,
@@ -79,23 +78,25 @@ router.post(createUserPath, async (req: Request, res: Response) => {
                 });
 
                 // Hash Password
-                const saltRounds = 10;
-                const hashedPassword = await bcrypt.hash(user.password, saltRounds);
-                user.password = hashedPassword;
-                const saved = await user.save();
+                const rounds = await bcrypt.genSalt(10);
+                bcrypt.hash(user.password, rounds, async (error, result) => {
+                    user.password = result;
+                    await user.save();
 
-                // jwt
-                const payload = { user };
-                const secret = process.env.JWT_SECRET as string;
-                const token = jwt.sign(payload, secret);
+                    // jwt
+                    const payload = { user };
+                    const secret = process.env.JWT_SECRET as string;
+                    const token = jwt.sign(payload, secret);
 
-                return res.status(CREATED).json({
-                    userID: user._id,
-                    token,
-                    // tslint:disable-next-line: max-line-length
-                    success: `Your account has been created, Welcom ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
-                    // FIX-ME: The name split
+                    return res.status(CREATED).json({
+                        userID: user._id,
+                        token,
+                        // tslint:disable-next-line: max-line-length
+                        success: `Your account has been created, Welcome ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
+                        // FIX-ME: The name split
+                    });
                 });
+
             } else {
                 res.status(BAD_REQUEST).json({
                     error: 'Empty request',
@@ -123,27 +124,28 @@ router.post(loginPath, async (req: Request, res: Response) => {
         if (user !== null) {
             const userPassword = user.password;
             const requestPassword = req.body.password;
-            const samePassword = await bcrypt.compare(requestPassword, userPassword);
-            if (samePassword) {
-                // if (req.session!.view >= 0) {
-                //     UserModel.findOneAndUpdate({ _id: req.session!.userID }, { $inc: { visits: 1 } }).exec();
-                //     req.session!.view++;
-                // } else {
-                //     req.session!.view = 0;
-                // }
-                const payload = { user };
-                const secret = process.env.JWT_SECRET as string;
-                const token = jwt.sign(payload, secret);
-                return res.status(OK).json({
-                    token,
-                    userID: user._id,
-                    success: `Welcome back ${user.name.split(' ').slice(0, -1).join(' ')}`,
-                });
-            } else {
-                return res.status(BAD_REQUEST).json({
-                    error: 'Oops, Your Details don\'t match what we have ',
-                });
-            }
+            bcrypt.compare(requestPassword, userPassword, (error, result) => {
+                if (result) {
+                    // if (req.session!.view >= 0) {
+                    //     UserModel.findOneAndUpdate({ _id: req.session!.userID }, { $inc: { visits: 1 } }).exec();
+                    //     req.session!.view++;
+                    // } else {
+                    //     req.session!.view = 0;
+                    // }
+                    const payload = { user };
+                    const secret = process.env.JWT_SECRET as string;
+                    const token = jwt.sign(payload, secret);
+                    return res.status(OK).json({
+                        token,
+                        userID: user._id,
+                        success: `Welcome back ${user.name.split(' ').slice(0, -1).join(' ')}`,
+                    });
+                } else {
+                    return res.status(BAD_REQUEST).json({
+                        error: 'Oops, Your Details don\'t match what we have ',
+                    });
+                }
+            });
         } else {
             return res.status(BAD_REQUEST).json({
                 error: 'Oops, Your Details don\'t match what we have ',
@@ -176,15 +178,19 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
             target: req.body.targetID,
         });
         // Update both target and follower documents
-        User.findByIdAndUpdate(req.body.targetID, { $push: { followers: follow._id } }).exec();
-        User.findByIdAndUpdate(req.token.user._id, { $push: { followings: following._id } }).exec();
+        const target = await User.findByIdAndUpdate(req.body.targetID, { $push: { followers: follow._id } }).exec();
+        await User.findByIdAndUpdate(req.token.user._id, { $push: { followings: following._id } }).exec();
+        // TODO: Add typings support for FCM-NODE
+        // TODO: Make notifications function async
+        const notif = new Notification('Campus', `${target!.userTag} followed you`, target!.fcm_token);
+        notif.send();
 
-        following.save();
-        follow.save();
+        await following.save();
+        await follow.save();
         return res.status(OK).json({
             status: `You/re now following`,
         });
-        // Send a notification to the target, informing about the follow
+        // TODO: Send a notification to the target, informing about the follow
     } catch (error) {
         logger.error(error, error.message);
         res.status(INTERNAL_SERVER_ERROR).json({ error: followErrorMessage });
@@ -222,7 +228,7 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
             // Get a particular user
             case 'user':
                 const particularUser = await UserModel.findById(req.params.user, { password: 0 })
-                .populate([{path: 'followings'}, {path: 'followers'}]).exec();
+                    .populate([{ path: 'followings' }, { path: 'followers' }]).exec();
 
                 res.status(OK).json({
                     user: particularUser,
@@ -308,7 +314,7 @@ router.get(explorePath, auth, async (req: Request, res: Response) => {
                 name: 1,
                 userProfile: 1,
                 userTag: 1,
-            }).populate([{path: 'followings'}, {path: 'followers'}]).exec();
+            }).populate([{ path: 'followings' }, { path: 'followers' }]).exec();
 
         for (const user of sameCampus) {
             // tslint:disable-next-line: max-line-length
@@ -324,7 +330,7 @@ router.get(explorePath, auth, async (req: Request, res: Response) => {
             name: 1,
             userProfile: 1,
             userTag: 1,
-        }).populate([{path: 'followings'}, {path: 'followers'}]).exec();
+        }).populate([{ path: 'followings' }, { path: 'followers' }]).exec();
 
         for (const user of diffCampuses) {
             // tslint:disable-next-line: max-line-length
@@ -338,7 +344,7 @@ router.get(explorePath, auth, async (req: Request, res: Response) => {
     } catch (error) {
         logger.error(error);
         res.status(INTERNAL_SERVER_ERROR).send({
-            error: 'Oops an error just occured',
+            error: 'Oops an error just occurred',
         });
     }
 });
@@ -379,13 +385,36 @@ router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request,
 });
 
 /******************************************************************************
+ *                          Check If A UserTag Is Available
+ /******************************************************************************/
+export const availableUserTag = '/userTag/:tag';
+router.get(availableUserTag, async (req: Request, res: Response) => {
+  try {
+      const userTag = await UserModel.findOne({userTag: {$regex: req.params.tag, $options: '$i'}});
+      if (userTag) {
+          // Return 0 if the userTag exists
+          res.status(OK).json(0);
+      } else {
+          // Return 1 is the userTag doesnt exist
+          res.status(OK).json(1);
+      }
+  } catch (e) {
+      logger.error(e);
+      res.status(INTERNAL_SERVER_ERROR).json({
+          error: 'Oops an error just occurred',
+      });
+  }
+
+});
+
+/******************************************************************************
 *                          Get Follower Notification
 /******************************************************************************/
 export const followingNotificationPath = '/notification/follower';
 router.get(followingNotificationPath, auth, async (req: Request, res: Response) => {
     try {
-        const followers =  await FollowsModel.find({target: req.token.user._id})
-            .populate('follower', {'name': 1, 'userTag': 1, 'userProfile.avatar': 1}).exec();
+        const followers = await FollowsModel.find({ target: req.token.user._id })
+            .populate('follower', { 'name': 1, 'userTag': 1, 'userProfile.avatar': 1 }).exec();
         await followers.reverse();
         res.status(OK).json({
             followers,
@@ -398,4 +427,20 @@ router.get(followingNotificationPath, auth, async (req: Request, res: Response) 
     }
 });
 
+/******************************************************************************
+ *                          Update FCM-TOKEN
+ /******************************************************************************/
+export const updateFCMTokenPath = '/fcmUpdate';
+
+router.post(updateFCMTokenPath, auth, async (req: Request, res: Response) => {
+    try {
+        await UserModel.findByIdAndUpdate(req.token.user._id, {fcm_token: req.body.fcm_token}).exec();
+
+        res.status(CREATED).json({});
+    } catch (e) {
+        logger.error(e);
+        res.status(INTERNAL_SERVER_ERROR).json({});
+    //    TODO: For responses that dont need to send anything back remove JSON response
+    }
+});
 export default { router, path };

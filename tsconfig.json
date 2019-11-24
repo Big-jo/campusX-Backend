@@ -13,9 +13,6 @@
     "target": "es6",
     "moduleResolution": "node",
     "paths": {
-      "@daos": [
-        "src/daos"
-      ],
       "@entities": [
         "src/entities"
       ],
@@ -39,6 +36,6 @@
   ],
   "exclude": [
     "src/public/",
-    "node_modules",
+    "node_modules"
   ]
 }

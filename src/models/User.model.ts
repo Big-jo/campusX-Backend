@@ -23,6 +23,7 @@ const UserSchema: Schema = new Schema({
     followers: [{type: Schema.Types.ObjectId, ref: 'Follows'}],
     // People this user follows
     followings: [{type: Schema.Types.ObjectId, ref: 'Following'}],
+    fcm_token: {type: String},
 });
 
 // Check if this user is followed by the user making the request

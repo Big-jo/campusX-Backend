@@ -20,4 +20,5 @@ export interface IUser extends Document {
     followers: string[];
     checkIsFollowed(id: string): boolean;
     checkIsFollowing(id: string): boolean;
+    fcm_token: string;
 }
