@@ -19,10 +19,6 @@ const UserSchema: Schema = new Schema({
     phoneNumber: {type: Number},
     visits: {type: Number, default: 0},
     userProfile: UserProfileSchema,
-    // People following this user
-    followers: [{type: Schema.Types.ObjectId, ref: 'Follows'}],
-    // People this user follows
-    followings: [{type: Schema.Types.ObjectId, ref: 'Following'}],
     fcm_token: {type: String},
 });
 
