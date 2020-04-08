@@ -84,7 +84,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
                     await user.save();
 
                     // jwt
-                    const payload = { user };
+                    const payload = user._id;
                     const secret = process.env.JWT_SECRET as string;
                     const token = jwt.sign(payload, secret);
 
@@ -132,7 +132,7 @@ router.post(loginPath, async (req: Request, res: Response) => {
                     // } else {
                     //     req.session!.view = 0;
                     // }
-                    const payload = { user };
+                    const payload = user._id;
                     const secret = process.env.JWT_SECRET as string;
                     const token = jwt.sign(payload, secret);
                     return res.status(OK).json({
