@@ -44,7 +44,7 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
 /*********************************************************
  *                      Create Comments
  *********************************************************/
-export const createComment = '/createcomment';
+export const createComment = '/comment';
 router.post(createComment, auth, async (req: Request, res: Response) => {
     try {
         const comment = {
