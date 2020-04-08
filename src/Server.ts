@@ -12,7 +12,6 @@ import session = require('express-session');
 import connectMongo from 'connect-mongo';
 import uuid from 'uuid';
 import cors from 'cors';
-import socketIO from 'socket.io';
 import {
     Server,
     createServer,
@@ -21,7 +20,6 @@ import {
     Campus,
 } from './controllers/campuses';
 import { DBRef } from 'bson';
-
 
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
@@ -38,8 +36,6 @@ const Db = mongoose.connection;
 Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', console.log.bind(console, 'MongoDB connected'));
-// Load campuses into DB
-Campus();
 
 // Init express
 const app = express();
@@ -49,9 +45,6 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
 });
-// Setup socket.io
-const server: Server = createServer(app);
-const io = socketIO.listen(server);
 
 // Add middleware/settings/routes to express.
 app.use(logger('dev'));
@@ -60,7 +53,6 @@ app.use(express.urlencoded({
     extended: true,
 }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(BaseRouter.path, BaseRouter.router);
 
 /**
