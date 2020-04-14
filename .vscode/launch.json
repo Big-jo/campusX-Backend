@@ -9,7 +9,8 @@
             "cwd": "${workspaceRoot}",
             "env": {
                 "SESSION_SECRET": "abcefghijklm",
-                "JWT_SECRET":"abcdefghijklmnop"
+                "JWT_SECRET":"abcdefghijklmnop",
+                "MONGO_URI": "mongodb://localhost:27017/campusX"
 
             },
             "name": "DEBUG",
