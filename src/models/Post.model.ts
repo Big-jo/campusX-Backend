@@ -4,6 +4,7 @@ import { IPostModel } from 'src/interfaces/IPost';
 
 const PostSchema: Schema = new Schema({
     author: { type: String, ref: 'User' },
+    userTag: { type: String},
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },
@@ -12,5 +13,9 @@ const PostSchema: Schema = new Schema({
     trash: { type: Number, default: 0 },
     createdAt: { type: String },
 });
+
+PostSchema.methods.score = function score() {
+    
+}
 
 export default mongoose.model<IPostModel>('Post', PostSchema);
