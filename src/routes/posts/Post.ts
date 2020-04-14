@@ -1,15 +1,32 @@
 import { Router, Response, Request } from 'express';
 import PostModel from '../../models/Post.model';
 import moment from 'moment';
-import { CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
+import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-codes';
 import { logger } from '../../shared/Logger';
-import { GetPosts, LikePost, DislikePost, TrashPost, CreatePost } from '../../controllers/post';
 import validation from '../../middleware/auth';
+import { Post } from 'src/entities/Post';
+import { IPost } from 'src/interfaces/IPost';
+import IORedis from 'ioredis';
+import { errMessage } from '../users/Users';
 
 const router = Router();
 const path = '/post';
 
 const auth = validation.validateToken;
+
+/******************************************************************************
+*                                 SETUP REDIS
+/******************************************************************************/
+const redisPort = Number(process.env.REDIS_PORT);
+const client = new IORedis(redisPort);
+client.on('connect', () => {
+    logger.log('info', 'Redis Instance Connected');
+});
+
+client.on('error', (err) => {
+    logger.error(err);
+});
+
 /*******************************************************
  *              Create New Post
  *********************************************************/
@@ -21,12 +38,16 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
     try {
         // TODO: Move this to controller dir
         // TODO: Add Annonymous feature
-        // resolution: The response from creating the pose
-        const resolution = CreatePost(req, res);
-
-        res.status(CREATED).json({
-            success: 'Posted',
-        });
+        const post: IPost = {
+            userTag: req.body.userTag,
+            author: req.token.userID,
+            image: req.body.image,
+            text: req.body.text,
+            video: req.body.video,
+        };
+        const result = await Post.CreatePost(post, req.token.userID, client);
+        result === 0 ? res.status(CREATED) : res.status(BAD_REQUEST).json(errMessage)
+    
     } catch (error) {
         res.status(INTERNAL_SERVER_ERROR).json({
             err: 'Oops an error occurred',
@@ -91,15 +112,14 @@ router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
 /*********************************************************
  *                          Get Posts
  *********************************************************/
-export const getPostsPath = '/getposts/:key/:id';
+export const getPostsPath = '/getposts/:id';
 
 // tslint:disable-next-line: no-shadowed-variable
 router.get(getPostsPath, auth, async (req: Request, res: Response) => {
-    try {
-        const posts = await GetPosts(req, res, { sortOptions: { mostRecent: true } });
-        res.status(OK).json({
-            posts,
-        });
+    try {   
+            const result = await Post.GetPosts(client, req.token.userID, {mostRecent: true});
+            res.status(200).json({result});
+        
     } catch (error) {
         logger.error(error, error.message);
         res.status(INTERNAL_SERVER_ERROR).json({
@@ -134,10 +154,8 @@ export const likePostPath = '/like';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
     try {
-        LikePost(req, res);
-        res.status(OK).json({
-            success: 'Liked',
-        });
+        const result = await Post.LikePost(req.token.userID, req.body.postID);
+        result === 0 ? res.status(200) : res.status(BAD_REQUEST);
     } catch (error) {
         logger.error(error, error.message);
         res.status(INTERNAL_SERVER_ERROR).json({
@@ -152,10 +170,8 @@ router.post(likePostPath, auth, async (req: Request, res: Response) => {
 export const dislikePostPath = '/dislike';
 router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
     try {
-        DislikePost(req, res);
-        res.status(OK).json({
-            success: 'Disliked',
-        });
+        const result = await Post.DislikePost(req.token.userID, req.body.postID);
+        result === 0 ? res.status(200) : res.status(BAD_REQUEST);
     } catch (error) {
         res.status(INTERNAL_SERVER_ERROR).json({
             err: 'Oops an error occured',
@@ -166,17 +182,17 @@ router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
 /******************************************************************************
  *                                 Trash Post
  /******************************************************************************/
-export const trashPostPath = '/trash';
-router.post(trashPostPath, auth, async (req: Request, res: Response) => {
-    try {
-        TrashPost(req, res);
-        res.status(OK).json({
-            success: 'Trashed',
-        });
-    } catch (error) {
-        res.status(INTERNAL_SERVER_ERROR).json({
-            err: 'Oops an error occured',
-        });
-    }
-});
+// export const trashPostPath = '/trash';
+// router.post(trashPostPath, auth, async (req: Request, res: Response) => {
+//     try {
+//         // const result = await Post.Tra(req.token.userID, req.body.postID);
+//         // result === 0 ? res.status(200) : res.status(BAD_REQUEST);
+//     } catch (error) {
+//         res.status(INTERNAL_SERVER_ERROR).json({
+//             err: 'Oops an error occured',
+//         });
+//     }
+// });
+
+
 export default { router, path };
