@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { IAuth } from '../interfaces/IAuth';
 import { NextFunction, Response, Request } from 'express';
 import { OK, UNAUTHORIZED } from 'http-status-codes';
-import { IUser } from 'src/interfaces/IUser';
+import { IUser, IUserProfile } from 'src/interfaces/IUser';
 import { logger } from '../shared/Logger';
 
 const validation = {
@@ -15,7 +15,7 @@ const validation = {
                 // Verify the token
                 const secret = process.env.JWT_SECRET as string;
                 result = jwt.verify(token, secret);
-                req.token = result as {user: IUser};
+                req.token = result as {userProfile: IUserProfile};
 
                 next();
             } catch (error) {
