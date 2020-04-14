@@ -1,15 +1,5 @@
 import mongoose, {Schema, Document} from 'mongoose';
-import { IUser } from 'src/interfaces/IUser';
-
-const UserProfileSchema: Schema = new Schema({
-    avatar: {type: String},
-    level: {type: Number},
-    university: {type: String},
-    gender: {type: String, required: true},
-    rep_points: {type: Number, default: 0},
-    bio: {type: String},
-    course: {type: String},
-});
+import { IUser, IUserModel } from 'src/interfaces/IUser';
 
 const UserSchema: Schema = new Schema({
     name: {type: String, required: true},
@@ -18,7 +8,15 @@ const UserSchema: Schema = new Schema({
     password: {type: String, required: true},
     phoneNumber: {type: Number},
     visits: {type: Number, default: 0},
-    userProfile: UserProfileSchema,
+    userProfile: {
+        avatar: {type: String},
+        level: {type: Number},
+        university: {type: String},
+        gender: {type: String},
+        rep_points: {type: Number, default: 0},
+        bio: {type: String},
+        course: {type: String},
+    },
     fcm_token: {type: String},
 });
 
@@ -55,4 +53,4 @@ function check(array: [], value: string, field: string) {
     }
 }
 // Export the model and return IUser interface
-export default mongoose.model<IUser>('User', UserSchema);
+export default mongoose.model<IUserModel>('User', UserSchema);
