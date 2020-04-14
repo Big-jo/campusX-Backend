@@ -1,6 +1,6 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
 
-interface IFollowing extends Document {
+export interface IFollowing extends Document {
     follower: string;
     target: string;
 }
