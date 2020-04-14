@@ -39,6 +39,7 @@ Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
 // Init express
 const app = express();
+
 app.use(cors());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -71,4 +72,4 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 // Export express instance
-export default server;
+export default app;
