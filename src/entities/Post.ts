@@ -46,7 +46,7 @@ export class Post {
         }
     }
 
-    public static async GetPosts(key: string, client: IORedis.Redis, userID: string, options?: IOptions) {
+    public static async GetPosts(client: IORedis.Redis, userID: string, options?: IOptions) {
         if (options!.mostRecent) {
             try {
                 /**
