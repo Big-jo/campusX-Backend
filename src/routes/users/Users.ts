@@ -1,38 +1,15 @@
 import { logger } from '../../shared/Logger';
 import { Request, Response, Router } from 'express';
 import { BAD_REQUEST, CREATED, OK, INTERNAL_SERVER_ERROR } from 'http-status-codes';
-import User from '../../models/User.model';
-import { IUser, IUserProfile } from 'src/interfaces/IUser';
-import UserModel from '../../models/User.model';
-import FollowsModel from '../../models/Follower.model';
-import FollowingModel from '../../models/Following.model';
-import { GetCampuses } from '../../controllers/campuses';
 import validation from '../../middleware/auth';
+import { User } from 'src/entities/User';
+import { IUser } from 'src/interfaces/IUser';
+import multer from 'multer';
 // Init router and path
 const router = Router();
 const path = '/users';
 const auth = validation.validateToken;
-// tslint:disable-next-line:no-var-requires
-// const Notification = require('../../lib/notifications');
-/******************************************************************************
-*                                 Configuring S3
-/******************************************************************************/
-// aws.config.update({
-//     secretAccessKey: 'abcdefghijklmnopqrstuvwxyz',
-//     accessKeyId: 'antigha',
-//     region: 'us-east(ohio)',
-// });
-
-// const s3 = new aws.S3();
-// const upload = multer ({
-//     storage: multers3({
-//         s3,
-//         bucket: 'campusx',
-//         key: (req, file, cb) => {
-//             cb(null, file.originalname);
-//         }
-//     }),
-// });
+const errMsg = { error: 'Oops, an error occurred' };
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -49,16 +26,25 @@ export const createUserPath = '/create';
  */
 router.post(createUserPath, async (req: Request, res: Response) => {
     try {
-                res.status(CREATED).json({
-                        userID: user._id,
-                        token,
-                        // tslint:disable-next-line: max-line-length
-                        success: `Your account has been created, Welcome ${req.body.user.name.split(' ').slice(0, -1).join(' ')}`,
-                        // FIX-ME: The name split
-                    })
+        const user: IUser = {
+            email: req.body.email,
+            name: req.body.name,
+            password: req.body.password,
+            phone_number: req.body.phoneNumber,
+            userTag: req.body.userTag,
+        }
+        const result = await User.CreateUser(user);
+        if (result.exist) {
+            res.status(BAD_REQUEST).json({exist: true});
+        } else {
+            res.status(CREATED).json({
+                messgae: 'User created',
+                result: result.token,
+            });
+        }
     } catch (error) {
         logger.error(error, error.message);
-        return res.status(INTERNAL_SERVER_ERROR).json({ error: 'Oops, an error occurred' });
+        return res.status(INTERNAL_SERVER_ERROR).json();
     }
 });
 
@@ -72,15 +58,16 @@ export const errorMessage = 'Oops sorry, error logging you in';
 
 router.post(loginPath, async (req: Request, res: Response) => {
     try {
-        
-        
-        } else {
-            return res.status(BAD_REQUEST).json({
-                error: 'Oops, Your Details don\'t match what we have ',
-            });
-        }
-    } catch (error) {
-
+            const result = await User.Login(req.body.email, req.body.password);
+            if (result?.exist) {
+                res.status(BAD_REQUEST).json({exist: true});
+            } else {
+                res.status(CREATED).json({
+                    messgae: 'login successful',
+                    result: result?.token,
+                });
+            } 
+        } catch (error) {
         logger.error(error, error.message);
         res.status(INTERNAL_SERVER_ERROR).json({
             error: errorMessage,
@@ -96,7 +83,8 @@ export const followUser = '/follow';
 export const followErrorMessage = 'Oops, something went wrong';
 
 router.post(followUser, auth, async (req: Request, res: Response) => {
-    
+    User.FollowUser(req.body.targetUserID, req.body.password);
+    res.status(OK);
 });
 
 /******************************************************************************
@@ -106,33 +94,42 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
 export const getUserInfo = '/getUser/:user/:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, auth, async (req: Request, res: Response) => {
-    
+    const result = await User.GetUser(req.params.searchKey, req.token.userID);
+    res.status(OK).json({
+        result,
+    });
+});
 
 /******************************************************************************
  *                              Update User Info
  ******************************************************************************/
 export const updateUserPath = '/update';
 export const errMessage = 'Oops could not update';
-router.post(updateUserPath, async (req: Request, res: Response) => {
-    
+router.post(updateUserPath, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await User.UpdateUser(req.body.field, req.token.userID, req.body.update);
+        result === 0 ? res.status(OK).json({msg: 'Updated'}) : res.status(BAD_REQUEST).json(errMessage);
+    } catch (error) {
+        res.status(INTERNAL_SERVER_ERROR).json(errMessage);
+    }
 });
 
 /******************************************************************************
  *                                  Get Campuses
  ******************************************************************************/
-export const getCampusesPath = '/getcampuses';
-router.get(getCampusesPath, async (req: Request, res: Response) => {
-    try {
-        const campuses = await GetCampuses(req, res);
-        res.status(OK).json({
-            campuses,
-        });
-    } catch (error) {
-        res.status(INTERNAL_SERVER_ERROR).json({
-            error: 'Oops an error occured',
-        });
-    }
-});
+// export const getCampusesPath = '/getcampuses';
+// router.get(getCampusesPath, async (req: Request, res: Response) => {
+//     try {
+//         const campuses = await GetCampuses(req, res);
+//         res.status(OK).json({
+//             campuses,
+//         });
+//     } catch (error) {
+//         res.status(INTERNAL_SERVER_ERROR).json({
+//             error: 'Oops an error occured',
+//         });
+//     }
+// });
 
 /******************************************************************************
 *                     Get Users From Same And Different Campuses
@@ -192,7 +189,12 @@ export const explorePath = '/explore';
 /******************************************************************************/
 export const uploadAvatarPath = '/avatar/upload';
 router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request, res: Response) => {
-   
+   try {
+    const result = await User.UploadAvatar(req.file, req.token.userID);
+    res.status(OK).json({result});
+   } catch (error) {
+    res.status(INTERNAL_SERVER_ERROR).json(errMessage);
+   }
 });
 
 /******************************************************************************
@@ -201,21 +203,13 @@ router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request,
 export const availableUserTag = '/userTag/:tag';
 router.get(availableUserTag, async (req: Request, res: Response) => {
   try {
-      const userTag = await UserModel.findOne({userTag: {$regex: req.params.tag, $options: '$i'}});
-      if (userTag) {
-          // Return 0 if the userTag exists
-          res.status(OK).json(0);
-      } else {
-          // Return 1 is the userTag doesnt exist
-          res.status(OK).json(1);
-      }
+      const userTag = await User.AvailableUserTag(req.params.tag);
+      userTag === 0 ? res.status(OK).json({available: true}) : res.status(OK).json({available: false});
   } catch (e) {
-      logger.error(e);
       res.status(INTERNAL_SERVER_ERROR).json({
           error: 'Oops an error just occurred',
       });
   }
-
 });
 
 /******************************************************************************
@@ -237,12 +231,4 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
 //         });,
 //   );
 
-/******************************************************************************
- *                          Update FCM-TOKEN
- /******************************************************************************/
-export const updateFCMTokenPath = '/fcmUpdate';
-
-router.post(updateFCMTokenPath, auth, async (req: Request, res: Response) => {
-    
-});
 export default { router, path };
