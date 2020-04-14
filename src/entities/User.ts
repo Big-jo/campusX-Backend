@@ -1,12 +1,12 @@
 import UserModel from '../models/User.model';
-import {IUser, IUserModel} from 'src/interfaces/IUser';
+import { IUser, IUserModel } from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {logger} from '../shared/Logger';
+import { logger } from '../shared/Logger';
 import FollowsModel from '../models/Follower.model';
 import FollowingModel from '../models/Following.model';
 import aws from 'aws-sdk';
-import {WriteCallback} from 'jsonfile';
+import { WriteCallback } from 'jsonfile';
 import PostModel from '../models/Post.model';
 
 export class User {
@@ -14,7 +14,7 @@ export class User {
     }
 
     public static async CreateUser(userObject: IUser) {
-        const foundUser = await UserModel.findOne({ email: userObject.email });        
+        const foundUser = await UserModel.findOne({ email: userObject.email });
         if (foundUser) {
             return { exist: true };
         } else {
@@ -33,13 +33,13 @@ export class User {
                 // Hash Password
                 user.password = await bcrypt.hash(user.password, rounds);
                 await user.save();
-                const payload =  {
+                const payload = {
                     userID: user._id,
-                    userProfile: user.userProfile
+                    userProfile: user.userProfile,
                 };
                 const secret = process.env.JWT_SECRET as string;
                 const token = jwt.sign(payload, secret);
-                return {token};
+                return { token };
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
@@ -56,7 +56,7 @@ export class User {
                 if (result) {
                     const payload = {
                         userID: user._id,
-                        userProfile: user.userProfile
+                        userProfile: user.userProfile,
                     };
                     const secret = process.env.JWT_SECRET as string;
                     const token = jwt.sign(payload, secret);
@@ -64,7 +64,7 @@ export class User {
                         token,
                     };
                 } else {
-                   return { exist: false };
+                    return { exist: false };
                 }
             }
         } catch (error) {
@@ -81,12 +81,12 @@ export class User {
             const following = await new FollowingModel({
                 follower: userID,
                 target: targetUserID,
-            });            
+            });
             // TODO: Add typings support for FCM-NODE
             // TODO: Make notifications function async
             // const notif = new Notification('Campus', `${target!.userTag} followed you`, target!.fcm_token);
             // notif.send();
-    
+
             await following.save();
             await follow.save();
             return 0;
@@ -105,7 +105,7 @@ export class User {
                         // tslint:disable-next-line: max-line-length
                         .populate({ path: 'followers', populate: { path: 'target', select: { name: 1, userProfile: 1, userTag: 1 } } })
                         .exec();
-                    return {followers};
+                    return { followers };
 
                 case 'followings':
                     const followings = await UserModel.findById(userID, { followings: 1 })
@@ -116,8 +116,8 @@ export class User {
 
                 case 'user':
                     const user = await UserModel.findById(userID, { password: 0 });
-                    if (user != null) return {user};
-                    return {exist: false};
+                    if (user != null) { return { user }; }
+                    return { exist: false };
                 default:
                     break;
             }
@@ -127,12 +127,12 @@ export class User {
         }
     }
 
-/**
- *
- *
- * @static
- * @memberof User
- */
+    /**
+     *
+     *
+     * @static
+     * @memberof User
+     */
 
     public static async UpdateUser(field: string, userID: string, update: any) {
         try {
@@ -144,7 +144,7 @@ export class User {
 
             UserModel.findOneAndUpdate({ _id: userID }, { [field]: update });
             return 0;
-    
+
         } catch (error) {
             logger.error(error);
         }
@@ -153,13 +153,13 @@ export class User {
     public static UploadAvatar(file: any, userID: string) {
         try {
             const s3FileURL = process.env.AWS_UvalidationPLOADED_FILE_URL_LINK;
-    
+
             const s3Bucket = new aws.S3({
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                 secretAccessKey: process.env.SECRET_ACCESS_KEY,
                 region: process.env.AWS_REGION,
             });
-    
+
             const params = {
                 Bucket: process.env.AWS_BUCKET_NAME as string,
                 Key: userID,
@@ -167,9 +167,11 @@ export class User {
                 contentType: file.mimetype,
                 ACL: 'public-read',
             };
-            s3Bucket.upload(params, (err: any, data: any) => {
-                    UserModel.findByIdAndUpdate(userID, { 'userProfile.avatar': data.Location }).exec();
-                    return { avatarData: data};
+            return new Promise((resolve, reject) => {
+                s3Bucket.upload(params, async (err: any, data: any) => {
+                    await UserModel.findByIdAndUpdate(userID, { 'userProfile.avatar': data.Location }).exec();
+                    return { avatarData: data };
+                });
             });
         } catch (error) {
             logger.error(error, error.message);
@@ -185,5 +187,16 @@ export class User {
         } catch (error) {
             logger.log(error);
         }
+    }
+
+    public static async AvailableUserTag(userTag: string) {
+        const available = await UserModel.findOne({userTag: {$regex: userTag, $options: '$i'}});
+        if (available) {
+          // Return 0 if the userTag exists
+          return 0;
+      } else {
+          // Return 1 is the userTag doesnt exist
+          return 1;
+      }
     }
 }
