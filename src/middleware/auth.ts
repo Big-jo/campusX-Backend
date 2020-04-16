@@ -15,7 +15,10 @@ const validation = {
                 // Verify the token
                 const secret = process.env.JWT_SECRET as string;
                 result = jwt.verify(token, secret);
-                req.token = result as {userProfile: IUserProfile};
+                req.token = result as {
+                    userID: string,
+                    userProfile: IUserProfile,
+                };
 
                 next();
             } catch (error) {
