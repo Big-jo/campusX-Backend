@@ -4,8 +4,8 @@ import moment from 'moment';
 import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-codes';
 import { logger } from '../../shared/Logger';
 import validation from '../../middleware/auth';
-import { Post } from 'src/entities/Post';
-import { IPost } from 'src/interfaces/IPost';
+import { Post } from '../../entities/Post';
+import { IPost } from '../../interfaces/IPost';
 import IORedis from 'ioredis';
 import { errMessage } from '../users/Users';
 
