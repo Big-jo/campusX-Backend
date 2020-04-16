@@ -3,18 +3,18 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import Server from '../../Start';
-import {CREATED} from 'http-status-codes';
-import {IUser} from 'src/interfaces/IUser';
+import { CREATED } from 'http-status-codes';
+import { IUser } from 'src/interfaces/IUser';
 import UserModel from 'src/models/User.model';
 import followers from 'src/models/Follower.model';
 import following from 'src/models/Following.model';
-import {Post} from '../../entities/Post';
-import {IPost} from '../../interfaces/IPost';
+import { Post } from '../../entities/Post';
+import { IPost } from '../../interfaces/IPost';
 import mongoose from 'mongoose';
 import IORedis from 'ioredis';
 // tslint:disable-next-line:import-spacing
-import  { expect } from 'chai';
-import {error} from 'winston';
+import { expect } from 'chai';
+import { error } from 'winston';
 
 const should = chai.should();
 const userID = '5dda8548843d9d433ed23b4e';
@@ -28,17 +28,19 @@ before(() => {
         useFindAndModify: false,
     });
     const Db = mongoose.connection;
+    // tslint:disable-next-line: no-console
     Db.on('error', console.error.bind(console, 'MongoDB connection error'));
+    // tslint:disable-next-line: no-console
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
     /* Set Up Redis */
     client.on('connect', () => {
         console.log('connected');
-        // logger.log(x);
+        // console.log(x);
     });
 
     client.on('error', (err) => {
-        // logger.error(err);
+        // console.error(err);
         console.log(err);
     });
 });
@@ -83,14 +85,14 @@ describe('Post Related Functions', () => {
 
     it('should get newsfeed', (done) => {
         // tslint:disable-next-line:max-line-length
-         Post.GetPosts('1', client, '5dda87f687ef1e4394fce929', {mostRecent: true}).then((reply) => {
+        Post.GetPosts(client, '5dda87f687ef1e4394fce929', { mostRecent: true }).then((reply) => {
             expect(reply).to.have.property('newsfeed');
             expect(reply!.newsfeed).to.be.an('Array');
             done();
         }).catch(done);
     });
 
-    it('should get home timeline', function() {
+    it('should get home timeline', function () {
 
     });
 });
