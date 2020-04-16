@@ -2,8 +2,8 @@ import { logger } from '../../shared/Logger';
 import { Request, Response, Router } from 'express';
 import { BAD_REQUEST, CREATED, OK, INTERNAL_SERVER_ERROR } from 'http-status-codes';
 import validation from '../../middleware/auth';
-import { User } from 'src/entities/User';
-import { IUser } from 'src/interfaces/IUser';
+import { User } from '../../entities/User';
+import { IUser } from '../../interfaces/IUser';
 import multer from 'multer';
 // Init router and path
 const router = Router();
@@ -32,7 +32,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             password: req.body.password,
             phone_number: req.body.phoneNumber,
             userTag: req.body.userTag,
-        }
+        };
         const result = await User.CreateUser(user);
         if (result.exist) {
             res.status(BAD_REQUEST).json({exist: true});
@@ -60,11 +60,11 @@ router.post(loginPath, async (req: Request, res: Response) => {
     try {
             const result = await User.Login(req.body.email, req.body.password);
             if (result?.exist) {
-                res.status(BAD_REQUEST).json({exist: true});
+                res.status(BAD_REQUEST).json({exist: false});
             } else {
                 res.status(CREATED).json({
                     messgae: 'login successful',
-                    result: result?.token,
+                    token: result?.token,
                 });
             } 
         } catch (error) {
