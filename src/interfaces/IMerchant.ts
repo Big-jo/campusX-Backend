@@ -1,8 +1,9 @@
 import { Document } from 'mongoose';
+import { IStore } from './IStore';
 
 export interface IMerchant {
     merchantID: string;
-    stores: [];
+    stores: IStore[];
 }
 
 export interface IMerchantModel extends IMerchant, Document {
