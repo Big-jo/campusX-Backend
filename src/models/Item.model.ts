@@ -1,4 +1,4 @@
-import mongoose, {Schema, Document, Mongoose} from 'mongoose';
+import mongoose, {Schema} from 'mongoose';
 import {StoreSchema} from './Store.model';
 import {IItemModel} from '../interfaces/IItem';
 /**
