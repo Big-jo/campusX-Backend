@@ -5,9 +5,8 @@ export interface IItem {
     store: string;
     date_added: string;
     description: string;
-    sales: string;
 }
 
 export interface IItemModel extends IItem, Document {
-    
+    sales: number;
 }
