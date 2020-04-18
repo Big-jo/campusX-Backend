@@ -41,7 +41,6 @@ export class Post {
 
             return 0;
         } catch (error) {
-            console.log(error);
             logger.error(error);
         }
     }
