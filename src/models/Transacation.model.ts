@@ -10,7 +10,8 @@ const StoreTransactionSchema = new Schema({
     itemsPurchased: [ItemSchema],
     Merchant: {type: Schema.Types.ObjectId, ref: 'Merchant', required: true},
     date: {type: String, default: moment().format('lll')},
-    grandTotal: {type: String, required: true},
+    grandTotal: {type: Number, required: true},
+    currency: {type: String, required: true},
 });
 
 export default mongoose.model<IStoreTransactionModel>('StoreTransaction', StoreTransactionSchema);

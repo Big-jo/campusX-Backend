@@ -8,9 +8,10 @@ export interface IStoreTransaction {
     itemsPurchased: IItem[];
     Merchat?: string;
     date?: string;
-    grandTotal: string;
+    grandTotal: number;
+    currency: string;
 }
 
 export interface IStoreTransactionModel extends IStoreTransaction, Document {
-    
+
 }
