@@ -28,6 +28,7 @@ export class Item {
                     store: itemObject.store,
                     date_added: moment().format('lll'),
                     description: itemObject.description,
+                    price: itemObject.price,
                 });
                 await item.save();
                 return 0;
@@ -50,7 +51,7 @@ export class Item {
 
     public async GetItem() {
         try {
-            return {item: ItemModel.findById(this.itemID).exec();}
+            return {item: ItemModel.findById(this.itemID).exec()};
         } catch (error) {
             logger.error(error);
             throw new Error(error);
