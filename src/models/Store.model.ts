@@ -6,6 +6,8 @@ export const StoreSchema: Schema = new Schema({
     owner: {type: Schema.Types.ObjectId, ref: 'Merchant'},
     description: {type: String},
     date_created: {type: String},
+    password: {type: String},
+    email: {type: String},
 });
 
 export const StoreModel = mongoose.model<IStoreModel>('Store', StoreSchema);
