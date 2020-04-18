@@ -8,10 +8,9 @@ import FollowingModel from '../models/Following.model';
 import aws from 'aws-sdk';
 import { WriteCallback } from 'jsonfile';
 import PostModel from '../models/Post.model';
-
+import {Utility} from '../lib/utility';
 export class User {
-    constructor() {
-    }
+    constructor() {}
 
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({ email: userObject.email });
@@ -37,9 +36,7 @@ export class User {
                     userID: user._id,
                     userProfile: user.userProfile,
                 };
-                const secret = process.env.JWT_SECRET as string;
-                const token = jwt.sign(payload, secret);
-                return { token };
+                return {token: Utility.createToken(payload)}; 
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
@@ -52,7 +49,7 @@ export class User {
             const user = await UserModel.findOne({ email }).lean().exec();
             if (user !== null) {
                 const userPassword = user.password;
-                const result = bcrypt.compare(password, userPassword);
+                const result = await bcrypt.compare(password, userPassword);
                 if (result) {
                     const payload = {
                         userID: user._id,
