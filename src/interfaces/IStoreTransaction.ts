@@ -6,7 +6,7 @@ export interface IStoreTransaction {
     buyerEmail: string;
     buyerName: string;
     itemsPurchased: IItem[];
-    Merchat?: string;
+    Merchant?: string;
     date?: string;
     grandTotal: number;
     currency: string;
