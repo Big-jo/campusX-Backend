@@ -21,6 +21,24 @@
       ],
       "@server": [
         "src/Server"
+      ],
+      "@spec": [
+        "src/spec"
+      ],
+      "@routes": [
+        "src/routes"
+      ],
+      "@models": [
+        "src/models"
+      ],
+      "@middleware": [
+        "src/middleware"
+      ],
+      "@lib": [
+        "src/lib"
+      ],
+      "@interfaces": [
+        "src/interfaces"
       ]
     },
     "types": [

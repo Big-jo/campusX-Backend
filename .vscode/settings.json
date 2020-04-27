@@ -8,5 +8,6 @@
         "REDIS_PORT": "6379"
     },
     "mochaExplorer.require": "ts-node/register",
-    "mochaExplorer.files": "src/spec/**/*ts"
+    "mochaExplorer.files": "src/spec/**/*ts",
+    "editor.quickSuggestions.comments": true
 }

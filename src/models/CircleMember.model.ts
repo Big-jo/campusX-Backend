@@ -3,6 +3,7 @@ import { ICircleMemberModel } from 'src/interfaces/ICircleMembers';
 
 const CircleMemberSchema = new Schema({
     userID: {type: Schema.Types.ObjectId, ref: 'User'},
+    circle: {type: Schema.Types.ObjectId, ref: 'Circle'},
 });
 
 export default mongoose.model<ICircleMemberModel>('CircleMember', CircleMemberSchema);

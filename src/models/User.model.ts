@@ -18,6 +18,7 @@ const UserSchema: Schema = new Schema({
         course: {type: String},
     },
     fcm_token: {type: String},
+    // lastActive: {type: Date},  Implement last active
 });
 
 // Check if this user is followed by the user making the request

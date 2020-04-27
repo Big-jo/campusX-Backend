@@ -1,2 +1,2 @@
- Create model method to check if a user already follows a target
- Move login in routes to controllers to follow a proper MVC pattern
+ TODO Rank posts in circles
+ 

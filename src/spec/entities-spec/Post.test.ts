@@ -46,22 +46,22 @@ before(() => {
 });
 
 describe('Post Related Functions', () => {
-    it('should create a new post', (done) => {
+    it('should create a new post',done => {
         const post: IPost = {
-            text: 'Testing 3',
+            text: 'Testing 5',
             author: '5dda8548843d9d433ed23b4e',
             userTag: 'Big-Jo',
         };
-        Post.CreatePost(post, userID, client).then((value) => {
+        Post.CreatePost(post, userID, client, {anonymous: false}).then(value => {
             expect(value).to.be.a('number');
             done();
-        }).catch((reason) => {
+        }).catch(reason => {
             console.log(reason);
         });
     });
 
     it('should like a post', (done) => {
-        Post.LikePost(userID, '5e91ea9a2817fa581481411f').then((value) => {
+        Post.LikePost(userID, '5e91ea9a2817fa581481411f').then(value => {
             expect(value).to.be.a('number');
             done();
         }).catch(done);
@@ -69,7 +69,7 @@ describe('Post Related Functions', () => {
 
     // TODO: A user shouldn't be able to both like and unlike a post
     it('should dislike a post', (done) => {
-        Post.DislikePost(userID, '5dda87f687ef1e4394fce929').then((value) => {
+        Post.DislikePost(userID, '5e91eb8dc030c258ea58247b').then((value) => {
             expect(value).to.be.a('number');
             done();
         }).catch(done);
@@ -85,14 +85,14 @@ describe('Post Related Functions', () => {
 
     it('should get newsfeed', (done) => {
         // tslint:disable-next-line:max-line-length
-        Post.GetPosts(client, '5dda87f687ef1e4394fce929', { mostRecent: true }).then((reply) => {
+        Post.GetPosts(client, '5dda87f687ef1e4394fce929', { mostRecent: true }).then(reply => {
             expect(reply).to.have.property('newsfeed');
             expect(reply!.newsfeed).to.be.an('Array');
             done();
         }).catch(done);
     });
 
-    it('should get home timeline', function () {
-
-    });
+    // it('should get home timeline', function () {
+    //
+    // });
 });

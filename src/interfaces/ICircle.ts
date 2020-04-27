@@ -2,10 +2,8 @@ import { Document } from 'mongoose';
 
 export interface ICircle {
     name: string;
-    members_count: number;
     description: string;
     avatar: string;
-    moderators: IModerator[];
 }
 
 interface IModerator {
@@ -13,5 +11,6 @@ interface IModerator {
 }
 
 export interface ICircleModel extends Document, ICircle {
-    
+    moderators: IModerator[];
+    members_count: number;
 }

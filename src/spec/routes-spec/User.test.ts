@@ -9,7 +9,7 @@ import app from '../../Server';
 import mongoose from 'mongoose';
 import {logger} from '../../shared/Logger';
 import {expect} from 'chai';
-import { createUserPath, loginPath, getUserInfo } from '../../routes/users/Users';
+import { createUserPath, loginPath, getUserInfo } from '../../routes/users/Users.route';
 
 const usersBaseApi = '/api/v1/users';
 // const createUserPath = `${usersPath}/create`;
@@ -18,103 +18,103 @@ const usersBaseApi = '/api/v1/users';
 
 let agent: SuperTest<Test>;
 agent = supertest.agent(app);
+const userID = '5dda8548843d9d433ed23b4e';
 
-before((done) => {
-    const URI = process.env.MONGO_URI as string;
-    mongoose.connect(URI, {
-        useNewUrlParser: true,
-        useFindAndModify: false,
-    });
-    const Db = mongoose.connection;
-    // tslint:disable-next-line: no-console
-    Db.on('error', console.error.bind(console, 'MongoDB connection error'));
-    // tslint:disable-next-line: no-console
-    Db.on('connected', console.log.bind(console, 'MongoDB connected'));
-    done();
+before(done => {
+	const URI = process.env.MONGO_URI as string;
+	mongoose.connect(URI, {
+		useNewUrlParser: true,
+		useFindAndModify: false,
+	});
+	const Db = mongoose.connection;
+	// tslint:disable-next-line: no-console
+	Db.on('error', console.error.bind(console, 'MongoDB connection error'));
+	// tslint:disable-next-line: no-console
+	Db.on('connected', console.log.bind(console, 'MongoDB connected'));
+	done();
 });
 
-after((done) => {
-    mongoose.disconnect();
-    done();
+after(done => {
+	mongoose.disconnect();
+	done();
 });
 
 const user = {
-    name: 'Joseph Henshaw',
-    email: 'furiousjoe16@gmail.com',
-    password: 'Mmedaraetuk16',
-    phoneNumber: '08180286156',
-    userTag: 'BigJoe',
+	name: 'Joseph Henshaw',
+	email: 'furiousjoe16@gmail.com',
+	password: 'Mmedaraetuk16',
+	phoneNumber: '08180286156',
+	userTag: 'BigJoe',
 };
 
 describe('Create new user and check if user exist', () => {
-    it(`should return an JSON object with a token and a status code of ok if
-        successful`, (done) => {
-        agent.post(`${usersBaseApi}${createUserPath}`).send(user)
-            .end((err: Error, res: Response) => {
-                logger.error(err);
-                if (res.status === BAD_REQUEST) {
-                    logger.error(err);
-                    expect(res.status).to.equal(BAD_REQUEST);
-                    expect(res.body.exist).to.equal(true);
-                    expect(res.body.error).to.equal(undefined);
-                    done();
-                } else {
-                    expect(res.status).to.equal(CREATED);
-                    expect(res.body.error).to.equal(undefined);
-                    done();
-                }
-            });
-    });
+	it(`should return an JSON object with a token and a status code of ok if
+        successful`, done => {
+		agent.post(`${usersBaseApi}${createUserPath}`).send(user)
+			.end((err: Error, res: Response) => {
+				logger.error(err);
+				if (res.status === BAD_REQUEST) {
+					logger.error(err);
+					expect(res.status).to.equal(BAD_REQUEST);
+					expect(res.body.exist).to.equal(true);
+					expect(res.body.error).to.equal(undefined);
+					done();
+				} else {
+					expect(res.status).to.equal(CREATED);
+					expect(res.body.error).to.equal(undefined);
+					done();
+				}
+			});
+	});
 });
 
 describe('Log In User', () => {
-    it('should return token', (done) => {
-        const request = {
-            email: 'furiousjoe16@gmail.com',
-            password: 'Mmedaraetuk16',
-        };
-        agent.post(`${usersBaseApi}${loginPath}`).send(request).end((err: Error, res: Response) => {
-            logger.error(err);
-            
-            if (res.body.exist) {
-                expect(res.body.exist).to.equal(false);
-            } else {
-                expect(res.body).to.have.property('token');
-                expect(res.body.result).to.not.equal(undefined);
-                expect(res.status).to.not.equal(INTERNAL_SERVER_ERROR);
-                done();
-            }
-        });
-    });
+	it('should return token',done => {
+		const request = {
+			email: 'furiousjoe16@gmail.com',
+			password: 'Mmedaraetuk16',
+		};
+		agent.post(`${usersBaseApi}${loginPath}`).send(request).end((err: Error, res: Response) => {
+
+			if (res.body.exist) {
+				expect(res.body.exist).to.equal(false);
+			} else {
+				expect(res.body).to.have.property('token');
+				expect(res.status).to.not.equal(INTERNAL_SERVER_ERROR);
+				done();
+			}
+		});
+	});
 });
 
 describe('Get user info', () => {
 
-    it('should return user followers', (done) => {
-        agent.get(`${getUserInfo}?queryField=followers`).end((err: Error, res: Response) => {
-            logger.error(err);
-            expect(res.body.queryResult).to.have.property('followers');
-            expect(res.body.queryResult.followers).to.not.equal([]);
-            done();
-        });
-    });
+	it('should return user followers',done => {
+		agent.get(`${usersBaseApi}/getUser/${userID}/followers`)
+			.set('Authorization', `Authorization ${process.env.token as string}`)
+			.end((err: Error, res: Response) => {
+			expect(res.body.result).to.have.property('followers');
+			expect(res.body.result.followers).to.not.equal([]);
+			done();
+		});
+	});
 
-    it('should return user followings', (done) => {
-        agent.get(`${getUserInfo}?queryField=followings`).end((err: Error, res: Response) => {
-            logger.error(err);
-            expect(res.body.queryResult).to.have.property('followings');
-            expect(res.body.queryResult.followings).to.not.equal([]);
-            done();
-        });
-    });
+	it('should return user followings',done => {
+		agent.get(`${usersBaseApi}/getUser/${userID}/followings`)
+			.set('Authorization', `Authorization ${process.env.token as string}`)
+			.end((err: Error, res: Response) => {
+			expect(res.body.result).to.have.property('followings');
+			expect(res.body.result.followings).to.not.equal([]);
+			done();
+		});
+	});
 
-    it('should return the user profile', (done) => {
-        agent.get(`${getUserInfo}?queryField=profile`).end((err: Error, res: Response) => {
-            logger.error(err);
-            expect(res.body.result).to.have.property('userProfile');
-            // tslint:disable-next-line:no-unused-expression
-            expect(res.body.resut).to.not.be.empty;
-            done();
-        });
-    });
+	it('should return the user profile',done => {
+		agent.get(`${usersBaseApi}/getUser/${userID}/user`)
+			.set('Authorization', `Authorization ${process.env.token as string}`)
+			.end((err: Error, res: Response) => {
+			expect(res.body.result.user).to.have.property('userProfile');
+			done();
+		});
+	});
 });

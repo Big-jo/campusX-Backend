@@ -49,7 +49,7 @@ describe('User Related Functions', () => {
             // },
         };
         
-        User.CreateUser(user).then((returned) => {
+        User.CreateUser(user).then(returned => {
              if (returned.exist) {
             expect(returned).to.be.an('object');
             done();
@@ -63,10 +63,19 @@ describe('User Related Functions', () => {
         
     });
 
-    it('should return a token',  (done) => {
-         User.Login('furiousjoe16@gmail.com', 'Mmedaraetuk16').then((result) => {
+    it('should return a token',done => {
+         User.Login('furiousjoe16@gmail.com', 'Mmedaraetuk16').then(result => {
              token = result!.token;
              expect(result).to.be.an('object');
+             expect(result.token).to.be.a('string');
+             done();
+        }).catch((done));
+    });
+
+    it('should return a login error', done => {
+        User.Login('furiousjoe16@gmail.com', 'Mmedaraetuk').then(result => {
+            token = result.token;
+            expect(result.incorrect).to.equal(true);
             done();
         }).catch((done));
     });
@@ -95,7 +104,7 @@ describe('User Related Functions', () => {
     });
 
     it('should get users home timeline', () => {
-        User.GetUserPosts(userID).then((value) => {
+        User.GetUserPosts(userID).then(value => {
             expect(value).to.be.an('Array');
         });
     });

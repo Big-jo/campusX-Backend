@@ -7,7 +7,7 @@ export class StoreTransaction implements IStoreTransaction {
     public buyerEmail: string;
     public buyerName: string;
     public itemsPurchased: IItem[];
-    public Merchat: string;
+    public Merchant: string;
     public grandTotal: number = 0;
     public currency: string;
     
@@ -15,31 +15,35 @@ export class StoreTransaction implements IStoreTransaction {
                 merchant: string, buyerName: string, currency: string) {
         this.store = store;
         this.buyerEmail = buyerEmail;
-        this.Merchat =  merchant;
+        this.Merchant =  merchant;
         this.itemsPurchased = itemsPurchased;
         this.buyerName = buyerName;
         this.currency = currency;
     }
 
-    public async CreateTransaction(transacation: IStoreTransaction) {
+    public async CreateTransaction(transaction: IStoreTransaction) {
 
          const storeTransaction =  new TransacationModel({
-             buyerEmail: transacation.buyerEmail,
-             store: transacation.store,
-             itemsPurchased: transacation.itemsPurchased,
-             buyerName: transacation.buyerName,
-             Merchant: transacation.Merchant,
+             buyerEmail: transaction.buyerEmail,
+             store: transaction.store,
+             itemsPurchased: transaction.itemsPurchased,
+             buyerName: transaction.buyerName,
+             Merchant: transaction.Merchant,
              grandTotal: this.CalculateTotal(),
-             currency: transacation.currency,
+             currency: transaction.currency,
          });
          
     }
     
     private CalculateTotal() {
         let grandTotal = 0;
-        this.itemsPurchased.forEach((item) => {
+        this.itemsPurchased.forEach(item => {
             grandTotal = Number(item.price) + grandTotal;
         });
         return grandTotal;
+    }
+
+    public Payment() {
+
     }
 }

@@ -5,10 +5,9 @@ export interface IStore {
     name: string;
     owner: string;
     description: string;
-    date_created: string;
     password: string;
 }
 
 export interface IStoreModel extends IStore, Document {
-    
+    date_created: string;
 }

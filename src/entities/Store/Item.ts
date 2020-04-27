@@ -17,21 +17,23 @@ export class Item {
      * @memberof Store
      */
     // tslint:disable-next-line: max-line-length
-    public static async AddItems(itemObject: IItem, Options: { singleDoc: boolean; multiDoc: boolean }, items?: IItem[]) {
+    public static async AddItems( Options: { multiDoc?: boolean }, itemObject?: IItem, items?: IItem[]) {
         try {
             if (Options.multiDoc) {
                 await ItemModel.create(items);
                 return 0;
             } else {
-                const item = new ItemModel({
-                    name: itemObject.name,
-                    store: itemObject.store,
-                    date_added: moment().format('lll'),
-                    description: itemObject.description,
-                    price: itemObject.price,
-                });
-                await item.save();
-                return 0;
+                if (itemObject !== undefined) {
+                    const item = new ItemModel({
+                        name: itemObject.name,
+                        store: itemObject.store,
+                        date_added: moment().format('lll'),
+                        description: itemObject.description,
+                        price: itemObject.price,
+                    });
+                    await item.save();
+                    return 0;
+                }
             }
         } catch (error) {
             logger.error(error);
@@ -39,9 +41,9 @@ export class Item {
         }
     }
 
-    public async UpdateItemProperty(field: string, value: string) {
+    public static async UpdateItemProperty(itemID: string, field: string, value: string) {
         try {
-            await ItemModel.findOneAndUpdate({ _id: this.itemID }, { [field]: value }).exec();
+            await ItemModel.findOneAndUpdate({ _id: itemID }, { [field]: value }).exec();
             return 0;
         } catch (error) {
             logger.error(error);
@@ -49,12 +51,14 @@ export class Item {
         }
     }
 
-    public async GetItem() {
+    public static async GetItem(itemID: string) {
         try {
-            return {item: ItemModel.findById(this.itemID).exec()};
+            return {item: ItemModel.findById(itemID).exec()};
         } catch (error) {
             logger.error(error);
             throw new Error(error);
         }
     }
+
+    // TODO: Method to verify item price
 }

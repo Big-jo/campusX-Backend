@@ -11,7 +11,7 @@ const PostSchema: Schema = new Schema({
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
     trash: { type: Number, default: 0 },
-    createdAt: { type: String },
+    createdAt: { type: Date, default: Date.now() },
 });
 
 PostSchema.methods.score = function score() {
