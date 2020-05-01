@@ -1,8 +1,8 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import {
-    Request,
-    Response,
+	Request,
+	Response,
 } from 'express';
 import logger from 'morgan';
 import path from 'path';
@@ -13,11 +13,11 @@ import connectMongo from 'connect-mongo';
 import uuid from 'uuid';
 import cors from 'cors';
 import {
-    Server,
-    createServer,
+	Server,
+	createServer,
 } from 'http';
 import {
-    Campus,
+	Campus,
 } from './controllers/campuses';
 import { DBRef } from 'bson';
 
@@ -25,8 +25,9 @@ import { DBRef } from 'bson';
 const URI = process.env.MONGO_URI as string;
 
 mongoose.connect(URI, {
-    useNewUrlParser: true,
-    useFindAndModify: false,
+	useNewUrlParser: true,
+	useFindAndModify: false,
+	useCreateIndex: true,
 });
 
 // Connection Instance
@@ -42,16 +43,16 @@ const app = express();
 
 app.use(cors());
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
+	res.header('Access-Control-Allow-Origin', '*');
+	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+	next();
 });
 
 // Add middleware/settings/routes to express.
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({
-    extended: true,
+	extended: true,
 }));
 app.use(cookieParser());
 app.use(BaseRouter.path, BaseRouter.router);
@@ -68,7 +69,7 @@ app.use(BaseRouter.path, BaseRouter.router);
 // const staticDir = path.join(__dirname, 'public');
 // app.use(express.static(staticDir));
 app.get('*', (req: Request, res: Response) => {
-    res.send('Oops the resource does not exist');
+	res.send('Oops the resource does not exist');
 });
 
 // Export express instance
