@@ -6,7 +6,7 @@ import { IUser, IUserProfile } from 'src/interfaces/IUser';
 import { logger } from '@shared';
 
 const validation = {
-	validateToken: (req: Request, res: Response, next: NextFunction) => {
+	validateToken: (req: any, res: Response, next: NextFunction) => {
 		const authorizationHeader = req.headers.authorization;
 		let result: object | string;
 
