@@ -5,3 +5,6 @@ env
 dist/
 .idea/
 coverage/
+creds.txt
+dist/
+logs/

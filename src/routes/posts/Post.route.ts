@@ -7,7 +7,6 @@ import validation from '../../middleware/auth';
 import { Post } from '../../entities/Post';
 import {IComment, IPost} from '../../interfaces/IPost';
 import IORedis from 'ioredis';
-import { errMessage } from '../users/Users.route';
 import { Utility } from '../../lib/utility';
 import CommentModel from '../../models/Comment.model';
 
@@ -23,6 +22,11 @@ const redisPort = Number(process.env.REDIS_PORT);
 const client = new IORedis(redisPort);
 client.on('connect', () => {
 	logger.log('info', 'Redis Instance Connected');
+	if (process.env.NODE_ENV !== 'development' || 'testing') {
+		client.auth(process.env.REDIS_PASS as string, () => {
+			logger.log('info', 'authenticated');
+		});
+	}
 });
 
 client.on('error', err => {
@@ -48,7 +52,8 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
 			video: req.body.video,
 		};
 		const result = await Post.CreatePost(post, req.token.userID, client, req.body.options);
-		result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json(errMessage);
+		// tslint:disable-next-line: max-line-length
+		result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({error: 'Sorry, error in the details your details'});
 
 	} catch (error) {
 		Utility.ErrResponse(res);

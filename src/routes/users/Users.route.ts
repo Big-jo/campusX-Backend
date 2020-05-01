@@ -114,8 +114,8 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
 /******************************************************************************
  *                              Update User Info
  ******************************************************************************/
-export const updateUserPath = '/update';
-export const errMessage = 'Oops could not update';
+const updateUserPath = '/update';
+const errMessage = 'Oops could not update';
 router.post(updateUserPath, auth, async (req: Request, res: Response) => {
 	try {
 		const result = await User.UpdateUser(req.body.field, req.token.userID, req.body.update);

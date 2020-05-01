@@ -1,6 +1,6 @@
 
 import mongoose, { Schema, Document, mongo } from 'mongoose';
-import { IPostModel, IRepost } from 'src/interfaces/IPost';
+import { IPostModel, IRepost, IRepostModel } from 'src/interfaces/IPost';
 
 const RepostSchema: Schema = new Schema({
     author: { type: String, ref: 'User' },
@@ -14,4 +14,4 @@ const RepostSchema: Schema = new Schema({
 
 });
 
-export default mongoose.model<IRepost>('Repost', RepostSchema);
+export default mongoose.model<IRepostModel>('Repost', RepostSchema);

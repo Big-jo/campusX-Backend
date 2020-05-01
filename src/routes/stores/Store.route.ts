@@ -1,7 +1,6 @@
 import { Router, Response, Request } from 'express';
 import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-codes';
 import validation from '../../middleware/auth';
-import { errMessage } from '../users/Users.route';
 import { Store } from '../../entities/Store/Store';
 import { Utility } from '../../lib/utility';
 
