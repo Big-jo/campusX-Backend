@@ -2,6 +2,8 @@
 
 ## Paths
 
+**IT IS RECOMMENDED TO USE AN AUTHORIZATION HEADER FOR ALL REQUESTS**
+
 ### /users/create
 
     post:
@@ -109,7 +111,7 @@
         '500':
           description: Internal Server Error
 
-### /users/update
+### /users/update (**PROTECTED**)
 
     post:
       summary: Updates a field in the user
@@ -134,7 +136,7 @@
                 type: object
 
 
-### /users/avatar/upload
+### /users/avatar/upload (**PROTECTED**)
 
     post:
       summary: Upload user avatar
