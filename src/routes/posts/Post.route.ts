@@ -19,15 +19,7 @@ const auth = validation.validateToken;
  *                                 SETUP REDIS
  /******************************************************************************/
 const redisPort = Number(process.env.REDIS_PORT);
-const client = new IORedis(redisPort);
-client.on('connect', () => {
-	logger.log('info', 'Redis Instance Connected');
-	if (process.env.NODE_ENV !== 'development' || 'testing') {
-		client.auth(process.env.REDIS_PASS as string, () => {
-			logger.log('info', 'authenticated');
-		});
-	}
-});
+const client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
 
 client.on('error', err => {
 	logger.error(err);

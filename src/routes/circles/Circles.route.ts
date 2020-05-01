@@ -17,7 +17,7 @@ const router = Router();
 const path = '/circles';
 const auth = validation.validateToken;
 const redisPort = Number(process.env.REDIS_PORT);
-const client = new IORedis(redisPort);
+const client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
  /* Set Up Redis */
 client.on('connect', () => {
 	logger.log('info', 'connected');
