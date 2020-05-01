@@ -5,7 +5,7 @@ declare global{
         interface Request {
             token: {
                 userID: string,
-                userProfile: IUserProfile
+                userProfile: IUserProfile,
             }
         }
     }
