@@ -1,27 +1,21 @@
+
 import mongoose, { Schema, Document, mongo } from 'mongoose';
-import { IPost } from 'src/interfaces/IPost';
+import { IPostModel } from 'src/interfaces/IPost';
 
 const PostSchema: Schema = new Schema({
-    author: { type: Schema.Types.ObjectId, ref: 'User' },
+    author: { type: String, ref: 'User' },
+    userTag: { type: String},
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
     trash: { type: Number, default: 0 },
-    likedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    createdAt: { type: String },
+    createdAt: { type: Date, default: Date.now() },
 });
 
-PostSchema.methods.scorePost = function () {
-    // if ((this.dislikes + this. trash) === 0) {
-    //     return this.likes;
-    // } else {
-    //     const PIS = (this.likes) / (this.dislikes + this. trash);
-    //     return (Math.round(PIS * 100) / 100);
-    // }
-    return this.likes;
-};
+PostSchema.methods.score = function score() {
+    
+}
 
-// TODO: Implement tags
-export default mongoose.model<IPost>('Post', PostSchema);
+export default mongoose.model<IPostModel>('Post', PostSchema);

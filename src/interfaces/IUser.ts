@@ -9,8 +9,9 @@ export interface IUserProfile {
     bio: string;
 }
 
-export interface IUser extends Document {
+export interface IUserModel extends Document {
     name: string;
+    userID: string;
     userTag: string;
     email: string;
     password: string;
@@ -20,4 +21,16 @@ export interface IUser extends Document {
     followers: string[];
     checkIsFollowed(id: string): boolean;
     checkIsFollowing(id: string): boolean;
+    fcm_token: string;
 }
+
+export interface IUser  {
+    name: string;
+    userID?: string;
+    userTag: string;
+    email: string;
+    password: string;
+    userProfile?: IUserProfile;
+    phone_number: string;
+}
+

@@ -1,0 +1,11 @@
+config:
+  target: "http://localhost:3000/api/v1"
+  phases:
+    - duration: 60
+      arrivalRate: 20
+scenarios:
+  - flow:
+      - get:
+          url: "/post/comments/comments/5e91ea9a2817fa581481411f"
+          headers:
+            x-Authorization: "Authorization eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGUiLCJ1c2VyUHJvZmlsZSI6eyJyZXBfcG9pbnRzIjoyLjQ1LCJfaWQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGYiLCJ1bml2ZXJzaXR5IjoiQmVsbHMgVW5pdmVyc2l0eSBPZiBUZWNobm9sb2d5IiwiZ2VuZGVyIjoibWFsZSIsImJpbyI6IjMwMCJ9LCJpYXQiOjE1ODc4NTIwODR9.85Supm15TpTSpZbSvEVy0wfLIh9B6Fl8r490AOuUbmI"

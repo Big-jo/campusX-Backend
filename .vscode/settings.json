@@ -1,0 +1,13 @@
+{
+    "mochaExplorer.env": {
+        "MONGO_URI": "mongodb://localhost:27017/campusX",
+        "PORT": "3000",
+        "HOST":"localhost",
+        "JWT_SECRET":"abcdefghijklmnop",
+        "NODE_ENV":"development",
+        "REDIS_PORT": "6379"
+    },
+    "mochaExplorer.require": "ts-node/register",
+    "mochaExplorer.files": "src/spec/**/*ts",
+    "editor.quickSuggestions.comments": true
+}
