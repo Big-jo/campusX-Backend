@@ -9,7 +9,7 @@
     "arrow-parens": {
       "options": "ban-single-arg-parens"
     },
-    "indent": [true, "tabs", 2]
+    "indent": [true, "spaces", 2]
   },
   "linterOptions": {
     "exclude": [
