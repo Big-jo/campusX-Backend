@@ -46,7 +46,8 @@
     "pm2": "^4.1.2",
     "socket.io": "^2.2.0",
     "uuid": "^3.3.2",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "tslib": "latest"
   },
   "devDependencies": {
     "@types/array-sort": "^1.0.0",
