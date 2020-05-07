@@ -1,11 +1,12 @@
 import { logger } from '../../shared/Logger';
-import { Request, Response, Router } from 'express';
-import { BAD_REQUEST, CREATED, OK, INTERNAL_SERVER_ERROR } from 'http-status-codes';
+import {Response, Router, Request } from 'express';
+import { CREATED, OK, INTERNAL_SERVER_ERROR, BAD_REQUEST } from 'http-status-codes';
 import validation from '../../middleware/auth';
 import { User } from '../../entities/User';
 import { IUser } from '../../interfaces/IUser';
 import multer from 'multer';
 import {Utility} from '../../lib/utility';
+
 // Init router and path
 const router = Router();
 const path = '/users';
@@ -26,27 +27,27 @@ export const createUserPath = '/create';
  * Full Path: "GET campusx/api/v1/users/create"
  */
 router.post(createUserPath, async (req: Request, res: Response) => {
-	try {
-		const user: IUser = {
-			email: req.body.email,
-			name: req.body.name,
-			password: req.body.password,
-			phone_number: req.body.phoneNumber,
-			userTag: req.body.userTag,
-		};
-		const result = await User.CreateUser(user);
-		if (result.exist) {
-			res.status(BAD_REQUEST).json({exist: true});
-		} else {
-			res.status(CREATED).json({
-				message: 'User created',
-				result: result.token,
-			});
-		}
-	} catch (error) {
-		logger.error(error, error.message);
-		return res.status(INTERNAL_SERVER_ERROR).json();
-	}
+    try {
+        const user: IUser = {
+            email: req.body.email,
+            name: req.body.name,
+            password: req.body.password,
+            phone_number: req.body.phoneNumber,
+            userTag: req.body.userTag,
+        };
+        const result = await User.CreateUser(user);
+        if (result.exist) {
+            res.status(BAD_REQUEST).json({exist: true});
+        } else {
+            res.status(CREATED).json({
+                message: 'User created',
+                result: result.token,
+            });
+        }
+    } catch (error) {
+        logger.error(error, error.message);
+        return res.status(INTERNAL_SERVER_ERROR).json();
+    }
 });
 
 /******************************************************************************
@@ -58,23 +59,23 @@ export const loginPath = '/login';
 export const errorMessage = 'Oops sorry, error logging you in';
 
 router.post(loginPath, async (req: Request, res: Response) => {
-	try {
-		const result = await User.Login(req.body.email, req.body.password);
-		logger.log('info', req.body);
-		if (result.token) {
-			res.status(CREATED).json({
-				message: 'login successful',
-				token: result.token,
-			});
-		} else {
-			res.status(BAD_REQUEST).json({exist: false});
-		}
-	} catch (error) {
-		logger.error(error, error.message);
-		res.status(INTERNAL_SERVER_ERROR).json({
-			error: errorMessage,
-		});
-	}
+    try {
+        const result = await User.Login(req.body.email, req.body.password);
+        logger.log('info', req.body);
+        if (result.token) {
+            res.status(CREATED).json({
+                message: 'login successful',
+                token: result.token,
+            });
+        } else {
+            res.status(BAD_REQUEST).json({exist: false});
+        }
+    } catch (error) {
+        logger.error(error, error.message);
+        res.status(INTERNAL_SERVER_ERROR).json({
+            error: errorMessage,
+        });
+    }
 
 });
 /******************************************************************************
@@ -85,12 +86,12 @@ export const followUser = '/follow';
 export const followErrorMessage = 'Oops, something went wrong';
 
 router.post(followUser, auth, async (req: Request, res: Response) => {
-	try {
-		const result = await User.FollowUser(req.body.targetUserID, req.body.password);
-		result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
-	} catch (e) {
-		Utility.ErrResponse(res);
-	}
+    try {
+        const result = await User.FollowUser(req.body.targetUserID, req.body.password);
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
+    } catch (e) {
+        Utility.ErrResponse(res);
+    }
 
 });
 
@@ -101,14 +102,14 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
 export const getUserInfo = '/getUser/:user/:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, auth, async (req: Request, res: Response) => {
-	try {
-		const result = await User.GetUser(req.params.searchKey, req.token.userID);
-		res.status(OK).json({
-			result,
-		});
-	} catch (e) {
-		Utility.ErrResponse(res);
-	}
+    try {
+        const result = await User.GetUser(req.params.searchKey, req.token.userID);
+        res.status(OK).json({
+            result,
+        });
+    } catch (e) {
+        Utility.ErrResponse(res);
+    }
 });
 
 /******************************************************************************
@@ -117,12 +118,12 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
 const updateUserPath = '/update';
 const errMessage = 'Oops could not update';
 router.post(updateUserPath, auth, async (req: Request, res: Response) => {
-	try {
-		const result = await User.UpdateUser(req.body.field, req.token.userID, req.body.update);
-		result === 0 ? res.status(OK).json({msg: 'Updated'}) : res.status(BAD_REQUEST).json(errMessage);
-	} catch (error) {
-		Utility.ErrResponse(res);
-	}
+    try {
+        const result = await User.UpdateUser(req.body.field, req.token.userID, req.body.update);
+        result === 0 ? res.status(OK).json({msg: 'Updated'}) : res.status(BAD_REQUEST).json(errMessage);
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
 });
 
 /******************************************************************************
@@ -200,12 +201,12 @@ export const explorePath = '/explore';
  /******************************************************************************/
 export const uploadAvatarPath = '/avatar/upload';
 router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request, res: Response) => {
-	try {
-		const result = await User.UploadAvatar(req.file, req.token.userID);
-		res.status(OK).json({result});
-	} catch (error) {
-		Utility.ErrResponse(res);
-	}
+    try {
+        const result = await User.UploadAvatar(req.file, req.token.userID);
+        res.status(OK).json({result});
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
 });
 
 /******************************************************************************
@@ -213,12 +214,12 @@ router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request,
  /******************************************************************************/
 export const availableUserTag = '/userTag/:tag';
 router.get(availableUserTag, async (req: Request, res: Response) => {
-	try {
-		const userTag = await User.AvailableUserTag(req.params.tag);
-		userTag === 0 ? res.status(OK).json({available: true}) : res.status(OK).json({available: false});
-	} catch (e) {
-		Utility.ErrResponse(res);
-	}
+    try {
+        const userTag = await User.AvailableUserTag(req.params.tag);
+        userTag === 0 ? res.status(OK).json({available: true}) : res.status(OK).json({available: false});
+    } catch (e) {
+        Utility.ErrResponse(res);
+    }
 });
 
 /******************************************************************************
