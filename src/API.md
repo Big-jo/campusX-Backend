@@ -155,6 +155,7 @@
                     type: object
 
 ### /userTag/:tag
+
     get:
     summary: Check if userTag is available
     parameters:
@@ -165,7 +166,7 @@
     response:
         '200': 
             description - A boolean value verifying if such exists
-        
+
         
    
     

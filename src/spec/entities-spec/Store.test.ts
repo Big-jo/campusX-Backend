@@ -13,6 +13,7 @@ before(() => {
     mongoose.connect(URI, {
         useNewUrlParser: true,
         useFindAndModify: false,
+        useCreateIndex: true,
     });
     // Connection Instance
     const Db = mongoose.connection;

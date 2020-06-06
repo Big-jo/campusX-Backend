@@ -108,7 +108,7 @@ describe('Get user info', () => {
             done();
         });
     });
-
+        
     it('should return the user profile',done => {
         agent.get(`${usersBaseApi}/getUser/${userID}/user`)
             .set('Authorization', `Authorization ${process.env.token as string}`)
