@@ -153,3 +153,19 @@
             application/json:
                 schema: 
                     type: object
+
+### /userTag/:tag
+    get:
+    summary: Check if userTag is available
+    parameters:
+        -name: tag
+        -in: path 
+        required: true
+        description: A user tag 
+    response:
+        '200': 
+            description - A boolean value verifying if such exists
+        
+        
+   
+    
