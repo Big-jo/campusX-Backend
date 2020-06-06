@@ -13,6 +13,7 @@ export const ItemSchema: Schema = new Schema({
    sales: {type: Number, default: 0},
    price: {type: String, required: true},
    image_url: {type: String},
+   categoryTag: [{type: String}],
 });
 
 ItemSchema.index('store');

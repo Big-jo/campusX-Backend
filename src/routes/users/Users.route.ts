@@ -99,7 +99,7 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
  *                   Generic get route for getting user related data
  ******************************************************************************/
 
-export const getUserInfo = '/getUser/:user/:searchKey';  /** Accepted info search Keys: followers, followings, */
+export const getUserInfo = '/getUser/:searchKey';  /** Accepted info search Keys: followers, followings, */
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, auth, async (req: Request, res: Response) => {
     try {

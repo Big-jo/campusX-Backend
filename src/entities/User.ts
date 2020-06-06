@@ -1,24 +1,23 @@
 import UserModel from '../models/User.model';
-import { IUser, IUserModel } from 'src/interfaces/IUser';
+import {IUser, IUserModel} from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { logger } from '../shared/Logger';
+import {logger} from '../shared/Logger';
 import FollowsModel from '../models/Follower.model';
+import followerModel from '../models/Follower.model';
 import FollowingModel from '../models/Following.model';
 import aws from 'aws-sdk';
-import { WriteCallback } from 'jsonfile';
 import PostModel from '../models/Post.model';
 import {Utility} from '../lib/utility';
-import followerModel from '../models/Follower.model';
-import followingModel from '../models/Following.model';
 
 export class User {
-    constructor() {}
+    constructor() {
+    }
 
     public static async CreateUser(userObject: IUser) {
-        const foundUser = await UserModel.findOne({ email: userObject.email });
+        const foundUser = await UserModel.findOne({email: userObject.email});
         if (foundUser) {
-            return { exist: true };
+            return {exist: true};
         } else {
             try {
                 const user: IUserModel = new UserModel({
@@ -49,7 +48,7 @@ export class User {
 
     public static async Login(email: string, password: string) {
         try {
-            const user = await UserModel.findOne({ email }).exec();
+            const user = await UserModel.findOne({email}).exec();
             if (user !== null) {
                 const userPassword = user.password;
                 const result = await bcrypt.compare(password, userPassword);
@@ -64,10 +63,10 @@ export class User {
                         token,
                     };
                 } else {
-                    return { incorrect: true };
+                    return {incorrect: true};
                 }
             } else {
-                return { exist: false };
+                return {exist: false};
             }
         } catch (error) {
             throw new Error(error);
@@ -76,6 +75,8 @@ export class User {
 
     public static async FollowUser(targetUserID: string, userID: string) {
         try {
+            const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().
+
             const follow = await new FollowsModel({
                 target: targetUserID,
                 follower: userID,
@@ -86,8 +87,8 @@ export class User {
             });
             // TODO: Add typings support for FCM-NODE
             // TODO: Make notifications function async
-            // const notif = new Notification('Campus', `${target!.userTag} followed you`, target!.fcm_token);
-            // notif.send();
+            const notif = new Notification('Campus', `${target!.userTag} followed you`, target!.fcm_token);
+            notif.send();
 
             await following.save();
             await follow.save();
@@ -105,22 +106,24 @@ export class User {
                 case 'followers':
                     const followers = await followerModel.find({target: userID})
                         .lean()
-                        .populate('follower', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
+                        .populate('follower', {name: 1, userProfile: 1, userTag: 1, avatar: 1})
                         .exec();
-                    return { followers };
+                    return {followers};
 
                 case 'followings':
                     const followings = await FollowingModel.find({follower: userID})
                     // tslint:disable-next-line: max-line-length
                         .lean()
-                        .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
+                        .populate('target', {name: 1, userProfile: 1, userTag: 1, avatar: 1})
                         .exec();
-                    return { followings };
+                    return {followings};
 
                 case 'user':
-                    const user = await UserModel.findById(userID, { password: 0 });
-                    if (user != null) { return { user }; }
-                    return { exist: false };
+                    const user = await UserModel.findById(userID, {password: 0});
+                    if (user != null) {
+                        return {user};
+                    }
+                    return {exist: false};
                 default:
                     break;
             }
@@ -145,7 +148,7 @@ export class User {
              *  Update: Data to update the field with
              */
 
-            UserModel.findOneAndUpdate({ _id: userID }, { [field]: update });
+            UserModel.findOneAndUpdate({_id: userID}, {[field]: update});
             return 0;
 
         } catch (error) {
@@ -172,8 +175,8 @@ export class User {
             };
             return new Promise((resolve, reject) => {
                 s3Bucket.upload(params, async (err: any, data: any) => {
-                    await UserModel.findByIdAndUpdate(userID, { 'userProfile.avatar': data.Location }).exec();
-                    return { avatarData: data };
+                    await UserModel.findByIdAndUpdate(userID, {'userProfile.avatar': data.Location}).exec();
+                    return {avatarData: data};
                 });
             });
         } catch (error) {
@@ -183,8 +186,8 @@ export class User {
 
     public static async GetUserPosts(userID: string) {
         try {
-            const posts = await PostModel.find({ author: userID })
-                .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1 } })
+            const posts = await PostModel.find({author: userID})
+                .populate({path: 'author', select: {name: 1, userProfile: 1, userTag: 1}})
                 .exec();
             return posts.reverse();
         } catch (error) {
@@ -201,5 +204,21 @@ export class User {
             // Return 1 is the userTag doesnt exist
             return 1;
         }
+    }
+
+    public static async ConnectUser(userID: string) {
+        const user = await UserModel.findById(userID).exec();
+        const onCampusUsers = await UserModel.find(
+            {'userProfile.university': user!.userProfile.university},
+            {name: 1, userProfile: 1, userTag: 1},
+            ).lean().exec();
+        const onOtherCampuses = await UserModel.find(
+            {'userProfile.university': {$ne: user!.userProfile.university}},
+            {name: 1, userProfile: 1, userTag: 1},
+            ).lean().exec();
+        return {
+            onCampusUsers,
+            onOtherCampuses,
+        };
     }
 }

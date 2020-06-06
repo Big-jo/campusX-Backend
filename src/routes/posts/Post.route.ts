@@ -9,20 +9,31 @@ import {IComment, IPost} from '../../interfaces/IPost';
 import IORedis from 'ioredis';
 import { Utility } from '../../lib/utility';
 import CommentModel from '../../models/Comment.model';
+import {consoleTestResultHandler} from 'tslint/lib/test';
+import {Newsfeed} from '../../lib/newsfeeds';
 
 const router = Router();
 const path = '/post';
 
 const auth = validation.validateToken;
-
+let client: IORedis.Redis;
 /******************************************************************************
  *                                 SETUP REDIS
  /******************************************************************************/
-const redisPort = Number(process.env.REDIS_PORT);
-const client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+
+if (process.env.NODE_ENV === 'development') {
+     client = new IORedis();
+} else {
+    const redisPort = Number(process.env.REDIS_PORT);
+    client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+}
+
+client.on('connect', args => {
+    logger.info('Redis Connected');
+})
 
 client.on('error', err => {
-	logger.error(err);
+    logger.error(err);
 });
 
 /*******************************************************
@@ -31,25 +42,29 @@ client.on('error', err => {
 export const createPostPath = '/create';
 // TODO: Remove exported error messages in other routes;
 router.post(createPostPath, auth, async (req: Request, res: Response) => {
-	// TODO: Move to post lib .
-	// TODO: Add option for anonymous posts.
-	try {
-		// TODO: Move this to controller dir
-		// TODO: Add Annonymous feature
-		const post: IPost = {
-			userTag: req.body.userTag,
-			author: req.token.userID,
-			image: req.body.image,
-			text: req.body.text,
-			video: req.body.video,
-		};
-		const result = await Post.CreatePost(post, req.token.userID, client, req.body.options);
-		// tslint:disable-next-line: max-line-length
-		result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({error: 'Sorry, error in the details your details'});
+    // TODO: Move to post lib .
+    // TODO: Add option for anonymous posts.
+    try {
+        // TODO: Move this to controller dir
+        // TODO: Add Annonymous feature
+        const post: IPost = {
+            userTag: req.body.userTag,
+            author: req.token.userID,
+            image: req.body.image,
+            text: req.body.text,
+            video: req.body.video,
+        };
+        // const result = await Post.CreatePost(post, req.token.userID, client, req.body.options, io);
+        const io = res.locals.socketio;
+        const newsfeed = new Newsfeed(io);
+        const options = req.body.options;
+        const result = await newsfeed.ConstructNewsFeed(post, req.token.userID, {anonymous: options.anon});
+        // tslint:disable-next-line: max-line-length
+        result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({error: 'Sorry, error in the details your details'});
 
-	} catch (error) {
-		Utility.ErrResponse(res);
-	}
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
 });
 
 /*********************************************************
@@ -57,21 +72,21 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
  *********************************************************/
 export const createComment = '/comment';
 router.post(createComment, auth, async (req: Request, res: Response) => {
-	try {
-		const commentObject: IComment = {
-			video: req.body.video,
-			image: req.body.image,
-			text: req.body.text,
-			author: req.body.author,
-			userTag: req.body.userTag,
-			parentPost: req.body.parentPost,
-		};
-		const result = await Post.Comment(commentObject);
-		result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
-	} catch (e) {
-		logger.error(e);
-		Utility.ErrResponse(res);
-	}
+    try {
+        const commentObject: IComment = {
+            video: req.body.video,
+            image: req.body.image,
+            text: req.body.text,
+            author: req.body.author,
+            userTag: req.body.userTag,
+            parentPost: req.body.parentPost,
+        };
+        const result = await Post.Comment(commentObject);
+        result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
+    } catch (e) {
+        logger.error(e);
+        Utility.ErrResponse(res);
+    }
 });
 
 /*********************************************************
@@ -80,37 +95,39 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
 export const getCommentsPath = '/comments/:postID';
 
 router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
-	try {
-		// Actually, just return post with comments sub-field
-		const result = await Post.GetComments(req.params.postID);
-		res.status(OK).json({result});
-		// TODO: Rank comments
-	} catch (e) {
-		logger.error(e);
-		Utility.ErrResponse(res);
-	}
+    try {
+        // Actually, just return post with comments sub-field
+        const result = await Post.GetComments(req.params.postID);
+        res.status(OK).json({result});
+        // TODO: Rank comments
+    } catch (e) {
+        logger.error(e);
+        Utility.ErrResponse(res);
+    }
 });
 /*********************************************************
  *                          Get Posts
  *********************************************************/
-export const getPostsPath = '/getposts/:id';
+export const getPostsPath = '/newsfeed/home/:userID';
 
 // tslint:disable-next-line: no-shadowed-variable
-router.get(getPostsPath, auth, async (req: Request, res: Response) => {
-	try {
-		const result = await Post.GetPosts(client, req.token.userID, {mostRecent: true});
-		res.status(200).json({result});
-
-	} catch (error) {
-		logger.error(error, error.message);
-		Utility.ErrResponse(res);
-	}
+router.get(getPostsPath, async (req, res) => {
+    try {
+        // await Post.GetPosts(client, req.params.userID, {mostRecent: true});
+        // const result = await Post.GetPosts(client, req.token.userID, {mostRecent: true});
+        const io = res.locals.io;
+        const newsfeed = new Newsfeed(io);
+        res.status(200);
+    } catch (error) {
+        logger.error(error, error.message);
+        Utility.ErrResponse(res);
+    }
 });
 
 /*********************************************************
  *              Get Posts From A Campus
  *********************************************************/
-export const getCampusPostPath = '/getposts/:campusID';
+export const getCampusPostPath = '/getnewsfeed/:campusID';
 
 // router.get(getCampusPostPath, async (req: Request, res: Response) => {
 //     try {
@@ -132,13 +149,13 @@ export const getCampusPostPath = '/getposts/:campusID';
 export const likePostPath = '/like';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
-	try {
-		const result = await Post.LikePost(req.token.userID, req.body.postID);
-		result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
-	} catch (error) {
-		logger.error(error, error);
-		Utility.ErrResponse(res);
-	}
+    try {
+        const result = await Post.LikePost(req.token.userID, req.body.postID);
+        result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
+    } catch (error) {
+        logger.error(error, error);
+        Utility.ErrResponse(res);
+    }
 });
 
 /******************************************************************************
@@ -146,12 +163,12 @@ router.post(likePostPath, auth, async (req: Request, res: Response) => {
  /******************************************************************************/
 export const dislikePostPath = '/dislike';
 router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
-	try {
-		const result = await Post.DislikePost(req.token.userID, req.body.postID);
-		result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
-	} catch (error) {
-		Utility.ErrResponse(res);
-	}
+    try {
+        const result = await Post.DislikePost(req.token.userID, req.body.postID);
+        result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
 });
 
 /******************************************************************************

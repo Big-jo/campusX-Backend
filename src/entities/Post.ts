@@ -12,167 +12,193 @@ import CommentModel from '../models/Comment.model';
 // import { bool } from 'aws-sdk/clients/signer';
 
 interface IOptions {
-	mostRecent?: boolean;
-	first100?: boolean;
+    mostRecent?: boolean;
+    first100?: boolean;
 }
 
-interface IPostOptions {
-	anonymous: boolean;
+export interface IPostOptions {
+    anonymous: boolean;
 }
 
 export class Post {
-	constructor() {
-	}
+    constructor() {
+    }
 
-	public static async CreatePost(postObject: IPost, userID: string, client: IORedis.Redis, options: IPostOptions) {
-		try {
-			if (options.anonymous) {
-				const post = await new PostModel({
-					text: postObject.text,
-					video: postObject.video,
-					image: postObject.image,
-					createdAt: moment().format('lll'),
-				});
+    public static async CreatePost(postObject: IPost, userID: string, client: IORedis.Redis, options: IPostOptions) {
+        try {
+            // TODO: Create new method for creating anon posts
+            if (options.anonymous) {
+                let post = await new PostModel({
+                    text: postObject.text,
+                    video: postObject.video,
+                    image: postObject.image,
+                    createdAt: moment().format('lll'),
+                });
 
-				const followers: IFollower[] = await FollowerModel.find({target: userID});
+                post = await post.save();
 
-				for (const follower of followers) {
-					const cahcedPost = JSON.stringify({[userID]: post});
-					await client.sadd(follower.follower, cahcedPost);
-				}
+                const followers: IFollower[] = await FollowerModel.find({target: userID});
+                const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
 
-				await post.save();
+                for (const follower of followers) {
 
-				return 0;
-			} else {
-				const post = await new PostModel({
-					author: userID,
-					userTag: postObject.userTag,
-					text: postObject.text,
-					video: postObject.video,
-					image: postObject.image,
-					createdAt: moment().format('lll'),
-				});
+                    /**
+                     * Set the state of a users newsfeed in the cache
+                     * - sanitized: It hasnt been updated
+                     * - dirty: It has been updated
+                     */
+                    await client.hmset(follower.follower, {[post._id]: post, state: 'dirty'});
+                    updatedFeeds.push({updatedHash: follower.follower, newPostID: post._id});
+                }
 
-				const followers: IFollower[] = await FollowerModel.find({target: userID});
+                // Also return ID of the newsfeed updated
+                return {
+                    opsValue: 0,
+                    updatedFeeds,
+                };
 
-				for (const follower of followers) {
-					const cachedPost = JSON.stringify({[userID]: post});
-					await client.sadd(follower.follower, cachedPost);
-				}
+            } else {
+                let post = await new PostModel({
+                    author: userID,
+                    userTag: postObject.userTag,
+                    text: postObject.text,
+                    video: postObject.video,
+                    image: postObject.image,
+                    createdAt: moment().format('lll'),
+                    name: postObject.name,
+                });
 
-				await post.save();
+                post = await post.save();
 
-				return 0;
-			}
-		} catch (error) {
-			logger.error(error);
-		}
-	}
+                const followers: IFollower[] = await FollowerModel.find({target: userID});
+                const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
 
-	public static async GetPosts(client: IORedis.Redis, userID: string, options?: IOptions) {
-		if (options!.mostRecent) {
-			try {
-				/**
-				 *  Check the cache for newsfeed
-				 */
-				const exists = await client.exists(userID) === 1;
-				if (exists) {
-					const posts: IPostModel[] = [];
-					const cachedPosts = await client.smembers(userID);
+                for (const follower of followers) {
 
-					for (const cachedPost of cachedPosts) {
-						const parsed = JSON.parse(cachedPost);
-						for (const newsfeedID in parsed) {
-							if (parsed.hasOwnProperty(newsfeedID)) {
-								const post = parsed[newsfeedID];
-								posts.push(post);
-							}
-						}
-					}
+                    /**
+                     * Set the state of a users newsfeed in the cache
+                     * - sanitized: It hasnt been updated
+                     * - dirty: It has been updated
+                     */
+                    await client.hmset(follower.follower, {[post._id]: post, state: 'dirty'});
+                    updatedFeeds.push({updatedHash: follower.follower, newPostID: post._id});
+                }
 
-					return {newsfeed: posts};
-				} else {
-					const followings = await FollowingModel.find({
-							follower: userID,
-						},
-						{
-							target: 1,
-						},
-					)
-						.exec();
-					//  TODO: A worker should be spawned to do tasks from here
-					const arr: string[] = [];
+                // Also return ID of the newsfeed updated
+                return {
+                    opsValue: 0,
+                    updatedFeeds,
+                };
+            }
+        } catch (error) {
+            logger.error(error);
+        }
+    }
 
-					followings.forEach((x) => {
-						arr.push(x.target);
-					});
+    public static async GetPosts(client: IORedis.Redis, userID: string, options?: IOptions) {
+        if (options!.mostRecent) {
+            try {
+                /**
+                 *  Check the cache for newsfeed
+                 */
+                const exists = await client.exists(userID) === 1;
+                if (exists) {
+                    // const posts: IPostModel[] = [];
+                    const cachedPosts = await client.hgetall(userID);
 
-					const Posts = await PostModel.find({author: {$in: arr}});
-					// const newsfeed = await this.SortPost(Posts, {reverse: true});
-					return {Posts};
-				}
-			} catch (error) {
-				logger.error(error);
-			}
-		}
-	}
+                    // for (const cachedPost of cachedPosts) {
+                    //     const parsed = JSON.parse(cachedPost);
+                    //     for (const newsfeedID in parsed) {
+                    //         if (parsed.hasOwnProperty(newsfeedID)) {
+                    //             const post = parsed[newsfeedID];
+                    //             posts.push(post);
+                    //         }
+                    //     }
+                    // }
 
-	public static async LikePost(userID: string, postID: string) {
-		try {
-			/**
-			 *  Increment Post likes and update the likedBy field
-			 */
-			await PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
-			await UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
-			return 0;
-		} catch (error) {
-			logger.error(error);
-			throw new Error(error);
-		}
-	}
+                    return {newsfeed: cachedPosts};
+                } else {
+                    const followings = await FollowingModel.find({
+                            follower: userID,
+                        },
+                        {
+                            target: 1,
+                        },
+                    )
+                        .exec();
+                    //  TODO: A worker should be spawned to do tasks from here
+                    const arr: string[] = [];
 
-	public static async DislikePost(userID: string, postID: string) {
-		try {
-			PostModel.findByIdAndUpdate(postID, {$inc: {dislikes: 1}}).exec();
-			UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.20}}).exec();
-			return 0;
-		} catch (error) {
-			throw new Error(error);
-		}
-	}
+                    followings.forEach((x) => {
+                        arr.push(x.target);
+                    });
 
-	public static async Comment(commentObject: IComment) {
-		try {
-			const comment = new CommentModel({
-				author: commentObject.author,
-				text: commentObject.text,
-				video: commentObject.video,
-				image: commentObject.image,
-				parentPost: commentObject.parentPost,
-			}).save();
-			return 0;
-		} catch (e) {
-			logger.error(e);
-			throw new Error(e);
-		}
-	}
+                    const Posts = await PostModel.find({author: {$in: arr}});
+                    // const newsfeed = await this.SortPost(Posts, {reverse: true});
+                    return {Posts};
+                }
+            } catch (error) {
+                logger.error(error);
+            }
+        }
 
-	public static async GetComments(postID: string) {
-		try {
-			const comments = await CommentModel.find({parentPost: postID})
-				.lean()
-				.populate('author', {name: 1, userProfile: 1, userTag: 1})
-				.populate('parentPost')
-				.exec();
-			return {comments};
-		} catch (e) {
-			logger.error(e);
-			throw new Error(e);
-		}
-	}
+    }
 
-	// private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
-	//
-	// }
+    public static async LikePost(userID: string, postID: string) {
+        try {
+            /**
+             *  Increment Post likes and update the likedBy field
+             */
+            await PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
+            await UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
+            return 0;
+        } catch (error) {
+            logger.error(error);
+            throw new Error(error);
+        }
+    }
+
+    public static async DislikePost(userID: string, postID: string) {
+        try {
+            PostModel.findByIdAndUpdate(postID, {$inc: {dislikes: 1}}).exec();
+            UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.20}}).exec();
+            return 0;
+        } catch (error) {
+            throw new Error(error);
+        }
+    }
+
+    public static async Comment(commentObject: IComment) {
+        try {
+            const comment = new CommentModel({
+                author: commentObject.author,
+                text: commentObject.text,
+                video: commentObject.video,
+                image: commentObject.image,
+                parentPost: commentObject.parentPost,
+            }).save();
+            return 0;
+        } catch (e) {
+            logger.error(e);
+            throw new Error(e);
+        }
+    }
+
+    public static async GetComments(postID: string) {
+        try {
+            const comments = await CommentModel.find({parentPost: postID})
+                .lean()
+                .populate('author', {name: 1, userProfile: 1, userTag: 1})
+                .populate('parentPost')
+                .exec();
+            return {comments};
+        } catch (e) {
+            logger.error(e);
+            throw new Error(e);
+        }
+    }
+
+    // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
+    //
+    // }
 }
