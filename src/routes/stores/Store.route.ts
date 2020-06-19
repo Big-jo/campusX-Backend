@@ -3,6 +3,7 @@ import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-cod
 import validation from '../../middleware/auth';
 import { Store } from '../../entities/Store/Store';
 import { Utility } from '../../lib/utility';
+import { logger } from 'src/shared/Logger';
 
 const router = Router();
 const path = '/store';
@@ -27,9 +28,14 @@ router.post(createStorePath, async (req: Request, res: Response) => {
         }
 
     } catch (error) {
-        Utility.ErrResponse(res);
+        logger.error(error);
+        Utility.ErrResponse (res);
     }
 });
+
+/******************************************************************************
+*                                 LOGIN TO STORE
+/******************************************************************************/
 
 export const storeLogin = '/login';
 /**
@@ -48,6 +54,10 @@ router.post(storeLogin, async (req: Request, res: Response) => {
     }
 });
 
+/******************************************************************************
+*                                 GET STORE CATALOGUE
+/******************************************************************************/
+
 export const cataloguePath = '/catalogue';
 router.get(cataloguePath, async (req: Request, res: Response) => {
     try {
@@ -57,6 +67,10 @@ router.get(cataloguePath, async (req: Request, res: Response) => {
         Utility.ErrResponse(res);
     }
 });
+
+/******************************************************************************
+*                                 UPDATE STORE
+/******************************************************************************/
 
 export const updateStore = '/update';
 router.post(updateStore, async (req: Request, res: Response) => {
