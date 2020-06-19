@@ -7,6 +7,7 @@ export interface IUserProfile {
     gender: string;
     rep_points?: string;
     bio: string;
+    // TODO: Test lastseen feature 
     lastSeen: Date;
 }
 
