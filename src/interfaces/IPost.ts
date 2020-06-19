@@ -12,8 +12,10 @@ export interface IPostModel extends Document {
     likes: number;
     dislikes: number;
     trash: number;
+    campus: string;
     scorePost(): number;
     checkLiked(id: string): boolean;
+    parentPost: string;
 }
 
 export interface IPost {
@@ -23,6 +25,8 @@ export interface IPost {
     userTag: string;
     video?: string;
     image?: string;
+    campus: string;
+    parentPost: string;
 }
 
 export interface ICommentModel extends IPostModel{
