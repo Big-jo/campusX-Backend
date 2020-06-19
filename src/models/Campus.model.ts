@@ -1,12 +1,15 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
 
-interface ICampus extends Document {
-   Name: string;
+export interface ICampus extends Document {
+   name: string;
+   abbreviation: string;
+  //  members: number;
 }
 
 const CampusSchema: Schema = new Schema({
-  Name: {type: String},
-  Abbreviation: {type: String},
+  name: {type: String},
+  abbreviation: {type: String},
+  // members: {type: Number, default: 0},
 });
 
 export default mongoose.model<ICampus>('Campus', CampusSchema);
