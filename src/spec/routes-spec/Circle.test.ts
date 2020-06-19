@@ -1,7 +1,7 @@
 import {BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
 import {Response, SuperTest, Test} from 'supertest';
 import supertest from 'supertest';
-import app from '../../Server';
+import {server} from '../../Server';
 // import {paramMissingError} from '@shared/constants';
 import mongoose from 'mongoose';
 import {logger} from '@shared';
