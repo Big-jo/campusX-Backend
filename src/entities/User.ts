@@ -9,7 +9,8 @@ import FollowingModel from '../models/Following.model';
 import aws from 'aws-sdk';
 import PostModel from '../models/Post.model';
 import {Utility} from '../lib/utility';
-
+// import * as Notifications from '../lib/notifications';
+// import Notifications from '../lib/notifications';
 export class User {
     constructor() {
     }
@@ -26,7 +27,6 @@ export class User {
                     userTag: `${userObject.userTag}`,
                     email: userObject.email,
                     password: userObject.password,
-                    phone_number: userObject.phone_number,
                 });
                 user.userID = user._id;
                 const rounds = await bcrypt.genSalt(10);
@@ -36,6 +36,8 @@ export class User {
                 await user.save();
                 const payload = {
                     userID: user._id,
+                    userTag: user.userTag,
+                    campus: user.userProfile.university,
                     // userProfile: user.userProfile,
                 };
                 return {token: Utility.createToken(payload)};
@@ -75,7 +77,7 @@ export class User {
 
     public static async FollowUser(targetUserID: string, userID: string) {
         try {
-            const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().
+            const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
 
             const follow = await new FollowsModel({
                 target: targetUserID,
@@ -87,8 +89,8 @@ export class User {
             });
             // TODO: Add typings support for FCM-NODE
             // TODO: Make notifications function async
-            const notif = new Notification('Campus', `${target!.userTag} followed you`, target!.fcm_token);
-            notif.send();
+            // const notif = new Notifications('Campus', `${target!.userTag} followed you`, target!.fcm_token);
+            // notif.send();
 
             await following.save();
             await follow.save();
