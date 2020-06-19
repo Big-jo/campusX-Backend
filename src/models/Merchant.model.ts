@@ -7,7 +7,7 @@ import {IMerchantModel} from '../interfaces/IMerchant';
 const MerchantSchema: Schema = new Schema({
    merchantID: {type: String, required: true},
    user: {type: Schema.Types.ObjectId, ref: 'User'},
-   stores: [StoreSchema],
+   stores: [{type: Schema.Types.ObjectId, ref: 'Store'}],
 });
 
 export default mongoose.model<IMerchantModel>('Merchant', MerchantSchema);
