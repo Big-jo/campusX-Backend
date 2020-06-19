@@ -21,24 +21,36 @@ export interface IPostOptions {
 }
 
 export class Post {
-    constructor() {
-    }
+    constructor() {  }
 
+    // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, client: IORedis.Redis, options: IPostOptions) {
         try {
-            // TODO: Create new method for creating anon posts
+            
+            // TODO: Optimize this block
             if (options.anonymous) {
                 let post = await new PostModel({
                     text: postObject.text,
                     video: postObject.video,
                     image: postObject.image,
                     createdAt: moment().format('lll'),
+                    campus: postObject.campus,
                 });
 
                 post = await post.save();
 
                 const followers: IFollower[] = await FollowerModel.find({target: userID});
                 const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
+
+                // Add post to campus Feed
+                await client.hmset(post.campus, {[post._id]: post, state: 'dirty'});
+
+                // Check if a campus is a member of the set, if not, add them
+
+                // TODO: Stop doing this on each post
+                if ( await client.sismember('campuses', post.campus) === 0) {
+                    await client.sadd('campuses', post.campus);
+                }
 
                 for (const follower of followers) {
 
@@ -66,12 +78,21 @@ export class Post {
                     image: postObject.image,
                     createdAt: moment().format('lll'),
                     name: postObject.name,
+                    campus: postObject.campus,
                 });
 
                 post = await post.save();
 
                 const followers: IFollower[] = await FollowerModel.find({target: userID});
                 const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
+
+                // Add post to campus Feed
+                await client.hmset(post.campus, {[post._id]: post, state: 'dirty'});
+
+                // TODO: Stop doing this on each post
+                if ( (await client.sismember('campuses', post.campus)) === 0) {
+                    await client.sadd('campuses', post.campus);
+                }
 
                 for (const follower of followers) {
 
@@ -129,7 +150,7 @@ export class Post {
                     //  TODO: A worker should be spawned to do tasks from here
                     const arr: string[] = [];
 
-                    followings.forEach((x) => {
+                    followings.forEach(x => {
                         arr.push(x.target);
                     });
 
@@ -170,7 +191,7 @@ export class Post {
 
     public static async Comment(commentObject: IComment) {
         try {
-            const comment = new CommentModel({
+            const comment = new PostModel({
                 author: commentObject.author,
                 text: commentObject.text,
                 video: commentObject.video,
