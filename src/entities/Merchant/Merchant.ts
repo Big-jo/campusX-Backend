@@ -1,19 +1,23 @@
+import { logger } from './../../shared/Logger';
 import { IMerchant } from 'src/interfaces/IMerchant';
 import MerchantModel from 'src/models/Merchant.model';
 
 export class Merchant {
     
-    public static async Create(merchantObject: IMerchant) {
+    public static async Create(userID: string) {
         try {
-            const merchant = await MerchantModel.findOne(merchantObject.merchantID).lean().exec();
+            const merchant = await MerchantModel.findOne({user: userID}).lean().exec();
 
             if (!merchant) {
-                const newMerchant = await new MerchantModel(merchantObject).save();
+                const newMerchant = await new MerchantModel({
+                    user: userID,
+                }).save();
                 return {merchantID: newMerchant._id};
             } else {
                 return {exist: true}; 
             }
         } catch (error) {
+         logger.error(error);
          throw new Error(error);
         }
     }
