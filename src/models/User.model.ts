@@ -6,8 +6,6 @@ const UserSchema: Schema = new Schema({
     userTag: {type: String, required: true},
     email: {type: String, required: true},
     password: {type: String, required: true},
-    phoneNumber: {type: Number},
-    visits: {type: Number, default: 0},
     userProfile: {
         avatar: {type: String},
         level: {type: Number},
@@ -16,6 +14,9 @@ const UserSchema: Schema = new Schema({
         rep_points: {type: Number, default: 0},
         bio: {type: String},
         course: {type: String},
+        phoneNumber: {type: Number},
+        visits: {type: Number, default: 0},
+        lastSeen: {type: Date},
     },
     fcm_token: {type: String},
     // lastActive: {type: Date},  Implement last active
