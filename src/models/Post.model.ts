@@ -12,6 +12,9 @@ const PostSchema: Schema = new Schema({
     dislikes: { type: Number, default: 0 },
     trash: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now() },
+    campus: { type: String},
+    // If this is a comment, this would be populated
+    parentPost: {type: String},
 });
 
 PostSchema.methods.score = function score() {
