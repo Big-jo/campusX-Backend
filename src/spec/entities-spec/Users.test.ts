@@ -33,7 +33,7 @@ before(() => {
 });
 
 describe('User Related Functions', () => {
-    it('should create a new user and return a token', (done) => {
+    it('should create a new user and return a token',done => {
         const user = {
             name: 'Joseph Henshaw',
             email: 'furiousjoe288@gmail.com',
@@ -80,23 +80,23 @@ describe('User Related Functions', () => {
         }).catch((done));
     });
 
-    it('should follow a user', (done) => {
-        User.FollowUser('5dda8548843d9d433ed23b4e', '5e91304bf271a262d583bfa9').then((result) => {
+    it('should follow a user', done => {
+        User.FollowUser('5dda8548843d9d433ed23b4e', '5e91304bf271a262d583bfa9').then(result => {
             expect(result).to.be.a('number');
             done();
         }).catch(done);
     });
 
-    it('should return a user/s profile', (done) => {
-        User.GetUser('user', '5dda8548843d9d433ed23b4e').then((result) => {
+    it('should return a user/s profile',done => {
+        User.GetUser('user', '5dda8548843d9d433ed23b4e').then(result => {
             expect(result).to.have.property('user');
             expect(result!.user).not.to.be.an('array');
             done();
         }).catch(done);
     });
 
-    it('should update a user field and return a number', (done) => {
-        User.UpdateUser('name', '5dda8548843d9d433ed23b4e', 'Richard Henshaw').then((result) => {
+    it('should update a user field and return a number',done => {
+        User.UpdateUser('name', '5dda8548843d9d433ed23b4e', 'Richard Henshaw').then(result => {
             expect(result).to.be.a('number');
             expect(result).to.equal(0);
             done();
