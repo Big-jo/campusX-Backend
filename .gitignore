@@ -115,3 +115,9 @@ dist
 .yarn/build-state.yml
 .pnp.*
 node_modules
+.VSCodeCounter
+.coverage
+.logs
+.nyc_output
+.idea
+.mocharc.json
