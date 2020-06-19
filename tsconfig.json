@@ -12,6 +12,7 @@
     "strict": true,
     "target": "es6",
     "moduleResolution": "node",
+    "allowJs": true,
     "paths": {
       "@entities": [
         "src/entities"
