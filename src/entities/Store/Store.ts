@@ -9,16 +9,17 @@ import {IItem, IItemModel} from '../../interfaces/IItem';
 import {throws} from 'assert';
 import {StoreTransaction} from './StoreTransaction';
 import {IStoreTransaction} from '../../interfaces/IStoreTransaction';
+import MerchantModel from 'src/models/Merchant.model';
 
 export class Store {
     // constructor() { }
 
-    /**
-     * Create
-     */
+    /******************************************************************************
+    *                                 CREATE A STORE
+    /******************************************************************************/
     public static async Create(name: string, storeObject: IStore) {
         try {
-            const store = await StoreModel.findOne({name: name.toLowerCase()}) !== null;
+            const store = await StoreModel.findOne({name: storeObject.name.toLowerCase()}) !== null;
             if (store) {
                 return { exist: true };
             } else {
@@ -33,11 +34,16 @@ export class Store {
                 const rounds = await bcrypt.genSalt(10);
                 newStore.password = await bcrypt.hash(newStore.password, rounds);
                 await newStore.save();
+
+                await MerchantModel.findByIdAndUpdate(newStore.owner, {$push: newStore._id}).exec();
+
                 const payload = {
                     storeID: newStore._id,
                     name: newStore.name,
                     email: newStore.email,
+                    owner: newStore.owner,
                 };
+                
                 return { token: Utility.createToken(payload) };
             }
         } catch (error) {
@@ -45,7 +51,9 @@ export class Store {
             throw new Error(error);
         }
     }
-
+    /******************************************************************************
+    *                                 LOGIN TO A STORE
+    /******************************************************************************/
     public static async Login(email: string, password: string) {
         try {
             const store = await StoreModel.findOne({ email }).exec();
@@ -70,6 +78,9 @@ export class Store {
         }
     }
 
+    /******************************************************************************
+    *                                 GET ITEMS IN A STORE
+    /******************************************************************************/
     public static async Catalogue(storeID: string) {
         try {
             const items = await ItemModel.find({store: storeID}).exec();
@@ -80,7 +91,6 @@ export class Store {
         }
     }
 
-    // TODO: Method to change store property
     // TODO: Add store settings such as ads,
     // TODO: Payment
 
