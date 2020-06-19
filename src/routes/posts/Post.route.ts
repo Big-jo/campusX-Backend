@@ -8,8 +8,7 @@ import { Post } from '../../entities/Post';
 import {IComment, IPost} from '../../interfaces/IPost';
 import IORedis from 'ioredis';
 import { Utility } from '../../lib/utility';
-import CommentModel from '../../models/Comment.model';
-import {consoleTestResultHandler} from 'tslint/lib/test';
+
 import {Newsfeed} from '../../lib/newsfeeds';
 
 const router = Router();
@@ -53,6 +52,7 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
             image: req.body.image,
             text: req.body.text,
             video: req.body.video,
+            campus: req.body.campus,
         };
         // const result = await Post.CreatePost(post, req.token.userID, client, req.body.options, io);
         const io = res.locals.socketio;
@@ -80,6 +80,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             author: req.body.author,
             userTag: req.body.userTag,
             parentPost: req.body.parentPost,
+            campus: req.token.userProfile.university,
         };
         const result = await Post.Comment(commentObject);
         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
