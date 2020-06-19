@@ -7,6 +7,7 @@ export interface IUserProfile {
     gender: string;
     rep_points?: string;
     bio: string;
+    lastSeen: Date;
 }
 
 export interface IUserModel extends Document {
