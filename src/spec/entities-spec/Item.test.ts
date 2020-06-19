@@ -156,8 +156,9 @@ describe('Item Functions', () => {
     });
 
     it('Update field in item ', done => {
-        Item.UpdateItemProperty('', 'name', 'Addidas').then(result => {
+        Item.UpdateItemProperty('5ecff5ea631385c8389443b1', 'name', 'Addidas').then(result => {
             expect(result).to.equal(0);
+            done();
         }).catch(done);
     });
 
