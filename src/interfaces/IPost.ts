@@ -26,7 +26,7 @@ export interface IPost {
     video?: string;
     image?: string;
     campus: string;
-    parentPost: string;
+    parentPost?: string;
 }
 
 export interface ICommentModel extends IPostModel{
