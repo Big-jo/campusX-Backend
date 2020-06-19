@@ -1,3 +1,4 @@
+import { logger } from './../../shared/Logger';
 import { Merchant } from './../../entities/Merchant/Merchant';
 import { Router, Response, Request } from 'express';
 import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-codes';
@@ -15,11 +16,12 @@ const auth = validation.validateToken;
 /******************************************************************************/
 
 export const newMerchant = '/create';
-router.post(newMerchant, async (req: Request, res: Response) => {
+router.post(newMerchant, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Merchant.Create(req.body.merchantObject);
+        const result = await Merchant.Create(req.token.userID);
         res.status(OK).json({result});
     } catch (error) {
+        logger.error(error.message);
         Utility.ErrResponse(res);
     }
 });
@@ -37,3 +39,5 @@ router.get(getStores, async (req: Request, res: Response) => {
         Utility.ErrResponse(res);
     }
 });
+
+export default {router, path};
