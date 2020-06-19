@@ -5,7 +5,7 @@ import {IMerchantModel} from '../interfaces/IMerchant';
  *  Merchant is the owner of a store
  */
 const MerchantSchema: Schema = new Schema({
-   merchantID: {type: String, required: true},
+   // merchantID: {type: String, required: true},
    user: {type: Schema.Types.ObjectId, ref: 'User'},
    stores: [{type: Schema.Types.ObjectId, ref: 'Store'}],
 });
