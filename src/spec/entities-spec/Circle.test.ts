@@ -1,15 +1,6 @@
 // tslint:disable-next-line:no-console
 
 import chai from 'chai';
-import chaiHttp from 'chai-http';
-import Server from '../../Start';
-import { CREATED } from 'http-status-codes';
-import { IUser } from 'src/interfaces/IUser';
-import UserModel from 'src/models/User.model';
-import followers from 'src/models/Follower.model';
-import following from 'src/models/Following.model';
-import { Post } from '../../entities/Post';
-import { IPost } from '../../interfaces/IPost';
 import mongoose from 'mongoose';
 import IORedis from 'ioredis';
 // tslint:disable-next-line:import-spacing
@@ -71,7 +62,7 @@ describe('Circle Functions', () => {
     });
 
     it('should leave circe', done =>  {
-        Circle.LeaveCircle('5ea19738e3f8fb4dd13efbb0').then(value => {
+        Circle.Leave('5ea19738e3f8fb4dd13efbb0').then((value: any) => {
             expect(value).to.equal(0);
             done();
         }).catch(done);
@@ -84,9 +75,11 @@ describe('Circle Functions', () => {
             text: 'Hiiii Circle',
             circle: '5ea194efaf495f482aec212c',
             image: '5ea194efaf495f482aec212c',
+            campus: 'Bells University Of Technology'
         };
 
-        CirclePost.Post(postObject, client, '5ea194efaf495f482aec212c', '5ea197f080c21b4ead7a254a').then(value => {
+        // tslint:disable-next-line: max-line-length
+        CirclePost.CirclePost(postObject, client, '5ea194efaf495f482aec212c', '5ea197f080c21b4ead7a254a').then(value => {
             expect(value).to.equal(0);
             done();
         });
@@ -94,7 +87,7 @@ describe('Circle Functions', () => {
     });
 
     it('should get feed from circle ', done => {
-        Circle.GetCircleFeed('5ea194efaf495f482aec212c', '5ea197f080c21b4ead7a254a', client).then(value => {
+        Circle.GetCircleFeed('5ea194efaf495f482aec212c', client).then(value => {
             expect(value).to.have.property('circleFeed');
             expect(value.circleFeed).to.be.an('array');
             done();
