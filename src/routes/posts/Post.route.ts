@@ -53,6 +53,7 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
             text: req.body.text,
             video: req.body.video,
             campus: req.body.campus,
+            name: req.body.name,
         };
         // const result = await Post.CreatePost(post, req.token.userID, client, req.body.options, io);
         const io = res.locals.socketio;
