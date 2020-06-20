@@ -4,6 +4,8 @@ import validation from '../../middleware/auth';
 import { Store } from '../../entities/Store/Store';
 import { Utility } from '../../lib/utility';
 import { logger } from 'src/shared/Logger';
+import { Item } from 'src/entities/Store/Item';
+import { ItemSchema } from 'src/models/Item.model';
 
 const router = Router();
 const path = '/store';
@@ -22,7 +24,7 @@ router.post(createStorePath, async (req: Request, res: Response) => {
     try {
         const result = await Store.Create(req.body.storeName, req.body.storeObject);
         if (result.token) {
-            res.status(CREATED).json(result.token);
+            res.status(CREATED).json({token: result.token});
         } else {
             res.status(BAD_REQUEST).json({ exist: result.exist });
         }
@@ -43,9 +45,9 @@ export const storeLogin = '/login';
  */
 router.post(storeLogin, async (req: Request, res: Response) => {
     try {
-        const result = await Store.Login(req.body.email, req.body.password);
+        const result = await Store.Login(req.body.name, req.body.password);
         if (result!.token !== undefined) {
-            res.status(CREATED).json(result!.token);
+            res.status(OK).json({token: result!.token});
         } else {
             res.status(BAD_REQUEST).json({ exist: result!.badRequest });
         }
@@ -58,10 +60,10 @@ router.post(storeLogin, async (req: Request, res: Response) => {
 *                                 GET STORE CATALOGUE
 /******************************************************************************/
 
-export const cataloguePath = '/catalogue';
+export const cataloguePath = '/catalogue/:storeID';
 router.get(cataloguePath, async (req: Request, res: Response) => {
     try {
-        const result = await Store.Catalogue(req.body.storeID);
+        const result = await Store.Catalogue(req.params.storeID);
         res.status(OK).json({ catalogue: result.items });
     } catch (error) {
         Utility.ErrResponse(res);
@@ -76,7 +78,60 @@ export const updateStore = '/update';
 router.post(updateStore, async (req: Request, res: Response) => {
     try {
         const result = await Store.Update(req.body.storeID, req.body.updateField, req.body.updateValue);
-        if (result === 0) { res.status(CREATED); }
+        if (result === 0) { res.status(CREATED).send(); }
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
+});
+
+/******************************************************************************
+*                           Add Item To Store
+/******************************************************************************/
+export const addItems = '/addItem';
+router.post(addItems, async (req: Request, res: Response) => {
+    try {
+        console.log(req.body)
+        switch (req.body.options.multiDoc) {
+            case true:
+                const result = await Item.AddItems({multiDoc: true}, req.body.itemObject, req.body.items);
+                result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
+                break;
+            
+            case false:
+                const result2 = await Item.AddItems({multiDoc: false}, req.body.itemsObject);
+                result2 === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
+                break;
+            default:
+                break;
+        }
+    } catch (error) {
+        logger.error(error.message);
+        Utility.ErrResponse(res);
+    }
+})
+
+/******************************************************************************
+*                                 Update Item Property
+/******************************************************************************/
+export const updateItem = '/item/update';
+router.post(updateItem, async (req: Request, res: Response) => {
+    try {
+        const result = await Item.UpdateItemProperty(req.body.itemID, req.body.field, req.body.value);
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
+});
+
+/******************************************************************************
+*                                 Get Item
+/******************************************************************************/
+
+export const getItem = '/item/:itemID';
+router.get(getItem, async (req: Request, res: Response) => {
+    try {
+        const result = await Item.GetItem(req.params.itemID);
+        res.status(OK).json({result});
     } catch (error) {
         Utility.ErrResponse(res);
     }
