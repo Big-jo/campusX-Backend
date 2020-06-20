@@ -33,7 +33,7 @@ client.on('error', err => {
 export const createCircle = '/create';
 router.post(createCircle, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.Create(req.body.circleObject);
+        const result = await Circle.Create(req.body);
         if (result === 0) {
             res.status(CREATED).json('created');
         } else {
@@ -47,7 +47,7 @@ router.post(createCircle, async (req: Request, res: Response) => {
 export const joinCircle = '/join';
 router.post(joinCircle, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.Join(req.body.userID, req.body.circleID);
+        const result = await Circle.Join(req.token.userID, req.body.circleID);
         if (result.exist !== true) {
             res.status(OK).json({memberID: result.memberID});
         } else {
@@ -64,7 +64,7 @@ router.post(joinCircle, async (req: Request, res: Response) => {
 
 export const leaveCircle = '/leave';
 router.post(leaveCircle, async (req: Request, res: Response) => {
-    const result = await Circle.Leave(req.body.memberID);
+    const result = await Circle.Leave(req.body.circleID, req.token.userID);
     if (result === 0) {
         res.status(OK);
     }
@@ -74,8 +74,8 @@ router.post(leaveCircle, async (req: Request, res: Response) => {
 *                                 GET CIRCLE FEED
 /******************************************************************************/
 
-export const circleFeed = '/circle-feed';
-router.get(circleFeed, async (req: Request, res: Response) => {
+export const circleFeed = '/feed';
+router.get(circleFeed, auth, async (req: Request, res: Response) => {
     try {
         const result = await Circle.GetCircleFeed(req.body.circleID, client);
         res.status(OK).json({circleFeed: result.circleFeed});
@@ -100,6 +100,16 @@ router.post(circlePost, async (req: Request, res: Response) => {
     }
 });
 
-
-
+/******************************************************************************
+*                                 GET CIRCLES
+/******************************************************************************/
+export const getCircles = '/list';
+router.get(getCircles, async (req: Request, res: Response) => {
+    try {
+        const result = Circle.GetCircles();
+        res.status(OK).json({result});
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
+})
 export default { router, path };
