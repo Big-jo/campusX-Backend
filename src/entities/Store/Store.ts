@@ -54,9 +54,9 @@ export class Store {
     /******************************************************************************
     *                                 LOGIN TO A STORE
     /******************************************************************************/
-    public static async Login(email: string, password: string) {
+    public static async Login(storeName: string, password: string) {
         try {
-            const store = await StoreModel.findOne({ email }).exec();
+            const store = await StoreModel.findOne({name: storeName.toLowerCase()}).exec();
             if (store) {
                 const payload = {
                     storeID: store._id,
@@ -71,9 +71,11 @@ export class Store {
                 } else {
                     return { badRequest: 'email or password is not correct' };
                 }
+            } else {
+                return {exist: false};
             }
         } catch (error) {
-            logger.error(error);
+            logger.error(error.message);
             throw new Error(error);
         }
     }
