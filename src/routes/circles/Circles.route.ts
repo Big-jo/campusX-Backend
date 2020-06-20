@@ -1,5 +1,5 @@
-import { BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
-import { Request, Response, Router, response } from 'express';
+import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
+import { Request, Response, Router } from 'express';
 
 import { Circle } from '../../entities/Circles/Circle';
 import { CirclePost } from '../../entities/Circles/CirclePost';
@@ -45,7 +45,7 @@ router.post(createCircle, async (req: Request, res: Response) => {
 });
 
 export const joinCircle = '/join';
-router.post(joinCircle, async (req: Request, res: Response) => {
+router.post(joinCircle, auth, async (req: Request, res: Response) => {
     try {
         const result = await Circle.Join(req.token.userID, req.body.circleID);
         if (result.exist !== true) {
@@ -63,10 +63,10 @@ router.post(joinCircle, async (req: Request, res: Response) => {
 /******************************************************************************/
 
 export const leaveCircle = '/leave';
-router.post(leaveCircle, async (req: Request, res: Response) => {
+router.post(leaveCircle, auth, async (req: Request, res: Response) => {
     const result = await Circle.Leave(req.body.circleID, req.token.userID);
     if (result === 0) {
-        res.status(OK);
+        res.status(OK).send();
     }
 });
 
@@ -111,5 +111,5 @@ router.get(getCircles, async (req: Request, res: Response) => {
     } catch (error) {
         Utility.ErrResponse(res);
     }
-})
+});
 export default { router, path };
