@@ -20,8 +20,8 @@ before(() => {
 });
 
 describe('Item Functions', () => {
-    it('Add items to a store using a signle doc', done => {
-        const itemsObject: IItem = {
+    it('Add items to a store using a single doc', done => {
+        const itemObject: IItem = {
             description: 'It is a shoe',
             image_url: 'randome',
             name: 'Nike Air Max',
