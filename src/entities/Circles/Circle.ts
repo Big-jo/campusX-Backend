@@ -23,7 +23,7 @@ export class Circle {
             return 0;
         }
         } catch (error) {
-            logger.error(error);
+            logger.error(error.message);
             throw new Error(error);
         }
     } 
@@ -47,9 +47,9 @@ export class Circle {
         }
     }
 
-    public static async Leave(memberID: string) {
+    public static async Leave(circleID: string, userID: string) {
         try {
-            await CircleMemberModel.findByIdAndDelete(memberID).exec();
+            await CircleMemberModel.findOneAndDelete({circle: circleID, userID}).exec();
             return 0;
         } catch (error) {
             logger.error(error);
@@ -66,12 +66,18 @@ export class Circle {
 
             // Write Sort Algorithm for Posts 😢 
         } catch (error) {
-            logger.error(error);
+            logger.error(error.message);
             throw new Error(error);
         }
     }
 
-    /******************************************************************************
-    *                                 Utility Function
-    /******************************************************************************/
+    public static async GetCircles() {
+        try {
+            const circles = CircleModel.find().exec();
+            return {circles};
+        } catch (error) {
+            logger.error(error.message);
+            throw new Error(error);
+        }
+    }
 }
