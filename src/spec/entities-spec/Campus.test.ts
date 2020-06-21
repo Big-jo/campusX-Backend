@@ -22,15 +22,15 @@ before( () => {
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
     /* Set Up Redis */
-    client.on('connect', () => {
-        console.log('connected');
-        // console.log(x);
-    });
+    // client.on('connect', () => {
+    //     console.log('connected');
+    //     // console.log(x);
+    // });
 
-    client.on('error', (err) => {
-        // console.error(err);
-        console.log(err);
-    });
+    // client.on('error', (err) => {
+    //     // console.error(err);
+    //     console.log(err);
+    // });
 });
 
 describe('Campus related functions', () => {

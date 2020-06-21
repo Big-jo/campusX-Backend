@@ -9,7 +9,7 @@ import {IItem, IItemModel} from '../../interfaces/IItem';
 import {throws} from 'assert';
 import {StoreTransaction} from './StoreTransaction';
 import {IStoreTransaction} from '../../interfaces/IStoreTransaction';
-import MerchantModel from 'src/models/Merchant.model';
+import MerchantModel from '../../models/Merchant.model';
 
 export class Store {
     // constructor() { }

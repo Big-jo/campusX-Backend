@@ -1,7 +1,7 @@
 import PostModel from '../models/Post.model';
 import FollowingModel, {IFollowing} from '../models/Following.model';
 import UserModel from '../models/User.model';
-import {IComment, IPost, IPostModel} from 'src/interfaces/IPost';
+import {IComment, IPost, IPostModel} from '../interfaces/IPost';
 import {logger} from '../shared/Logger';
 import arraySort from 'array-sort';
 import moment from 'moment';

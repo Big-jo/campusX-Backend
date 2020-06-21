@@ -29,7 +29,7 @@ if (process.env.NODE_ENV === 'development') {
 
 client.on('connect', args => {
     logger.info('Redis Connected');
-})
+});
 
 client.on('error', err => {
     logger.error(err);

@@ -1,6 +1,5 @@
 import { logger } from './../../shared/Logger';
-import { IMerchant } from 'src/interfaces/IMerchant';
-import MerchantModel from 'src/models/Merchant.model';
+import MerchantModel from '../../models/Merchant.model';
 
 export class Merchant {
     

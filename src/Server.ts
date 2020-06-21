@@ -71,7 +71,5 @@ app.get('*', (req: Request, res: Response) => {
 
 const newsfeed = new Newsfeed(io);
 
-
-
 // Export express instance
 export { server, io};

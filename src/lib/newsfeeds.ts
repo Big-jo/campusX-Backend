@@ -6,11 +6,26 @@ import EventEmitter from 'events';
 import {logger} from '@shared';
 
 export class Newsfeed {
-    private cacheClient = new IORedis();
+    private cacheClient: IORedis.Redis;
     private feedEmitter1 = new EventEmitter(); // Emitter for synchronization with creating post
     private feedEmitter2 = new EventEmitter();
 
     constructor(private io: SocketIO.Server) {
+
+        if (process.env.NODE_ENV === 'development') {
+            this.cacheClient = new IORedis();
+        } else {
+           const redisPort = Number(process.env.REDIS_PORT);
+           this.cacheClient = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+        }
+
+        this.cacheClient.on('connect', args => {
+            logger.info('Redis Connected');
+         });
+         
+        this.cacheClient.on('error', err => {
+            logger.error(err);
+         });
 
         io.on('connection', async socket => {
             const userID = socket.handshake.query.userID;

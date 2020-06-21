@@ -15,17 +15,23 @@ import validation from '../../middleware/auth';
 const router = Router();
 const path = '/circles';
 const auth = validation.validateToken;
-const redisPort = Number(process.env.REDIS_PORT);
-const client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
- /* Set Up Redis */
-client.on('connect', () => {
-    logger.log('info', 'connected');
-});
-
+let client: IORedis.Redis;
+/******************************************************************************
+ *                                 SETUP REDIS
+ /******************************************************************************/
+if (process.env.NODE_ENV === 'development') {
+    client = new IORedis();
+} else {
+   const redisPort = Number(process.env.REDIS_PORT);
+   client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+}
+client.on('connect', args => {
+    logger.info('Redis Connected');
+ });
+ 
 client.on('error', err => {
-    // console.error(err);
-    logger.error(err);
-});
+    logger.error(err.message);
+ });
 /******************************************************************************
 *                                 
 /******************************************************************************/
