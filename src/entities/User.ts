@@ -150,11 +150,29 @@ export class User {
              *  Update: Data to update the field with
              */
 
-            UserModel.findOneAndUpdate({_id: userID}, {[field]: update});
+            await UserModel.findOneAndUpdate({_id: userID}, {[field]: update});
             return 0;
 
         } catch (error) {
             logger.error(error);
+        }
+    }
+
+    public static async UpdateUserProfile(userID: string, update: any) {
+        try {
+
+            await UserModel.update({id: userID}, {
+                $set: {
+                    university: update.university,
+                    gender: update.gender,
+                    bio: update.bio,
+                },
+            });
+
+            return 0;
+
+        } catch (error) {
+            logger.error(error.error);
         }
     }
 
