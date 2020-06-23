@@ -10,6 +10,7 @@ import {throws} from 'assert';
 import {StoreTransaction} from './StoreTransaction';
 import {IStoreTransaction} from '../../interfaces/IStoreTransaction';
 import MerchantModel from '../../models/Merchant.model';
+import {error} from 'winston';
 
 export class Store {
     // constructor() { }
@@ -138,5 +139,15 @@ export class Store {
             }
         }
         return {valid: true};
+    }
+
+    public static async GetStores() {
+        try {
+            const stores = await StoreModel.find({}, {password: 0}).lean().exec();
+            return {stores};
+        } catch (e) {
+            logger.error(e.error);
+            throw new Error(e);
+        }
     }
 }
