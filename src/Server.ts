@@ -1,5 +1,6 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import * as sentry from '@sentry/node';
 import {
     Request,
     Response,
@@ -37,7 +38,7 @@ Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 // Init express
 
 const app = express();
-
+sentry.init({dsn: 'https://1c1c4292267644e2b1fbed99f9eebfb0@o411372.ingest.sentry.io/5286469'});
 //  Setup socketIO
 const server = http.createServer(app);
 
@@ -46,9 +47,7 @@ const io = socketIO.listen(server);
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
 // });
-
-
-
+  
 app.use(cors());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -64,12 +63,23 @@ app.use(express.urlencoded({
 }));
 app.use((req, res, next) => { res.locals.socketio = io; next(); });
 app.use(cookieParser());
-app.use(BaseRouter.path, BaseRouter.router);
-app.get('*', (req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
     res.status(NOT_FOUND).send('Oops the resource does not exist');
 });
 
+app.use(BaseRouter.path, BaseRouter.router);
+
 const newsfeed = new Newsfeed(io);
+
+app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
+
+// Optional fallthrough error handler
+// app.use(function onError(err: any, req: any, res: any, next: any) {
+//     // The error id is attached to `res.sentry` to be returned
+//     // and optionally displayed to the user for support.
+//     res.statusCode = 500;
+//     res.end(res.sentry + '\n');
+//   });
 
 // Export express instance
 export { server, io};
