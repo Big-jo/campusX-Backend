@@ -136,6 +136,21 @@ router.get(getItem, async (req: Request, res: Response) => {
     }
 });
 
+/******************************************************************************
+ *                                 Get Stores
+ /******************************************************************************/
+
+export const getStores = '/all';
+router.get(getStores, async (req: Request, res: Response) => {
+    try {
+        const result = await Store.GetStores();
+        res.status(OK).json({result});
+    } catch (error) {
+        Utility.ErrResponse(res);
+    }
+});
+
+
 // TODO: Purchase API
 
 export default { router, path };
