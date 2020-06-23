@@ -17,6 +17,7 @@
     "@server": "dist/Server"
   },
   "dependencies": {
+    "@sentry/node": "^5.17.0",
     "@types/bcrypt-nodejs": "0.0.30",
     "@types/express-ws": "^3.0.0",
     "@types/ioredis": "^4.14.9",
