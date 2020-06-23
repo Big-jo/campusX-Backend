@@ -46,7 +46,7 @@ router.post(createCircle, async (req: Request, res: Response) => {
             res.status(BAD_REQUEST).json({ exist: true});
         }
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -60,7 +60,7 @@ router.post(joinCircle, auth, async (req: Request, res: Response) => {
             res.status(BAD_REQUEST).json({exist: true});
         }
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -86,7 +86,7 @@ router.get(circleFeed, auth, async (req: Request, res: Response) => {
         const result = await Circle.GetCircleFeed(req.body.circleID, client);
         res.status(OK).json({circleFeed: result.circleFeed});
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -102,7 +102,7 @@ router.post(circlePost, async (req: Request, res: Response) => {
             res.status(CREATED);
         }
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -112,10 +112,10 @@ router.post(circlePost, async (req: Request, res: Response) => {
 export const getCircles = '/list';
 router.get(getCircles, async (req: Request, res: Response) => {
     try {
-        const result = Circle.GetCircles();
+        const result = await Circle.GetCircles();
         res.status(OK).json({result});
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 export default { router, path };

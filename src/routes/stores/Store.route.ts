@@ -29,8 +29,7 @@ router.post(createStorePath, async (req: Request, res: Response) => {
         }
 
     } catch (error) {
-        logger.error(error);
-        Utility.ErrResponse (res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -51,7 +50,7 @@ router.post(storeLogin, async (req: Request, res: Response) => {
             res.status(BAD_REQUEST).json({ exist: result!.badRequest });
         }
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -65,7 +64,7 @@ router.get(cataloguePath, async (req: Request, res: Response) => {
         const result = await Store.Catalogue(req.params.storeID);
         res.status(OK).json({ catalogue: result.items });
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -79,8 +78,7 @@ router.post(updateStore, async (req: Request, res: Response) => {
         const result = await Store.Update(req.body.storeID, req.body.updateField, req.body.updateValue);
         if (result === 0) { res.status(CREATED).send(); }
     } catch (error) {
-        Utility.ErrResponse(res);
-    }
+        Utility.ErrResponse(res, error);    }
 });
 
 /******************************************************************************
@@ -104,8 +102,7 @@ router.post(addItems, async (req: Request, res: Response) => {
                 break;
         }
     } catch (error) {
-        logger.error(error.message);
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 })
 
@@ -118,7 +115,7 @@ router.post(updateItem, async (req: Request, res: Response) => {
         const result = await Item.UpdateItemProperty(req.body.itemID, req.body.field, req.body.value);
         result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -132,7 +129,7 @@ router.get(getItem, async (req: Request, res: Response) => {
         const result = await Item.GetItem(req.params.itemID);
         res.status(OK).json({result});
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -146,7 +143,7 @@ router.get(getStores, async (req: Request, res: Response) => {
         const result = await Store.GetStores();
         res.status(OK).json({result});
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 

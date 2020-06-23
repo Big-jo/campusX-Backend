@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { Response } from 'express';
 import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
-
+import {logger} from '@shared';
+import sentry from './sentry';
 export class Utility {
 
     constructor() {}
@@ -11,11 +12,10 @@ export class Utility {
         return jwt.sign(payload, secret);
     }
 
-    public static ErrResponse(res: Response) {
-        const errMsg = { error: 'Oops, an error occurred' };
-
+    public static ErrResponse(res: Response, err: any) {
+        const errMsg = { error: err.message };
+        logger.error(err.message);
+        sentry.captureException(err);
         res.status(INTERNAL_SERVER_ERROR).json(errMsg);
     }
-    
-    
 }

@@ -21,8 +21,7 @@ router.post(newMerchant, auth, async (req: Request, res: Response) => {
         const result = await Merchant.Create(req.token.userID);
         res.status(OK).json({result});
     } catch (error) {
-        logger.error(error.message);
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -36,7 +35,7 @@ router.get(getStores, async (req: Request, res: Response) => {
         const result = await Merchant.GetStores(req.body.merchantID);
         res.status(OK).json({result});
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 

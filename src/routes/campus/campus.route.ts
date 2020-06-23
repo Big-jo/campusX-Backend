@@ -39,7 +39,7 @@ router.get(getCampuses, async (req: Request, res: Response) => {
         const result = await Campus.GetList(client);
         res.status(OK).json({campuses: result});
     } catch (error) {
-        Utility.ErrResponse(error);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -49,7 +49,7 @@ router.get(getPost, async (req: Request, res: Response) => {
         const result = await Campus.GetPosts(client, req.body.campus);
         res.status(OK).json({result});
     } catch (error) {
-        Utility.ErrResponse(error);
+        Utility.ErrResponse(res, error);
     }
 });
 

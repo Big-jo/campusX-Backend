@@ -45,8 +45,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             });
         }
     } catch (error) {
-        logger.error(error, error.message);
-        return res.status(INTERNAL_SERVER_ERROR).json();
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -71,10 +70,7 @@ router.post(loginPath, async (req: Request, res: Response) => {
             res.status(BAD_REQUEST).json({ exist: false });
         }
     } catch (error) {
-        logger.error(error, error.message);
-        res.status(INTERNAL_SERVER_ERROR).json({
-            error: errorMessage,
-        });
+        Utility.ErrResponse(res, error);
     }
 
 });
@@ -90,7 +86,7 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
         const result = await User.FollowUser(req.body.targetUserID, req.token.userID);
         result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
     } catch (e) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, e);
     }
 
 });
@@ -108,7 +104,7 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
             result,
         });
     } catch (e) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, e);
     }
 });
 
@@ -123,7 +119,7 @@ router.post(updateUserPath, auth, async (req: Request, res: Response) => {
         const result = await User.UpdateUser(field, req.token.userID, req.body.update);
         result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -136,7 +132,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
         const result = await User.UpdateUserProfile(req.token.userID, req.body.update);
         result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);;
     }
 });
 
@@ -146,10 +142,10 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-     const result = User.ConnectUser(req.token.userID);
+     const result = await User.ConnectUser(req.token.userID);
      res.status(OK).json({result});
     } catch (error) {
-        Utility.ErrResponse(error);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -162,7 +158,7 @@ router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request,
         const result = await User.UploadAvatar(req.file, req.token.userID);
         res.status(OK).json({ result });
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -175,7 +171,7 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
         const userTag = await User.AvailableUserTag(req.params.tag);
         userTag === 0 ? res.status(OK).json({ available: true }) : res.status(OK).json({ available: false });
     } catch (e) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, e);
     }
 });
 

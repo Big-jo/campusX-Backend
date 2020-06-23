@@ -64,7 +64,7 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({error: 'Sorry, error in the details your details'});
 
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -87,7 +87,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
     } catch (e) {
         logger.error(e);
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, e);
     }
 });
 
@@ -103,8 +103,7 @@ router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
         res.status(OK).json({result});
         // TODO: Rank comments
     } catch (e) {
-        logger.error(e);
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, e);
     }
 });
 /*********************************************************
@@ -122,7 +121,7 @@ router.get(getPostsPath, async (req, res) => {
         res.status(200);
     } catch (error) {
         logger.error(error, error.message);
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -155,8 +154,7 @@ router.post(likePostPath, auth, async (req: Request, res: Response) => {
         const result = await Post.LikePost(req.token.userID, req.body.postID);
         result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
     } catch (error) {
-        logger.error(error, error);
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -169,7 +167,7 @@ router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
         const result = await Post.DislikePost(req.token.userID, req.body.postID);
         result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
     } catch (error) {
-        Utility.ErrResponse(res);
+        Utility.ErrResponse(res, error);
     }
 });
 

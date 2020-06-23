@@ -4,6 +4,7 @@ import { NextFunction, Response, Request } from 'express';
 import { OK, UNAUTHORIZED } from 'http-status-codes';
 import { IUser, IUserProfile } from 'src/interfaces/IUser';
 import { logger } from '@shared';
+import {Utility} from '../lib/utility';
 
 const validation = {
     validateToken: (req: any, res: Response, next: NextFunction) => {
@@ -22,9 +23,8 @@ const validation = {
 
                 next();
             } catch (error) {
-                logger.error(error.error);
                 // Throw an error if anything goes wrong with verification
-                throw new Error(error);
+                Utility.ErrResponse(res, error);
             }
         } else {
             res.status(UNAUTHORIZED).json({
