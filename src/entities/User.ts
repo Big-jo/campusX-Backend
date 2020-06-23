@@ -160,12 +160,11 @@ export class User {
 
     public static async UpdateUserProfile(userID: string, update: any) {
         try {
-
-            await UserModel.update({id: userID}, {
+            await UserModel.update({_id: userID}, {
                 $set: {
-                    university: update.university,
-                    gender: update.gender,
-                    bio: update.bio,
+                    'userProfile.university': update.university,
+                    'userProfile.gender': update.gender,
+                    'userProfile.bio': update.bio,
                 },
             });
 
