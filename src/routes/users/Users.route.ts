@@ -131,7 +131,7 @@ router.post(updateUserPath, auth, async (req: Request, res: Response) => {
 *                                 Update User Profile
 /******************************************************************************/
 const updateUserProfile = '/update/profile';
-router.post(updateUserPath, auth, async (req: Request, res: Response) => {
+router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.UpdateUserProfile(req.token.userID, req.body.update);
         result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
