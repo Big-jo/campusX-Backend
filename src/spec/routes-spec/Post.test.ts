@@ -1,7 +1,7 @@
 import {BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
 import {Response, SuperTest, Test} from 'supertest';
 import supertest from 'supertest';
-import app from '../../Server';
+import {server} from '@server';
 // import {paramMissingError} from '@shared/constants';
 import mongoose from 'mongoose';
 import {logger} from '../../shared/Logger';
@@ -15,7 +15,7 @@ const BaseApi = '/api/v1/post';
 // const getUserInfo = `${usersPath}/queryUser/5e7d47e80cb878546927c7d8`;
 
 let agent: SuperTest<Test>;
-agent = supertest.agent(app, {});
+agent = supertest.agent(server, {});
 const token = process.env.token as string;
 const postID = '5e91ea9a2817fa581481411f';
 const userID = '5dda8548843d9d433ed23b4e';
@@ -91,6 +91,10 @@ describe('Comment Operations', () => {
         userTag: '@Big-jo',
         author: userID,
         text: 'Heyyy there',
+        campus: 'Bells University Of Technology',
+        image: '....',
+        name: 'Joseph Henshaw',
+        video: '....',
     };
 
     it('should create a comment and return 201', done => {

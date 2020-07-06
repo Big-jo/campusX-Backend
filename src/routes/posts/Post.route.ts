@@ -81,7 +81,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             author: req.body.author,
             userTag: req.body.userTag,
             parentPost: req.body.parentPost,
-            campus: req.token.userProfile.university,
+            campus: req.body.university,
         };
         const result = await Post.Comment(commentObject);
         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();

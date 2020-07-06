@@ -191,13 +191,7 @@ export class Post {
 
     public static async Comment(commentObject: IComment) {
         try {
-            const comment = new PostModel({
-                author: commentObject.author,
-                text: commentObject.text,
-                video: commentObject.video,
-                image: commentObject.image,
-                parentPost: commentObject.parentPost,
-            }).save();
+            const comment = new PostModel(commentObject).save();
             return 0;
         } catch (e) {
             logger.error(e);
