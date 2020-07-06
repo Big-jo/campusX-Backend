@@ -40,7 +40,7 @@ export class User {
                     campus: user.userProfile.university,
                     // userProfile: user.userProfile,
                 };
-                return {token: Utility.createToken(payload)};
+                return {token: Utility.createToken(payload), user: {userTag: user.userTag}};
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
@@ -63,6 +63,7 @@ export class User {
                     const token = jwt.sign(payload, secret);
                     return {
                         token,
+                         user: {userTag: user.userTag, university: user.userProfile.university}
                     };
                 } else {
                     return {incorrect: true};

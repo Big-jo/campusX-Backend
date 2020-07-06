@@ -60,11 +60,11 @@ export const errorMessage = 'Oops sorry, error logging you in';
 router.post(loginPath, async (req: Request, res: Response) => {
     try {
         const result = await User.Login(req.body.email, req.body.password);
-        logger.log('info', req.body);
         if (result.token) {
             res.status(CREATED).json({
                 message: 'login successful',
                 token: result.token,
+                user: result.user,
             });
         } else {
             res.status(BAD_REQUEST).json({ exist: false });
