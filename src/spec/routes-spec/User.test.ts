@@ -4,7 +4,7 @@
 import {BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR} from 'http-status-codes';
 import {Response, SuperTest, Test} from 'supertest';
 import supertest from 'supertest';
-import app from '../../Server';
+import {server} from '@server';
 // import {paramMissingError} from '@shared/constants';
 import mongoose from 'mongoose';
 import {logger} from '@shared';
@@ -17,7 +17,7 @@ const usersBaseApi = '/api/v1/users';
 // const getUserInfo = `${usersPath}/queryUser/5e7d47e80cb878546927c7d8`;
 
 let agent: SuperTest<Test>;
-agent = supertest.agent(app);
+agent = supertest.agent(server);
 const userID = '5dda8548843d9d433ed23b4e';
 
 before(done => {
@@ -72,14 +72,16 @@ describe('Log In User', () => {
     it('should return token', done => {
         const request = {
             email: 'furiousjoe16@gmail.com',
-            password: '1101',
+            password: 'Mmedaraetuk16',
         };
         agent.post(`${usersBaseApi}${loginPath}`).send(request).end((err: Error, res: Response) => {
-
+            if (err) { console.log(err.message) }
             if (res.body.exist) {
                 expect(res.body.exist).to.equal(false);
             } else {
+                console.log(res.body);
                 expect(res.body).to.have.property('token');
+                expect(res.body).to.have.property('user');
                 expect(res.status).to.not.equal(INTERNAL_SERVER_ERROR);
                 done();
             }
