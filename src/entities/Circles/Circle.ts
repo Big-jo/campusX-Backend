@@ -1,6 +1,6 @@
 import { ICircle } from '../../interfaces/ICircle';
 import CircleModel from '../../models/Circle.model';
-import { logger } from '../../shared/Logger';
+import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
 
@@ -73,7 +73,7 @@ export class Circle {
 
     public static async GetCircles() {
         try {
-            const circles = CircleModel.find().exec();
+            const circles = await CircleModel.find().exec();
             return {circles};
         } catch (error) {
             logger.error(error.message);
