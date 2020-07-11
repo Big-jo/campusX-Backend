@@ -121,3 +121,5 @@ node_modules
 .nyc_output
 .idea
 .mocharc.json
+src/spec/routes-spec/test-media
+src/spec/lib-spec/tmp
