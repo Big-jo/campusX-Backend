@@ -75,6 +75,7 @@ app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
 app.use(function onError(err: any, req: any, res: any, next: any) {
     // The error id is attached to `res.sentry` to be returned
     // and optionally displayed to the user for support.
+    console.log(err.message);
     res.statusCode = 500;
     res.end(res.sentry + '\n');
   });
