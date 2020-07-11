@@ -75,7 +75,7 @@ describe('Log In User', () => {
             password: 'Mmedaraetuk16',
         };
         agent.post(`${usersBaseApi}${loginPath}`).send(request).end((err: Error, res: Response) => {
-            if (err) { console.log(err.message) }
+            if (err) { console.log(err.message); }
             if (res.body.exist) {
                 expect(res.body.exist).to.equal(false);
             } else {
@@ -91,7 +91,7 @@ describe('Log In User', () => {
 
 describe('Get user info', () => {
 
-    it('should return user followers',done => {
+    it('should return user followers', done => {
         agent.get(`${usersBaseApi}/getUser/${userID}/followers`)
             .set('Authorization', `Authorization ${process.env.token as string}`)
             .end((err: Error, res: Response) => {
@@ -101,7 +101,7 @@ describe('Get user info', () => {
         });
     });
 
-    it('should return user followings',done => {
+    it('should return user followings', done => {
         agent.get(`${usersBaseApi}/getUser/${userID}/followings`)
             .set('Authorization', `Authorization ${process.env.token as string}`)
             .end((err: Error, res: Response) => {
@@ -111,7 +111,7 @@ describe('Get user info', () => {
         });
     });
         
-    it('should return the user profile',done => {
+    it('should return the user profile', done => {
         agent.get(`${usersBaseApi}/getUser/${userID}/user`)
             .set('Authorization', `Authorization ${process.env.token as string}`)
             .end((err: Error, res: Response) => {

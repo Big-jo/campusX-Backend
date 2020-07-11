@@ -8,7 +8,6 @@ import {Campus} from '../../entities/Campus';
 const client = new IORedis(redisPort);
 const userID = '5dda8548843d9d433ed23b4e';
 
-
 before( () => {
     const URI = process.env.MONGO_URI as string;
     mongoose.connect(URI, {
@@ -34,7 +33,7 @@ before( () => {
 });
 
 describe('Campus related functions', () => {
-    it('should get all campuses available',done => {
+    it('should get all campuses available', done => {
         const post: IPost = {
             text: 'Testing 5',
             author: '5dda8548843d9d433ed23b4e',

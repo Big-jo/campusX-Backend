@@ -43,13 +43,13 @@ describe('Create Post', () => {
     const post = {
         userTag: '@Big-jo',
         author: 'Joseph Henshaw',
-        text: 'Hiiiii',
+        text: 'Testing this image out',
         options: {
             anonymous: false,
-        }
+        },
     };
 
-    it('Should create a new post and return 201', done => {
+    it('Should create a post with just text and return 201', done => {
         agent.post(`${BaseApi}/create`)
             .send(post)
             .set('Authorization', `Authorization ${process.env.token as string}`)
@@ -58,6 +58,18 @@ describe('Create Post', () => {
                 done();
             });
     });
+
+    it('Should create a post with just text and an image and return 201', done => {
+        agent.post(`${BaseApi}/create`)
+            .field('postObject', JSON.stringify(post))
+            .set('Authorization', `Authorization ${process.env.token as string}`)
+            .attach('image', __dirname + '/test-media/picture.jpg')
+            .end((err: Error, res: Response) => {
+                expect(res.status).to.equal(CREATED);
+                done();
+            });
+    });
+
 
 });
 

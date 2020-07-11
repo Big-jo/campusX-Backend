@@ -1,15 +1,6 @@
 import chai, { expect } from 'chai';
-import chaiHttp from 'chai-http';
-import Server from '../../Start';
-import { CREATED } from 'http-status-codes';
-import { IUser } from 'src/interfaces/IUser';
-import UserModel from 'src/models/User.model';
-import followers from 'src/models/Follower.model';
-import following from 'src/models/Following.model';
 import { User } from '../../entities/User';
 import mongoose from 'mongoose';
-import { logger } from '../../shared/Logger';
-import {error} from 'winston';
 // import it = Mocha.it;
 
 const should = chai.should();
@@ -33,7 +24,7 @@ before(() => {
 });
 
 describe('User Related Functions', () => {
-    it('should create a new user and return a token',done => {
+    it('should create a new user and return a token', done => {
         const user = {
             name: 'Joseph Henshaw',
             email: 'furiousjoe288@gmail.com',
@@ -63,7 +54,7 @@ describe('User Related Functions', () => {
 
     });
 
-    it('should return a token',done => {
+    it('should return a token', done => {
         User.Login('furiousjoe16@gmail.com', 'Mmedaraetuk16').then(result => {
             token = result!.token;
             expect(result).to.be.an('object');
@@ -87,7 +78,7 @@ describe('User Related Functions', () => {
         }).catch(done);
     });
 
-    it('should return a user/s profile',done => {
+    it('should return a user/s profile', done => {
         User.GetUser('user', '5dda8548843d9d433ed23b4e').then(result => {
             expect(result).to.have.property('user');
             expect(result!.user).not.to.be.an('array');
@@ -95,7 +86,7 @@ describe('User Related Functions', () => {
         }).catch(done);
     });
 
-    it('should update a user field and return a number',done => {
+    it('should update a user field and return a number', done => {
         User.UpdateUser('name', '5dda8548843d9d433ed23b4e', 'Richard Henshaw').then(result => {
             expect(result).to.be.a('number');
             expect(result).to.equal(0);
@@ -111,7 +102,7 @@ describe('User Related Functions', () => {
 
     it('should get users from same campus and other campuses', function(done) {
         User.ConnectUser(userID).then(value => {
-            console.log(value)
+            console.log(value);
             expect(value).to.be.an('object');
             expect(value).to.have.property('onCampusUsers');
             expect(value).to.have.property('onOtherCampuses');

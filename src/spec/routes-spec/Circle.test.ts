@@ -1,7 +1,7 @@
 import {BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
 import {Response, SuperTest, Test} from 'supertest';
 import supertest from 'supertest';
-import {server} from '../../Server';
+import {server} from '@server';
 // import {paramMissingError} from '@shared/constants';
 import mongoose from 'mongoose';
 import {logger} from '@shared';
@@ -16,7 +16,7 @@ const circleID = '5ea194efaf495f482aec212c';
 const memberID = '5ea197f080c21b4ead7a254a';
 
 let agent: SuperTest<Test>;
-agent = supertest.agent(app);
+agent = supertest.agent(server);
 
 before(done => {
     const URI = process.env.MONGO_URI as string;
