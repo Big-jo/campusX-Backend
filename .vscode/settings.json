@@ -9,5 +9,5 @@
     },
     "mochaExplorer.require": "ts-node/register",
     "mochaExplorer.files": "src/spec/**/*ts",
-    "editor.quickSuggestions.comments": true
+    "editor.quickSuggestions.comments": true,
 }

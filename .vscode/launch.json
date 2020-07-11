@@ -1,4 +1,46 @@
 {
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "args": [],
+      "cwd": "${workspaceRoot}",
+      "env": {
+        "MONGO_URI": "mongodb://localhost:27017/campusX",
+        "PORT": "3000",
+        "HOST": "localhost",
+        "JWT_SECRET": "abcdefghijklmnop",
+        "NODE_ENV": "development",
+        "REDIS_PORT": "6379",
+        "SERVER_KEY": "absceceec",
+        "SPACES_ACCESS_KEY": "FTVDMDSV4BNQ3QZKE6DW",
+        "SPACES_SECRET": "7Rm+X+P1yad276laydyenQmSQzclMIH3qtgYuLQRM0A",
+        "SPACES_BUCKET_AVATAR": "campusx/avatars",
+        "SPACES_BUCKET_IMAGE":"campusx/images",
+        "SPACES_BUCKET_VIDEO":"campusx/videos",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGUiLCJ1c2VyUHJvZmlsZSI6eyJyZXBfcG9pbnRzIjoyLjQ1LCJfaWQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGYiLCJ1bml2ZXJzaXR5IjoiQmVsbHMgVW5pdmVyc2l0eSBPZiBUZWNobm9sb2d5IiwiZ2VuZGVyIjoibWFsZSIsImJpbyI6IjMwMCJ9LCJpYXQiOjE1ODc4NTIwODR9.85Supm15TpTSpZbSvEVy0wfLIh9B6Fl8r490AOuUbmI"
+      },
+      "console": "internalConsole",
+      "name": "DEBUG",
+      "outFiles": ["${workspaceRoot}/dist/**/*.js"],
+      "preLaunchTask": "compile",
+      "program": "${workspaceRoot}/src/Start.ts",
+      "request": "launch",
+      "runtimeArgs": ["--nolazy", "-r","module-alias/register"],
+      "runtimeExecutable": null,
+      "sourceMaps": true,
+      "stopOnEntry": false,
+      "type": "node"
+    },
+    {
+      "name": "Attach",
+      "type": "node",
+      "request": "attach",
+      "port": 3000,
+      "address": "localhost"
+    }
+  ]
+}
+{
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
@@ -8,10 +50,17 @@
             "args": [],
             "cwd": "${workspaceRoot}",
             "env": {
-                "SESSION_SECRET": "abcefghijklm",
+                "MONGO_URI": "mongodb://localhost:27017/campusX",
+                "PORT": "3000",
+                "HOST":"localhost",
                 "JWT_SECRET":"abcdefghijklmnop",
-                "MONGO_URI": "mongodb://localhost:27017/campusX"
-
+                "NODE_ENV":"development",
+                "REDIS_PORT": "6379",
+                "SERVER_KEY": "absceceec",
+                "SPACES_ACCESS_KEY":"FTVDMDSV4BNQ3QZKE6DW",
+                "SPACES_SECRET":"7Rm+X+P1yad276laydyenQmSQzclMIH3qtgYuLQRM0A",
+                "SPACES_BUCKET_AVATAR":"campusx/avatars",
+                "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGUiLCJ1c2VyUHJvZmlsZSI6eyJyZXBfcG9pbnRzIjoyLjQ1LCJfaWQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGYiLCJ1bml2ZXJzaXR5IjoiQmVsbHMgVW5pdmVyc2l0eSBPZiBUZWNobm9sb2d5IiwiZ2VuZGVyIjoibWFsZSIsImJpbyI6IjMwMCJ9LCJpYXQiOjE1ODc4NTIwODR9.85Supm15TpTSpZbSvEVy0wfLIh9B6Fl8r490AOuUbmI"
             },
             "name": "DEBUG",
             "outFiles": ["${workspaceRoot}/dist/**/*.js"],
@@ -38,5 +87,24 @@
             "outFiles": [],
             "localRoot": "${workspaceRoot}",
             "remoteRoot": null
-        }
+        },
+    ]
 }
+
+// {
+//   "version": "0.2.0",
+//   "configurations": [
+//     {
+//       "name": "DEBUG1",
+//       "type": "node",
+//       "request": "launch",
+//       "runtimeArgs": [
+//         "-r",
+//         "ts-node/register",
+//         "-r",
+//         "tsconfig-paths/register"
+//       ],
+//       "args": ["${workspaceFolder}/src/Start.ts"]
+//     }
+//   ]
+// }
