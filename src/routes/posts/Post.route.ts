@@ -10,10 +10,13 @@ import IORedis from 'ioredis';
 import { Utility } from '../../lib/utility';
 
 import {Newsfeed} from '../../lib/newsfeeds';
+import multer from 'multer';
 
 const router = Router();
 const path = '/post';
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 const auth = validation.validateToken;
 let client: IORedis.Redis;
 /******************************************************************************
@@ -40,7 +43,7 @@ client.on('error', err => {
  *********************************************************/
 export const createPostPath = '/create';
 // TODO: Remove exported error messages in other routes;
-router.post(createPostPath, auth, async (req: Request, res: Response) => {
+router.post(createPostPath, auth, upload.single('image'), async (req: Request, res: Response) => {
     // TODO: Move to post lib .
     // TODO: Add option for anonymous posts.
     try {
@@ -49,16 +52,17 @@ router.post(createPostPath, auth, async (req: Request, res: Response) => {
         const post: IPost = {
             userTag: req.body.userTag,
             author: req.token.userID,
-            image: req.body.image,
+            image: req.file,
             text: req.body.text,
-            video: req.body.video,
             campus: req.body.campus,
             name: req.body.name,
         };
         // const result = await Post.CreatePost(post, req.token.userID, client, req.body.options, io);
         const io = res.locals.socketio;
         const newsfeed = new Newsfeed(io);
-        const options = req.body.options;
+        const options = {
+            anon: req.body.anon,
+        };
         const result = await newsfeed.ConstructNewsFeed(post, req.token.userID, {anonymous: options.anon});
         // tslint:disable-next-line: max-line-length
         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({error: 'Sorry, error in the details your details'});
