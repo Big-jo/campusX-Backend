@@ -23,8 +23,8 @@ export interface IPost {
     author?: string;
     text?: string;
     userTag: string;
-    video?: string;
-    image?: string;
+    video?: any;
+    image?: any;
     campus: string;
     parentPost?: string;
 }
