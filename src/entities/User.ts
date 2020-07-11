@@ -9,9 +9,11 @@ import FollowingModel from '../models/Following.model';
 import aws from 'aws-sdk';
 import PostModel from '../models/Post.model';
 import {Utility} from '../lib/utility';
+import {S3} from '../lib/s3';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 export class User {
+
     constructor() {
     }
 
@@ -176,29 +178,10 @@ export class User {
         }
     }
 
-    public static UploadAvatar(file: any, userID: string) {
+    public static async UploadAvatar(file: any, userID: string) {
         try {
-            const s3FileURL = process.env.AWS_UvalidationPLOADED_FILE_URL_LINK;
-
-            const s3Bucket = new aws.S3({
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.SECRET_ACCESS_KEY,
-                region: process.env.AWS_REGION,
-            });
-
-            const params = {
-                Bucket: process.env.AWS_BUCKET_NAME as string,
-                Key: userID,
-                Body: file.buffer,
-                contentType: file.mimetype,
-                ACL: 'public-read',
-            };
-            return new Promise((resolve, reject) => {
-                s3Bucket.upload(params, async (err: any, data: any) => {
-                    await UserModel.findByIdAndUpdate(userID, {'userProfile.avatar': data.Location}).exec();
-                    return {avatarData: data};
-                });
-            });
+            const s3 = new S3(userID, file, 'avatars');
+            return await s3.UploadAvatar();
         } catch (error) {
             logger.error(error, error.message);
         }
