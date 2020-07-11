@@ -153,7 +153,7 @@ router.get(connectPath, auth, async (req: Request, res: Response) => {
  *                                 Upload Avatar
  /******************************************************************************/
 export const uploadAvatarPath = '/avatar/upload';
-router.post(uploadAvatarPath, auth, upload.single('image'), async (req: Request, res: Response) => {
+router.post(uploadAvatarPath, auth, upload.single('avatar'), async (req: Request, res: Response) => {
     try {
         const result = await User.UploadAvatar(req.file, req.token.userID);
         res.status(OK).json({ result });
