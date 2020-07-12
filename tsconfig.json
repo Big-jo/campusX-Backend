@@ -13,7 +13,6 @@
     "target": "es6",
     "moduleResolution": "node",
     "allowJs": true,
-    "inlineSources": true,
     "paths": {
       "@entities": [
         "src/entities"

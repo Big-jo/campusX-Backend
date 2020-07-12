@@ -51,7 +51,8 @@
     "socket.io": "^2.3.0",
     "tslib": "latest",
     "uuid": "^3.3.2",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "fs-extra": "^8.1.0"
   },
   "devDependencies": {
     "@types/array-sort": "^1.0.0",
