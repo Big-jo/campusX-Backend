@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
-
+// People that follows the client
 export interface IFollowing extends Document {
     follower: string;
     target: string;

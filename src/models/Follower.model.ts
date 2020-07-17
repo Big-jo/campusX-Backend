@@ -1,4 +1,5 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
+// People client is following
 
 export interface IFollower extends Document {
     target: string;
