@@ -2,20 +2,15 @@ import UserModel from '../models/User.model';
 import {IUser, IUserModel} from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {logger} from '../shared/Logger';
+import {logger} from '@shared';
 import FollowsModel from '../models/Follower.model';
-import followerModel from '../models/Follower.model';
 import FollowingModel from '../models/Following.model';
-import aws from 'aws-sdk';
 import PostModel from '../models/Post.model';
 import {Utility} from '../lib/utility';
 import {S3} from '../lib/s3';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 export class User {
-
-    constructor() {
-    }
 
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({email: userObject.email});
@@ -65,7 +60,7 @@ export class User {
                     const token = jwt.sign(payload, secret);
                     return {
                         token,
-                         user: {userTag: user.userTag, university: user.userProfile.university}
+                         user: {userTag: user.userTag, university: user.userProfile.university},
                     };
                 } else {
                     return {incorrect: true};
@@ -80,12 +75,13 @@ export class User {
 
     public static async FollowUser(targetUserID: string, userID: string) {
         try {
-            const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
+            // const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
 
             const follow = await new FollowsModel({
                 target: targetUserID,
                 follower: userID,
             });
+
             const following = await new FollowingModel({
                 follower: userID,
                 target: targetUserID,
@@ -109,7 +105,7 @@ export class User {
         try {
             switch (searchKey) {
                 case 'followers':
-                    const followers = await followerModel.find({target: userID})
+                    const followers = await FollowsModel.find({target: userID})
                         .lean()
                         .populate('follower', {name: 1, userProfile: 1, userTag: 1, avatar: 1})
                         .exec();
@@ -139,15 +135,12 @@ export class User {
     }
 
     /**
-     *
-     *
      * @static
      * @memberof User
      */
 
     public static async UpdateUser(field: string, userID: string, update: any) {
         try {
-
             /**
              *  Field: Field to update in database
              *  Update: Data to update the field with
@@ -210,18 +203,35 @@ export class User {
     }
 
     public static async ConnectUser(userID: string) {
-        const user = await UserModel.findById(userID).exec();
+
+        const user = await UserModel.findById(userID).lean().exec();
+
         const onCampusUsers = await UserModel.find(
             {'userProfile.university': user!.userProfile.university},
-            {name: 1, userProfile: 1, userTag: 1},
+            {name: 1, userProfile: 1, userTag: 1, _id: 1},
             ).lean().exec();
         const onOtherCampuses = await UserModel.find(
             {'userProfile.university': {$ne: user!.userProfile.university}},
-            {name: 1, userProfile: 1, userTag: 1},
+            {name: 1, userProfile: 1, userTag: 1, _id: 1},
             ).lean().exec();
+        
+        const users = onCampusUsers.concat(onOtherCampuses) as IUserModel[];
+        const userIDs = users.map( userObjects => userObjects._id );
+    
+        const followings = await FollowsModel.find({target: {$in: userIDs}, follower: userID}).lean().exec();
+        // const followers = await FollowingModel.find({follower: {$in: userIDs}, target: userID}).lean().exec();
+
+        const connectUsers = await followings.map( (userObject: any) => {
+            for (const x of users) {
+                if (x._id.toString() === userObject.target.toString()) {
+                    x.checkIsFollowing = true;
+                    return x;
+                }
+            }
+        });
+
         return {
-            onCampusUsers,
-            onOtherCampuses,
+            connectUsers,
         };
     }
 }
