@@ -21,8 +21,8 @@ export interface IUserModel extends Document {
     phone_number: string;
     followings: string[];
     followers: string[];
-    checkIsFollowed(id: string): boolean;
-    checkIsFollowing(id: string): boolean;
+    checkIsFollowed: boolean;
+    checkIsFollowing: boolean;
     fcm_token: string;
 }
 
