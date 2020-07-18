@@ -1,6 +1,8 @@
 import aws from 'aws-sdk';
 import { logger } from '@shared';
 import UserModel from '../models/User.model';
+import {Circle} from '../entities/Circles/Circle';
+import CircleModel from 'src/models/Circle.model';
 
 export class S3 {
     // public Endpoint = new aws.Endpoint('ams3.digitaloceanspaces.com');
@@ -63,8 +65,17 @@ export class S3 {
                     ACL: 'public-read',
                 };
                 break;
+            case 'circle-avatars':
+                this.params = {
+                    Bucket: process.env.SPACES_BUCKET_CIRCLE_AVATAR as string,
+                    Key: ID,
+                    Body: file.buffer,
+                    contentType: file.mimetype,
+                    ACL: 'public-read',
+                };
+                break;
             default:
-                throw new Error('No folder choosen');
+                throw new Error('No folder chosen');
         }
 
     }
@@ -79,6 +90,22 @@ export class S3 {
                     }
                     UserModel.findByIdAndUpdate(this.ID, { 'userProfile.avatar': data.Location });
                     resolve(data);
+                });
+            });
+        } catch (e) {
+            logger.error(e);
+            throw new Error(e);
+        }
+    }
+
+    public UploadCircleAvatar() {
+        try {
+            return new Promise((resolve, reject) => {
+                this.s3Bucket.upload(this.params, (err: any, data: any) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    resolve(data.Location);
                 });
             });
         } catch (e) {
