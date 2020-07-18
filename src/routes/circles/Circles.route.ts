@@ -7,6 +7,8 @@ import IORedis from 'ioredis';
 import { Utility } from '../../lib/utility';
 import { logger } from '../../shared/Logger';
 import validation from '../../middleware/auth';
+import multer from 'multer';
+import {ICircle} from '../../interfaces/ICircle';
 
 /******************************************************************************
 *                                 Router Setup
@@ -15,6 +17,8 @@ import validation from '../../middleware/auth';
 const router = Router();
 const path = '/circles';
 const auth = validation.validateToken;
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 let client: IORedis.Redis;
 /******************************************************************************
  *                                 SETUP REDIS
@@ -37,9 +41,15 @@ client.on('error', err => {
 /******************************************************************************/
 
 export const createCircle = '/create';
-router.post(createCircle, async (req: Request, res: Response) => {
+router.post(createCircle, upload.single('image'), async (req: Request, res: Response) => {
     try {
-        const result = await Circle.Create(req.body);
+        req.body.circleObject = JSON.parse(req.body.circleObject);
+        const circleObject: ICircle = {
+            avatar: req.file,
+            name: req.body.circleObject.name,
+            description: req.body.circleObject.description,
+        };
+        const result = await Circle.Create(circleObject);
         if (result === 0) {
             res.status(CREATED).json('created');
         } else {
