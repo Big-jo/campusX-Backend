@@ -3,6 +3,7 @@ import CircleModel from '../../models/Circle.model';
 import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
+import {S3} from '../../lib/s3';
 
 export class Circle {
     // constructor() {}
@@ -16,16 +17,22 @@ export class Circle {
         } else {
             const newCircle = new CircleModel({
                 name: circleObject.name,
-                avatar: circleObject.avatar,
+                avatar: ' ',
                 description: circleObject.description,
             });
+
+            const s3 = new S3(newCircle.id, circleObject.avatar, 'circle-avatars');
+            newCircle.avatar = await s3.UploadCircleAvatar() as string;
+
             await newCircle.save();
             return 0;
         }
+
         } catch (error) {
             logger.error(error.message);
             throw new Error(error);
         }
+
     } 
 
     public static async Join(userID: string, circleID: string) {
