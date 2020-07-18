@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 export interface ICircle {
     name: string;
     description: string;
-    avatar: string;
+    avatar: any;
 }
 
 interface IModerator {
