@@ -72,7 +72,7 @@ export class Post {
 
             // } else {
 
-            let post = await new PostModel({
+            let post = new PostModel({
                 author: userID,
                 userTag: postObject.userTag,
                 text: postObject.text,
@@ -84,12 +84,12 @@ export class Post {
             });
 
             if (postObject.image != null) {
-                const s3 = new S3(post._id + 'image', postObject.image, 'image');
+                const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
             } 
 
             if (postObject.video) {
-                const s3 = new S3(post._id + 'video', postObject.video, 'video');
+                const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
             
@@ -100,6 +100,7 @@ export class Post {
 
             // Add post to campus Feed
             await client.hmset(post.campus, { [post._id]: post, state: 'dirty' });
+            
 
             // TODO: Stop doing this on each post
             if ((await client.sismember('campuses', post.campus)) === 0) {
@@ -114,6 +115,8 @@ export class Post {
                  * - dirty: It has been updated
                  */
                 await client.hmset(follower.follower, { [post._id]: post, state: 'dirty' });
+                 // Set TTL 
+
                 updatedFeeds.push({ updatedHash: follower.follower, newPostID: post._id });
             }
 
