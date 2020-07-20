@@ -202,7 +202,7 @@ export class User {
         }
     }
 
-    public static async ConnectUser(userID: string) {
+    public static async ConnectUser(userID: string, campus: string) {
 
         const user = await UserModel.findById(userID).lean().exec();
 
@@ -221,12 +221,13 @@ export class User {
         const followings = await FollowsModel.find({target: {$in: userIDs}, follower: userID}).lean().exec();
         // const followers = await FollowingModel.find({follower: {$in: userIDs}, target: userID}).lean().exec();
 
-        const connectUsers = await followings.map( (userObject: any) => {
+        const connectUsers: IUserModel[] = [];
+        followings.forEach( (userObject: any) => {
+            const arr = [];
             for (const x of users) {
-                if (x._id.toString() === userObject.target.toString()) {
-                    x.checkIsFollowing = true;
-                    return x;
-                }
+                x.checkIsFollowing = x._id.toString() === userObject.target.toString();
+                x.sameCampus = x.userProfile.university === campus;
+                connectUsers.push(x);
             }
         });
 

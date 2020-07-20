@@ -1,4 +1,3 @@
-import { logger } from '../../shared/Logger';
 import { Response, Router, Request } from 'express';
 import { CREATED, OK, INTERNAL_SERVER_ERROR, BAD_REQUEST } from 'http-status-codes';
 import validation from '../../middleware/auth';
@@ -11,7 +10,6 @@ import { Utility } from '../../lib/utility';
 const router = Router();
 const path = '/users';
 const auth = validation.validateToken;
-const errMsg = { error: 'Oops, an error occurred' };
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -95,7 +93,7 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
  *                   Generic get route for getting user related data
  ******************************************************************************/
 
-export const getUserInfo = '/getUser/:searchKey';  /** Accepted info search Keys: followers, followings, user*/
+export const getUserInfo = '/getUser/:searchKey';  // Accepted info search Keys: followers, followings, user
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, auth, async (req: Request, res: Response) => {
     try {
@@ -132,7 +130,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
         const result = await User.UpdateUserProfile(req.token.userID, req.body.update);
         result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
     } catch (error) {
-        Utility.ErrResponse(res, error);;
+        Utility.ErrResponse(res, error);
     }
 });
 
@@ -142,7 +140,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-     const result = await User.ConnectUser(req.token.userID);
+     const result = await User.ConnectUser(req.token.userID, req.token.userProfile.university);
      res.status(OK).json({result});
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -179,6 +177,4 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
  *                          Get Follower Notification
  /******************************************************************************/
 export const followingNotificationPath = '/notification/follower';
-
-
 export default { router, path };
