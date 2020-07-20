@@ -140,7 +140,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-     const result = await User.ConnectUser(req.token.userID, req.token.userProfile.university);
+     const result = await User.ConnectUser(req.token.userID, req.token.campus);
      res.status(OK).json({result});
     } catch (error) {
         Utility.ErrResponse(res, error);

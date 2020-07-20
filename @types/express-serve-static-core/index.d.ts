@@ -4,9 +4,10 @@ declare global{
     namespace Express {
          interface Request {
              token: {
-                 userID: string,
-                 userProfile: IUserProfile,
-             }
+                 userID: string;
+                 userTag: string;
+                 campus: string;
+             };
          }
      }
      
