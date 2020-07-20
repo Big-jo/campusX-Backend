@@ -60,7 +60,7 @@ export class User {
                     const token = jwt.sign(payload, secret);
                     return {
                         token,
-                         user: {userTag: user.userTag, university: user.userProfile.university},
+                        user: {userTag: user.userTag, university: user.userProfile.university},
                     };
                 } else {
                     return {incorrect: true};
@@ -209,34 +209,28 @@ export class User {
         const onCampusUsers = await UserModel.find(
             {'userProfile.university': user!.userProfile.university},
             {name: 1, userProfile: 1, userTag: 1, _id: 1},
-            ).lean().exec();
+        ).lean().exec();
         const onOtherCampuses = await UserModel.find(
             {'userProfile.university': {$ne: user!.userProfile.university}},
             {name: 1, userProfile: 1, userTag: 1, _id: 1},
-            ).lean().exec();
-        
+        ).lean().exec();
+
         const users = onCampusUsers.concat(onOtherCampuses) as IUserModel[];
-        const userIDs = users.map( userObjects => userObjects._id );
-    
+        const userIDs = users.map(userObjects => userObjects._id);
+
         const followings = await FollowsModel.find({target: {$in: userIDs}, follower: userID}).lean().exec();
         // const followers = await FollowingModel.find({follower: {$in: userIDs}, target: userID}).lean().exec();
 
-        let connectUsers: IUserModel[] = [];
+        const connectUsers: IUserModel[] = [];
 
-        if (followings) {
-
-            followings.forEach( (userObject: any) => {
-                const arr = [];
-                for (const x of users) {
-                    x.checkIsFollowing = x._id.toString() === userObject.target.toString();
-                    x.sameCampus = x.userProfile.university === campus;
-                    connectUsers.push(x);
-                }
-            });
-
-        } else {
-            connectUsers = onOtherCampuses.concat(onCampusUsers);
-        }
+        users.forEach((userObject: any) => {
+            // const arr = [];
+            for (const following of followings) {
+                userObject.checkIsFollowing = userObject._id.toString() === following.target.toString();
+            }
+            userObject.sameCampus = userObject.userProfile.university === campus;
+            connectUsers.push(userObject);
+        });
 
         return {
             connectUsers,
