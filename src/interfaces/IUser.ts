@@ -12,6 +12,7 @@ export interface IUserProfile {
 }
 
 export interface IUserModel extends Document {
+    sameCampus: boolean;
     name: string;
     userID: string;
     userTag: string;
