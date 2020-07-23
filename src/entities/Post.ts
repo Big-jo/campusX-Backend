@@ -95,11 +95,11 @@ export class Post {
             
             post = await post.save();
 
-            const followers: IFollower[] = await FollowerModel.find({ target: userID });
+            const followers: IFollower[] = await FollowerModel.find({ target: userID }).lean().exec();
             const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
 
             // Add post to campus Feed
-            await client.hmset(post.campus, { [post._id]: post, state: 'dirty' });
+            await client.hmset(post.campus, { [post.id]: post, state: 'dirty' });
             
 
             // TODO: Stop doing this on each post
@@ -114,10 +114,10 @@ export class Post {
                  * - sanitized: It hasnt been updated
                  * - dirty: It has been updated
                  */
-                await client.hmset(follower.follower, { [post._id]: post, state: 'dirty' });
-                 // Set TTL 
+                await client.hmset(follower.follower, { [post.id]: post, state: 'dirty' });
+                 // TODO: Set TTL
 
-                updatedFeeds.push({ updatedHash: follower.follower, newPostID: post._id });
+                updatedFeeds.push({ updatedHash: follower.follower, newPostID: post.id });
             }
 
             // Also return ID of the newsfeed updated
@@ -141,16 +141,6 @@ export class Post {
                 if (exists) {
                     // const posts: IPostModel[] = [];
                     const cachedPosts = await client.hgetall(userID);
-
-                    // for (const cachedPost of cachedPosts) {
-                    //     const parsed = JSON.parse(cachedPost);
-                    //     for (const newsfeedID in parsed) {
-                    //         if (parsed.hasOwnProperty(newsfeedID)) {
-                    //             const post = parsed[newsfeedID];
-                    //             posts.push(post);
-                    //         }
-                    //     }
-                    // }
 
                     return { newsfeed: cachedPosts };
                 } else {
