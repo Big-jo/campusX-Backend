@@ -4,6 +4,7 @@ import {IPostOptions, Post} from '../entities/Post';
 import {IPost} from '../interfaces/IPost';
 import EventEmitter from 'events';
 import {logger} from '@shared';
+import {isNegativeNumberLiteral} from 'tslint';
 
 export class Newsfeed {
     private cacheClient: IORedis.Redis;
@@ -15,29 +16,34 @@ export class Newsfeed {
         if (process.env.NODE_ENV === 'development') {
             this.cacheClient = new IORedis();
         } else {
-           const redisPort = Number(process.env.REDIS_PORT);
-           this.cacheClient = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+            const redisPort = Number(process.env.REDIS_PORT);
+            this.cacheClient = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
         }
 
         this.cacheClient.on('connect', args => {
             logger.info('Redis Connected');
-         });
-         
+        });
+
         this.cacheClient.on('error', err => {
             logger.error(err);
-         });
+        });
 
-        io.on('connection', async socket => {
+        io.on('connect', async socket => {
             const userID = socket.handshake.query.userID;
-            console.log(userID);
+
             if (await this.cacheClient.exists(userID)) {
                 this.MatchSocketID(socket.id, userID);
             }
 
             /**
-             * Return feed to user;
+             * Return feed to user on connect;
              */
 
+            this.GetNewsFeed(socket.handshake.query.userID);
+
+            /**
+             * Return feed to the user on request
+             */
             socket.on('get-feed', args => {
                 this.GetNewsFeed(socket.handshake.query.userID);
             });
@@ -48,7 +54,6 @@ export class Newsfeed {
          */
         this.feedEmitter1.on('pull-updated-feed', async newsfeedUpdates => {
             for (const update of newsfeedUpdates) {
-                const hash = update.updatedHash;
                 const newPost = update.newPostID as string;
                 const newsfeed = await this.cacheClient.hmget(update.updatedHash, newPost, 'socketID');
                 const socketID = newsfeed[1] as string;
@@ -91,6 +96,7 @@ export class Newsfeed {
 
     public async GetNewsFeed(userID: string) {
         const result = await Post.GetPosts(this.cacheClient, userID, {mostRecent: true});
+
         if (result !== undefined) {
             this.feedEmitter2.emit('pull-feed', result.newsfeed);
         } else {
