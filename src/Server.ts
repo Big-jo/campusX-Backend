@@ -41,6 +41,8 @@ const app = express();
 const server = http.createServer(app);
 
 const io = socketIO.listen(server);
+
+const newsfeed = new Newsfeed(io);
 // Handle Websockets
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
@@ -59,15 +61,17 @@ app.use(express.json());
 app.use(express.urlencoded({
     extended: true,
 }));
-app.use((req, res, next) => { res.locals.socketio = io; next(); });
+app.use((req, res, next) => {
+    res.locals.socketio = io;
+    res.locals.newsfeed = newsfeed;
+    next();
+});
 app.use(cookieParser());
 app.get('/', (req: Request, res: Response) => {
     res.status(NOT_FOUND).send('Oops the resource does not exist');
 });
 
 app.use(BaseRouter.path, BaseRouter.router);
-
-const newsfeed = new Newsfeed(io);
 
 app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
 

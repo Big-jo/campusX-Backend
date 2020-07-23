@@ -57,9 +57,9 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
             campus: req.body.campus,
             name: req.body.name,
         };
-        // const result = await Post.CreatePost(post, req.token.userID, client, req.body.options, io);
-        const io = res.locals.socketio;
-        const newsfeed = new Newsfeed(io);
+
+        const newsfeed = res.locals.newsfeed as Newsfeed;
+
         const options = {
             anon: req.body.anon,
         };
