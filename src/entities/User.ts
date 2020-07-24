@@ -73,7 +73,7 @@ export class User {
         }
     }
 
-    public static async FollowUser(targetUserID: string, userID: string) {
+    public static async     FollowUser(targetUserID: string, userID: string) {
         try {
             // const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
 
@@ -120,7 +120,8 @@ export class User {
                     return {followings};
 
                 case 'user':
-                    const user = await UserModel.findById(userID, {password: 0});
+
+                    const user = await UserModel.findById(userID, {password: 0}).lean().exec();
                     if (user != null) {
                         return {user};
                     }
@@ -202,28 +203,23 @@ export class User {
         }
     }
 
-    public static async ConnectUser(userID: string, campus: string) {
+    public static async ConnectUser(userID: string, campus: string, offset: number) {
+        const [user, users] = await Promise.all([UserModel.findById(userID).lean().exec(), UserModel.paginate({}, {
+                offset,
+                limit: 10,
+                select: 'name userProfile userTag _id',
+                lean: true,
+            },
+        )]);
 
-        const user = await UserModel.findById(userID).lean().exec();
-
-        const onCampusUsers = await UserModel.find(
-            {'userProfile.university': user!.userProfile.university},
-            {name: 1, userProfile: 1, userTag: 1, _id: 1},
-        ).lean().exec();
-        const onOtherCampuses = await UserModel.find(
-            {'userProfile.university': {$ne: user!.userProfile.university}},
-            {name: 1, userProfile: 1, userTag: 1, _id: 1},
-        ).lean().exec();
-
-        const users = onCampusUsers.concat(onOtherCampuses) as IUserModel[];
-        const userIDs = users.map(userObjects => userObjects._id);
+        const userIDs = users.docs.map((userObjects: { id: string; }) => userObjects.id);
 
         const followings = await FollowsModel.find({target: {$in: userIDs}, follower: userID}).lean().exec();
         // const followers = await FollowingModel.find({follower: {$in: userIDs}, target: userID}).lean().exec();
 
         const connectUsers: IUserModel[] = [];
 
-        users.forEach((userObject: any) => {
+        users.docs.forEach((userObject: any) => {
             // const arr = [];
             for (const following of followings) {
                 userObject.checkIsFollowing = userObject._id.toString() === following.target.toString();
