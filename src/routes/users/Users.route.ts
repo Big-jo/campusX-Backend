@@ -97,7 +97,8 @@ export const getUserInfo = '/getUser/:searchKey';  // Accepted info search Keys:
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, auth, async (req: Request, res: Response) => {
     try {
-        const result = await User.GetUser(req.params.searchKey, req.token.userID);
+        const userID = req.body.userID === '' ? req.token.userID : req.query.userID;
+        const result = await User.GetUser(req.params.searchKey, userID);
         res.status(OK).json({
             result,
         });
@@ -140,7 +141,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-     const result = await User.ConnectUser(req.token.userID, req.token.campus);
+     const result = await User.ConnectUser(req.token.userID, req.token.campus, parseInt(req.query.offset, 10));
      res.status(OK).json({result});
     } catch (error) {
         Utility.ErrResponse(res, error);
