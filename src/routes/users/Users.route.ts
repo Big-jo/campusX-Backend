@@ -32,7 +32,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             password: req.body.password,
             phone_number: req.body.phoneNumber,
             userTag: req.body.userTag,
-        };
+        } as IUser;
         const result = await User.CreateUser(user);
         if (result.exist) {
             res.status(BAD_REQUEST).json({ exist: true });

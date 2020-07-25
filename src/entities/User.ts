@@ -18,7 +18,7 @@ export class User {
             return {exist: true};
         } else {
             try {
-                const user: IUserModel = new UserModel({
+                const user: IUser = new UserModel({
                     name: userObject.name,
                     userID: '',
                     userTag: `${userObject.userTag}`,
@@ -217,7 +217,7 @@ export class User {
         const followings = await FollowsModel.find({target: {$in: userIDs}, follower: userID}).lean().exec();
         // const followers = await FollowingModel.find({follower: {$in: userIDs}, target: userID}).lean().exec();
 
-        const connectUsers: IUserModel[] = [];
+        const connectUsers: IUser[] = [];
 
         users.docs.forEach((userObject: any) => {
             // const arr = [];
