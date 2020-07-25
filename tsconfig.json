@@ -43,8 +43,7 @@
       ]
     },
     "types": [
-      "node",
-      "mocha"
+      "node"
     ],
     "typeRoots": [
       "@types",
