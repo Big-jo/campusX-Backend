@@ -9,6 +9,9 @@
     "arrow-parens": {
       "options": "ban-single-arg-parens"
     },
+    "max-line-length": {
+      "options": {"limit":  150}
+    },
     "indent": [true, "spaces", 2]
   },
   "linterOptions": {
