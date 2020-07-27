@@ -1,19 +1,34 @@
-import { Post } from '../Post';
+import {Post} from '../Post';
 import CircleCirclePostModel from '../../models/CirclePost.model';
-import { ICirclePost } from '../../interfaces/ICirclePost';
-import { logger } from '../../shared/Logger';
+import {ICirclePost} from '../../interfaces/ICirclePost';
+import {logger} from '../../shared/Logger';
 import IORedis from 'ioredis';
 import CirclePostModel from '../../models/CirclePost.model';
+import {S3} from '../../lib/s3';
 
 export class CirclePost extends Post {
 
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, redisClient: IORedis.Redis, circleID: string, memberID: string) {
+    public static async CirclePost(circlePost: { text: string, name: string, userTag: string, circleID: string }, media: any, redisClient: IORedis.Redis, circleID: string, memberID: string) {
         try {
-            const post = new CircleCirclePostModel(circlePost);
+            const CPost = {
+                circle: circlePost.circleID,
+                text: circlePost.text,
+                name: circlePost.name,
+                userTag: circlePost.userTag,
+                video: '',
+                image: '',
+            };
+
+            const post = new CirclePostModel(CPost);
+            const s3 = new S3(post.id, media.file, 'image');
+
+            media.tag === 'image' ? post.image = await s3.UploadImage() as string : post.video = await s3.UploadImage() as string;
+
             await post.save();
+
             const serializedPost = JSON.stringify(post);
             await redisClient.hset(circleID, memberID, serializedPost);
             return 0;
