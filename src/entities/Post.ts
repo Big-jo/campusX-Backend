@@ -138,10 +138,10 @@ export class Post {
                  *  Check the cache for newsfeed
                  */
                 const exists = await client.exists(userID) === 1;
+
                 if (exists) {
                     // const posts: IPostModel[] = [];
                     const cachedPosts = await client.hgetall(userID);
-
                     return { newsfeed: cachedPosts };
                 } else {
                     const followings = await FollowingModel.find({
