@@ -78,10 +78,11 @@ export class Circle {
         }
     }
 
-    public static async GetCircles() {
+    public static async GetCircles(offset: number) {
         try {
-            const circles = await CircleModel.find().exec();
-            return {circles};
+            const [circles] = await Promise.all([CircleModel.paginate({}, {offset, limit: 10})]);
+
+            return {circles: circles.docs};
         } catch (error) {
             logger.error(error.message);
             throw new Error(error);
