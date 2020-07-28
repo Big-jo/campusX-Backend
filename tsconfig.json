@@ -55,6 +55,7 @@
   ],
   "exclude": [
     "src/public/",
-    "node_modules"
+    "node_modules",
+    "src/spec"
   ]
 }
