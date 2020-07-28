@@ -47,7 +47,7 @@ export class User {
 
     public static async Login(email: string, password: string) {
         try {
-            const user = await UserModel.findOne({email}).exec();
+            const user = await UserModel.findOne({email}).lean().exec();
             if (user !== null) {
                 const userPassword = user.password;
                 const result = await bcrypt.compare(password, userPassword);
