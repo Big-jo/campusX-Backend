@@ -44,11 +44,10 @@ client.on('error', err => {
 export const createCircle = '/create';
 router.post(createCircle, upload.single('image'), async (req: Request, res: Response) => {
     try {
-        req.body.circleObject = JSON.parse(req.body.circleObject);
         const circleObject = {
             avatar: req.file,
-            name: req.body.circleObject.name,
-            description: req.body.circleObject.description
+            name: req.body.name,
+            description: req.body.description,
         } as ICircle;
 
         const result = await Circle.Create(circleObject);
