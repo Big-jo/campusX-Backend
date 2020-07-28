@@ -60,7 +60,7 @@ export class User {
                     const token = jwt.sign(payload, secret);
                     return {
                         token,
-                        user: {userTag: user.userTag, university: user.userProfile.university},
+                        user: {userTag: user.userTag, university: user.userProfile.university, avatar: user.userProfile.avatar},
                     };
                 } else {
                     return {incorrect: true};
