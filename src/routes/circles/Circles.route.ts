@@ -140,4 +140,19 @@ router.get(getCircles, async (req: Request, res: Response) => {
         Utility.ErrResponse(res, error);
     }
 });
+
+/******************************************************************************
+*                                 GET CIRCLE
+/******************************************************************************/
+export const getCircle = '/circle/:circleID';
+router.get(getCircle, async (req: Request, res: Response) => {
+    try {
+        const result = await Circle.GetCircle(req.params.circleID); 
+
+        res.status(OK).json(result);
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
 export default {router, path};

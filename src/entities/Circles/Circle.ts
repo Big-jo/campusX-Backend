@@ -88,4 +88,14 @@ export class Circle {
             throw new Error(error);
         }
     }
+
+    public static async GetCircle(circleId: string){
+        try {
+            const circle =  await CircleModel.findById(circleId).lean().exec();
+            return {circle};
+        } catch (error) {
+            logger.error(error.message);
+            throw new Error(error);
+        }
+    }
 }
