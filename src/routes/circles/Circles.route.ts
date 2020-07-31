@@ -145,11 +145,25 @@ router.get(getCircles, async (req: Request, res: Response) => {
 *                                 GET CIRCLE
 /******************************************************************************/
 export const getCircle = '/circle/:circleID';
-router.get(getCircle, async (req: Request, res: Response) => {
+router.get(getCircle, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircle(req.params.circleID); 
+        const result = await Circle.GetCircle(req.params.circleID, req.token.userID); 
 
         res.status(OK).json(result);
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
+*                                 GET USER CIRCLES
+/******************************************************************************/
+
+export const userCircles = '/home';
+router.get(userCircles, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await Circle.UserCircles(req.token.userID);
+        res.status(OK).json(result);    
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
