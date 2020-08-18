@@ -101,23 +101,55 @@ export class Post {
             // Add post to campus Feed
             await client.hmset(post.campus, { [post.id]: post, state: 'dirty' });
             
-
             // TODO: Stop doing this on each post
             if ((await client.sismember('campuses', post.campus)) === 0) {
                 await client.sadd('campuses', post.campus);
             }
 
+            //  Offload this work to another thread
             for (const follower of followers) {
 
                 /**
                  * Set the state of a users newsfeed in the cache
-                 * - sanitized: It hasnt been updated
+                 * - sanitized: It hasnt been updated 
                  * - dirty: It has been updated
                  */
-                await client.hmset(follower.follower, { [post.id]: post, state: 'dirty' });
-                 // TODO: Set TTL
 
+                const hashedPost: string = JSON.stringify({
+                    campus: post.campus,
+                    userTag: post.userTag,
+                    author: post.author,
+                    image: post.image,
+                    name: post.name,
+                    parentPost: post.parentPost,
+                    text: post.text,
+                    video: post.video,
+                });
+
+                await client.hmset(follower.follower, {[post.id]: hashedPost, state: 'dirty' });
+
+                // Contains all the posts and their data
+                // Probably not the smartest thing to do
+                // const hashedPost: IPost = {
+                //     campus: post.campus,
+                //     userTag: post.userTag,
+                //     author: post.author,
+                //     image: post.image,
+                //     name: post.name,
+                //     parentPost: post.parentPost,
+                //     text: post.text,
+                //     video: post.video,
+                // };
+
+                // await client.hmset('posts-hash', {[post.id]: hashedPost});
+                 // TODO: Set TTL
+                
+                /**
+                 *  This stores all the users the need to get the uploaded post and 
+                 *  the postID
+                 */
                 updatedFeeds.push({ updatedHash: follower.follower, newPostID: post.id });
+
             }
 
             // Also return ID of the newsfeed updated
@@ -125,7 +157,6 @@ export class Post {
                 opsValue: 0,
                 updatedFeeds,
             };
-            // }
         } catch (error) {
             logger.error(error);
         }
@@ -140,8 +171,10 @@ export class Post {
                 const exists = await client.exists(userID) === 1;
 
                 if (exists) {
-                    // const posts: IPostModel[] = [];
+                    // Get all the postIDs in the users newsfeed
                     const cachedPosts = await client.hgetall(userID);
+                    
+                    // const posts = await client.
                     return { newsfeed: cachedPosts };
                 } else {
                     const followings = await FollowingModel.find({
