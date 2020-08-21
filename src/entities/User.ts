@@ -1,21 +1,21 @@
 import UserModel from '../models/User.model';
-import {IUser, IUserModel} from 'src/interfaces/IUser';
+import { IUser, IUserModel } from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {logger} from '@shared';
+import { logger } from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingModel from '../models/Following.model';
 import PostModel from '../models/Post.model';
-import {Utility} from '../lib/utility';
-import {S3} from '../lib/s3';
+import { Utility } from '../lib/utility';
+import { S3 } from '../lib/s3';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 export class User {
 
     public static async CreateUser(userObject: IUser) {
-        const foundUser = await UserModel.findOne({email: userObject.email});
+        const foundUser = await UserModel.findOne({ email: userObject.email });
         if (foundUser) {
-            return {exist: true};
+            return { exist: true };
         } else {
             try {
                 const user: IUser = new UserModel({
@@ -37,7 +37,7 @@ export class User {
                     campus: user.userProfile.university,
                     // userProfile: user.userProfile,
                 };
-                return {token: Utility.createToken(payload), user: {userTag: user.userTag}};
+                return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id } };
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
@@ -47,7 +47,7 @@ export class User {
 
     public static async Login(email: string, password: string) {
         try {
-            const user = await UserModel.findOne({email}).lean().exec();
+            const user = await UserModel.findOne({ email }).lean().exec();
             if (user !== null) {
                 const userPassword = user.password;
                 const result = await bcrypt.compare(password, userPassword);
@@ -60,20 +60,20 @@ export class User {
                     const token = jwt.sign(payload, secret);
                     return {
                         token,
-                        user: {userTag: user.userTag, university: user.userProfile.university, avatar: user.userProfile.avatar},
+                        user: { userTag: user.userTag, university: user.userProfile.university, avatar: user.userProfile.avatar, userID: user._id },
                     };
                 } else {
-                    return {incorrect: true};
+                    return { incorrect: true };
                 }
             } else {
-                return {exist: false};
+                return { exist: false };
             }
         } catch (error) {
             throw new Error(error);
         }
     }
 
-    public static async     FollowUser(targetUserID: string, userID: string) {
+    public static async FollowUser(targetUserID: string, userID: string) {
         try {
             // const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
 
@@ -105,27 +105,27 @@ export class User {
         try {
             switch (searchKey) {
                 case 'followers':
-                    const followers = await FollowsModel.find({target: userID})
+                    const followers = await FollowsModel.find({ target: userID })
                         .lean()
-                        .populate('follower', {name: 1, userProfile: 1, userTag: 1, avatar: 1})
+                        .populate('follower', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
                         .exec();
-                    return {followers};
+                    return { followers };
 
                 case 'followings':
-                    const followings = await FollowingModel.find({follower: userID})
-                    // tslint:disable-next-line: max-line-length
+                    const followings = await FollowingModel.find({ follower: userID })
+                        // tslint:disable-next-line: max-line-length
                         .lean()
-                        .populate('target', {name: 1, userProfile: 1, userTag: 1, avatar: 1})
+                        .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
                         .exec();
-                    return {followings};
+                    return { followings };
 
                 case 'user':
 
-                    const user = await UserModel.findById(userID, {password: 0}).lean().exec();
+                    const user = await UserModel.findById(userID, { password: 0 }).lean().exec();
                     if (user != null) {
-                        return {user};
+                        return { user };
                     }
-                    return {exist: false};
+                    return { exist: false };
                 default:
                     break;
             }
@@ -147,7 +147,7 @@ export class User {
              *  Update: Data to update the field with
              */
 
-            await UserModel.findOneAndUpdate({_id: userID}, {[field]: update});
+            await UserModel.findOneAndUpdate({ _id: userID }, { [field]: update });
             return 0;
 
         } catch (error) {
@@ -157,7 +157,7 @@ export class User {
 
     public static async UpdateUserProfile(userID: string, update: any) {
         try {
-            await UserModel.update({_id: userID}, {
+            await UserModel.update({ _id: userID }, {
                 $set: {
                     'userProfile.university': update.university,
                     'userProfile.gender': update.gender,
@@ -183,8 +183,8 @@ export class User {
 
     public static async GetUserPosts(userID: string) {
         try {
-            const posts = await PostModel.find({author: userID})
-                .populate({path: 'author', select: {name: 1, userProfile: 1, userTag: 1}})
+            const posts = await PostModel.find({ author: userID })
+                .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1 } })
                 .exec();
             return posts.reverse();
         } catch (error) {
@@ -193,7 +193,7 @@ export class User {
     }
 
     public static async AvailableUserTag(userTag: string) {
-        const available = await UserModel.findOne({userTag: {$regex: userTag, $options: '$i'}});
+        const available = await UserModel.findOne({ userTag: { $regex: userTag, $options: '$i' } });
         if (available) {
             // Return 0 if the userTag exists
             return 0;
@@ -203,30 +203,25 @@ export class User {
         }
     }
 
-    public static async ConnectUser(userID: string, campus: string, offset: number) {
+    public static async ConnectUser(userID: string, offset: number) {
         const [user, users] = await Promise.all([UserModel.findById(userID).lean().exec(), UserModel.paginate({}, {
-                offset,
-                limit: 10,
-                select: 'name userProfile userTag _id',
-                lean: true,
-            },
+            offset,
+            limit: 10,
+            select: 'name userProfile userTag _id',
+            lean: true,
+        },
         )]);
 
-        const userIDs = users.docs.map((userObjects: { id: string; }) => userObjects.id);
+        const sameCampus = [];
+        const others = [];
 
-        const followings = await FollowsModel.find({target: {$in: userIDs}, follower: userID}).lean().exec();
-        // const followers = await FollowingModel.find({follower: {$in: userIDs}, target: userID}).lean().exec();
-
-        const connectUsers: IUser[] = [];
-
-        users.docs.forEach((userObject: any) => {
-            // const arr = [];
-            for (const following of followings) {
-                userObject.checkIsFollowing = userObject._id.toString() === following.target.toString();
+        for (const userObject of users.docs) {
+            if (userObject.id !== userID) {
+                userObject.userProfile.university === user.userProfile.university ? sameCampus.push(userObject) : others.push(userObject);
             }
-            userObject.sameCampus = userObject.userProfile.university === campus;
-            connectUsers.push(userObject);
-        });
+        }
+
+        const connectUsers = [{ sameCampus }, { others }];
 
         return {
             connectUsers,
