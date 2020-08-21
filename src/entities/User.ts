@@ -18,7 +18,7 @@ export class User {
             return { exist: true };
         } else {
             try {
-                const user: IUser = new UserModel({
+                const user = new UserModel({
                     name: userObject.name,
                     userID: '',
                     userTag: `${userObject.userTag}`,
@@ -212,16 +212,14 @@ export class User {
         },
         )]);
 
-        const sameCampus = [];
-        const others = [];
-
-        for (const userObject of users.docs) {
+        const connectUsers = [];
+        
+        for (const userObject of users.docs as any) {
             if (userObject.id !== userID) {
-                userObject.userProfile.university === user.userProfile.university ? sameCampus.push(userObject) : others.push(userObject);
+                userObject.userProfile.university === user.userProfile.university ? userObject.sameCampus = true : userObject.sameCampus = false;
+                connectUsers.push(userObject);
             }
         }
-
-        const connectUsers = [{ sameCampus }, { others }];
 
         return {
             connectUsers,
