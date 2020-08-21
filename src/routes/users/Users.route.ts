@@ -141,7 +141,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-     const result = await User.ConnectUser(req.token.userID, req.token.campus, parseInt(req.query.offset, 10));
+     const result = await User.ConnectUser(req.token.userID, parseInt(req.query.offset, 10));
      res.status(OK).json({result});
     } catch (error) {
         Utility.ErrResponse(res, error);
