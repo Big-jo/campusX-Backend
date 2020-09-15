@@ -7,31 +7,36 @@ import {logger} from '@shared';
 import {isNegativeNumberLiteral} from 'tslint';
 
 export class Newsfeed {
-    private cacheClient: IORedis.Redis;
+    private primaryCache: IORedis.Redis;
+    private postCache: IORedis.Redis;
     private feedEmitter1 = new EventEmitter(); // Emitter for synchronization with creating post
     private feedEmitter2 = new EventEmitter();
 
     constructor(private io: SocketIO.Server) {
 
         if (process.env.NODE_ENV === 'development') {
-            this.cacheClient = new IORedis();
+            this.primaryCache = new IORedis();
+            this.postCache = new IORedis({port: 6380});
         } else {
-            const redisPort = Number(process.env.REDIS_PORT);
-            this.cacheClient = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+            const redisPortPrimary = Number(process.env.REDIS_PORT);
+            const redisPortPC = Number(process.env.REDIS_PORT_PC);
+            this.primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, {password: process.env.REDIS_PASS_PRIMARY});
+            this.postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, {password: process.env.REDIS_PASS_PC});
+
         }
 
-        this.cacheClient.on('connect', args => {
+        this.primaryCache.on('connect', args => {
             logger.info('Redis Connected');
         });
 
-        this.cacheClient.on('error', err => {
+        this.primaryCache.on('error', err => {
             logger.error(err);
         });
 
         io.on('connect', async socket => {
             const userID = socket.handshake.query.userID;
 
-            if (await this.cacheClient.exists(userID)) {
+            if (await this.primaryCache.exists(userID)) {
                 this.MatchSocketID(socket.id, userID);
             }
 
@@ -55,7 +60,7 @@ export class Newsfeed {
         this.feedEmitter1.on('pull-updated-feed', async newsfeedUpdates => {
             for (const update of newsfeedUpdates) {
                 const newPost = update.newPostID as string;
-                const newsfeed = await this.cacheClient.hmget(update.updatedHash, newPost, 'socketID');
+                const newsfeed = await this.primaryCache.lindex(update.updatedHash, 0);
                 const socketID = newsfeed[1] as string;
                 const retrivedPost = newsfeed[0];
 
@@ -70,13 +75,15 @@ export class Newsfeed {
          */
         this.feedEmitter2.on('pull-feed', async newsfeed => {
             // socket.broadcast.to(newsfeed.socketID).emit('newsfeed', newsfeed);
-            io.to(newsfeed.socketID).emit('newsfeed', newsfeed);
+            if (newsfeed.socketID !== undefined) {
+                io.to(newsfeed.socketID).emit('newsfeed', newsfeed);
+            }
         });
     }
 
     public async ConstructNewsFeed(postObject: IPost, userID: string, options: IPostOptions) {
         try {
-            const result = await Post.CreatePost(postObject, userID, this.cacheClient, options);
+            const result = await Post.CreatePost(postObject, userID, this.primaryCache, this.postCache, options);
             if (result !== undefined) {
                 this.feedEmitter1.emit('pull-updated-feed', result.updatedFeeds);
             }
@@ -95,7 +102,7 @@ export class Newsfeed {
      */
 
     public async GetNewsFeed(userID: string) {
-        const result = await Post.GetPosts(this.cacheClient, userID, {mostRecent: true});
+        const result = await Post.GetPosts(this.primaryCache, this.postCache, userID, {mostRecent: true});
 
         if (result !== undefined) {
             this.feedEmitter2.emit('pull-feed', result.newsfeed);
@@ -105,8 +112,16 @@ export class Newsfeed {
         return 0;
     }
 
+    /**
+     * Matches a socketID to its newsfeed
+     *
+     * @private
+     * @param {string} socketID 
+     * @param {string} userID
+     * @memberof Newsfeed
+     */
     private async MatchSocketID(socketID: string, userID: string) {
-        await this.cacheClient.hset(userID, 'socketID', socketID);
+        await this.primaryCache.lset(userID, 0, socketID);
     }
 
 }
