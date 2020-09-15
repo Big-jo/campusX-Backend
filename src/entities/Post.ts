@@ -22,10 +22,12 @@ export interface IPostOptions {
 }
 
 export class Post {
+
     constructor() { }
 
+
     // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, client: IORedis.Redis, options: IPostOptions) {
+    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis, options: IPostOptions) {
         try {
 
             // TODO: Optimize this block
@@ -44,13 +46,13 @@ export class Post {
             //     const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
 
             //     // Add post to campus Feed
-            //     await client.hmset(post.campus, {[post._id]: post, state: 'dirty'});
+            //     await primaryCache.hmset(post.campus, {[post._id]: post, state: 'dirty'});
 
             //     // Check if a campus is a member of the set, if not, add them
 
             //     // TODO: Stop doing this on each post
-            //     if ( await client.sismember('campuses', post.campus) === 0) {
-            //         await client.sadd('campuses', post.campus);
+            //     if ( await primaryCache.sismember('campuses', post.campus) === 0) {
+            //         await primaryCache.sadd('campuses', post.campus);
             //     }
 
             //     for (const follower of followers) {
@@ -60,7 +62,7 @@ export class Post {
             //          * - sanitized: It hasnt been updated
             //          * - dirty: It has been updated
             //          */
-            //         await client.hmset(follower.follower, {[post._id]: post, state: 'dirty'});
+            //         await primaryCache.hmset(follower.follower, {[post._id]: post, state: 'dirty'});
             //         updatedFeeds.push({updatedHash: follower.follower, newPostID: post._id});
             //     }
 
@@ -95,59 +97,45 @@ export class Post {
             
             post = await post.save();
 
+            // Add post to post cache
+            postCache.hmset(post.id, {
+                author: post.author,
+                userTag: post.userTag,
+                text: post.text,
+                video: post.video,
+                image: post.image,
+                createdAt: post.createdAt,
+                name: postObject.name,
+                campus: post.campus,
+            });
+
             const followers: IFollower[] = await FollowerModel.find({ target: userID }).lean().exec();
+
             const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
 
+
             // Add post to campus Feed
-            await client.hmset(post.campus, { [post.id]: post, state: 'dirty' });
+            // await primaryCache.hmset(post.campus, { [post.id]: post, state: 'dirty' });
+            await primaryCache.lpush(post.campus, post.id);
             
             // TODO: Stop doing this on each post
-            if ((await client.sismember('campuses', post.campus)) === 0) {
-                await client.sadd('campuses', post.campus);
+            if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
+                await primaryCache.sadd('campuses', post.campus);
             }
 
             //  Offload this work to another thread
             for (const follower of followers) {
+                await primaryCache.lpush(follower.follower, post.id);
 
-                /**
-                 * Set the state of a users newsfeed in the cache
-                 * - sanitized: It hasnt been updated 
-                 * - dirty: It has been updated
-                 */
-
-                const hashedPost: string = JSON.stringify({
-                    campus: post.campus,
-                    userTag: post.userTag,
-                    author: post.author,
-                    image: post.image,
-                    name: post.name,
-                    parentPost: post.parentPost,
-                    text: post.text,
-                    video: post.video,
-                });
-
-                await client.hmset(follower.follower, {[post.id]: hashedPost, state: 'dirty' });
-
-                // Contains all the posts and their data
-                // Probably not the smartest thing to do
-                // const hashedPost: IPost = {
-                //     campus: post.campus,
-                //     userTag: post.userTag,
-                //     author: post.author,
-                //     image: post.image,
-                //     name: post.name,
-                //     parentPost: post.parentPost,
-                //     text: post.text,
-                //     video: post.video,
-                // };
-
-                // await client.hmset('posts-hash', {[post.id]: hashedPost});
+                // await primaryCache.hmset('posts-hash', {[post.id]: hashedPost});
                  // TODO: Set TTL
                 
                 /**
-                 *  This stores all the users the need to get the uploaded post and 
+                 *  This stores all the users that need to get the uploaded post and 
                  *  the postID
                  */
+
+                //  TODO: This should not be done, incase the user isnt online 
                 updatedFeeds.push({ updatedHash: follower.follower, newPostID: post.id });
 
             }
@@ -162,20 +150,23 @@ export class Post {
         }
     }
 
-    public static async GetPosts(client: IORedis.Redis, userID: string, options?: IOptions) {
+    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, options?: IOptions) {
         if (options!.mostRecent) {
             try {
                 /**
                  *  Check the cache for newsfeed
                  */
-                const exists = await client.exists(userID) === 1;
+                const exists = await primaryCache.exists(userID) === 1;
 
                 if (exists) {
                     // Get all the postIDs in the users newsfeed
-                    const cachedPosts = await client.hgetall(userID);
+                    const postKeys = await primaryCache.lrange(userID, 0, -1);
                     
-                    // const posts = await client.
-                    return { newsfeed: cachedPosts };
+                    // Get posts from cache 
+                    const newsfeed = await postCache.mget(...postKeys)
+
+                    // const posts = await primaryCache.
+                    return { newsfeed };
                 } else {
                     const followings = await FollowingModel.find({
                         follower: userID,
@@ -230,6 +221,7 @@ export class Post {
     public static async Comment(commentObject: IComment) {
         try {
             const comment = new PostModel(commentObject).save();
+
             return 0;
         } catch (e) {
             logger.error(e);
