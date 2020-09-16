@@ -1,15 +1,15 @@
 import mongoose, { Schema } from 'mongoose';
-import {ICircle} from 'src/interfaces/ICircle';
+import { ICircle } from 'src/interfaces/ICircle';
 import mongoosePaginate from 'mongoose-paginate';
 const ModeratorSchema: Schema = new Schema({
-    moderator: {type: Schema.Types.ObjectId, ref: 'User'},
+    moderator: { type: Schema.Types.ObjectId, ref: 'User' },
 });
 
 const CircleSchema: Schema = new Schema({
-    name: {type: String, required: true},
-    members_count: {type: String},
-    description: {type: String, required: true},
-    avatar: {type: String},
+    name: { type: String, required: true },
+    members_count: { type: Number, default: 0 },
+    description: { type: String, required: true },
+    avatar: { type: String },
     moderators: [ModeratorSchema],
 });
 
