@@ -88,13 +88,13 @@ export class Post {
             if (postObject.image != null) {
                 const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
-            } 
+            }
 
             if (postObject.video) {
                 const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
-            
+
             post = await post.save();
 
             // Add post to post cache
@@ -111,46 +111,33 @@ export class Post {
 
             const followers: IFollower[] = await FollowerModel.find({ target: userID }).lean().exec();
 
-            const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
-
-
             // Add post to campus Feed
-            // await primaryCache.hmset(post.campus, { [post.id]: post, state: 'dirty' });
+
             await primaryCache.lpush(post.campus, post.id);
-            
+
             // TODO: Stop doing this on each post
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
-                await primaryCache.sadd('campuses', post.campus);
+                primaryCache.sadd('campuses', post.campus);
             }
 
             //  Offload this work to another thread
             for (const follower of followers) {
-                await primaryCache.lpush(follower.follower, post.id);
-
-                // await primaryCache.hmset('posts-hash', {[post.id]: hashedPost});
-                 // TODO: Set TTL
-                
-                /**
-                 *  This stores all the users that need to get the uploaded post and 
-                 *  the postID
-                 */
-
-                //  TODO: This should not be done, incase the user isnt online 
-                updatedFeeds.push({ updatedHash: follower.follower, newPostID: post.id });
-
+                primaryCache.lpush(follower.follower, post.id);
+                primaryCache.sadd('dirty', follower.follower);
             }
+
 
             // Also return ID of the newsfeed updated
             return {
                 opsValue: 0,
-                updatedFeeds,
             };
+
         } catch (error) {
             logger.error(error);
         }
     }
 
-    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, options?: IOptions) {
+    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, check: boolean, options?: IOptions) {
         if (options!.mostRecent) {
             try {
                 /**
@@ -159,14 +146,18 @@ export class Post {
                 const exists = await primaryCache.exists(userID) === 1;
 
                 if (exists) {
+
                     // Get all the postIDs in the users newsfeed
                     const postKeys = await primaryCache.lrange(userID, 0, -1);
-                    
-                    // Get posts from cache 
-                    const newsfeed = await postCache.mget(...postKeys)
 
+                    // Since feed has been retrieved, remove its dirty status
+                    primaryCache.srem('dirty', userID);
+
+                    // Hydrate the feed list 
+                    const newsfeed = await this.Hydrate(postKeys, postCache);
                     // const posts = await primaryCache.
                     return { newsfeed };
+
                 } else {
                     const followings = await FollowingModel.find({
                         follower: userID,
@@ -243,6 +234,28 @@ export class Post {
         }
     }
 
+    /**
+     * Retrives posts from cache`
+     * 
+     * @param keys Keys of the post
+     */
+    private static async Hydrate(keys: string[], postCache: IORedis.Redis) {
+        const pipeline = postCache.pipeline();
+
+        for (const key of keys) {
+            pipeline.hgetall(key);
+        }
+
+        return await pipeline.exec();
+    }
+
+    public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
+        if (await primaryCache.sismember('dirty', userID) === 1) {
+            return { newsfeedStatus: 'dirty' };
+        } else {
+            return { newsfeedStatus: 'sanitized' };
+        }
+    }
     // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
     //
     // }
