@@ -51,6 +51,7 @@ export class Circle {
                     circle: circleID,
                 });
                 const saved = await newMember.save();
+                CircleModel.findByIdAndUpdate({ _id: circleID }, { $inc: { members_count: 1 } }).exec();
                 return { memberID: saved.id };
             }
         } catch (error) {
@@ -96,9 +97,9 @@ export class Circle {
 
     public static async GetCircle(circleId: string, userID: string) {
         try {
-            const memberID = await CircleMemberModel.find({userID, circle: circleId}).lean().exec();
+            const memberID = await CircleMemberModel.find({ userID, circle: circleId }).lean().exec();
             const circle = await CircleModel.findById(circleId).lean().exec();
-            return { circle, memberID: memberID !== undefined ? memberID : null};
+            return { circle, memberID: memberID !== undefined ? memberID : null };
         } catch (error) {
             logger.error(error.message);
             throw new Error(error);
@@ -109,7 +110,7 @@ export class Circle {
         try {
 
             const circles = await CircleMemberModel.find({ userID }).lean()
-                .populate({path: 'circle'}).exec();
+                .populate({ path: 'circle' }).exec();
             return { circles };
         } catch (error) {
             logger.error(error.message);
