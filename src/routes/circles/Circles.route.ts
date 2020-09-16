@@ -27,8 +27,8 @@ let client: IORedis.Redis;
 if (process.env.NODE_ENV === 'development') {
     client = new IORedis();
 } else {
-    const redisPort = Number(process.env.REDIS_PORT);
-    client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+    const redisPort = Number(process.env.REDIS_PORT_PRIMARY);
+    client = new IORedis(redisPort, process.env.REDIS_HOST_PRIMARY, {password: process.env.REDIS_PASS_PRIMARY});
 }
 client.on('connect', args => {
     logger.info('Redis Connected');
