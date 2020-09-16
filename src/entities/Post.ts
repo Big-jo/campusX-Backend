@@ -25,7 +25,6 @@ export class Post {
 
     constructor() { }
 
-
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis, options: IPostOptions) {
         try {
@@ -126,7 +125,6 @@ export class Post {
                 primaryCache.sadd('dirty', follower.follower);
             }
 
-
             // Also return ID of the newsfeed updated
             return {
                 opsValue: 0,
@@ -154,7 +152,9 @@ export class Post {
                     primaryCache.srem('dirty', userID);
 
                     // Hydrate the feed list 
-                    const newsfeed = await this.Hydrate(postKeys, postCache);
+                    let newsfeed = await this.Hydrate(postKeys, postCache);
+
+                    newsfeed = newsfeed.map(item => item[1]);
                     // const posts = await primaryCache.
                     return { newsfeed };
 
@@ -245,7 +245,7 @@ export class Post {
         for (const key of keys) {
             pipeline.hgetall(key);
         }
-
+        
         return await pipeline.exec();
     }
 
