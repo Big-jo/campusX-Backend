@@ -11,7 +11,7 @@ import cors from 'cors';
 import * as socketIO from 'socket.io';
 import * as http from 'http';
 import * as SocketIO from 'socket.io';
-import {Newsfeed} from './lib/newsfeeds';
+// import {Newsfeed} from './lib/newsfeeds';
 import {NOT_FOUND} from 'http-status-codes';
 import sentry from './lib/sentry';
 // Setup MongoDB
@@ -42,7 +42,7 @@ const server = http.createServer(app);
 
 const io = socketIO.listen(server);
 
-const newsfeed = new Newsfeed(io);
+// const newsfeed = new Newsfeed(io);
 // Handle Websockets
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
@@ -63,7 +63,7 @@ app.use(express.urlencoded({
 }));
 app.use((req, res, next) => {
     res.locals.socketio = io;
-    res.locals.newsfeed = newsfeed;
+    // res.locals.newsfeed = newsfeed;
     next();
 });
 app.use(cookieParser());
