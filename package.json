@@ -7,7 +7,7 @@
     "start": "ENV_FILE=production node -r ./env -r module-alias/register dist/Start.js",
     "start-dev": "nodemon --config \"./util/nodemon.json\"",
     "start-debug": "nodemon --config \"./util/nodemon.debug.json\" --inspect src/Start.ts",
-    "start-stage": "nodemon --config \"./util/nodemon.staging.json\"",
+    "start-staging": "nodemon --config \"./util/nodemon.staging.json\"",
     "test": "nodemon --config \"./util/nodemon.test.json\"",
     "webstorm": "ENV_FILE=development ts-node -r ./env -r tsconfig-paths/register src/Start.ts"
   },
