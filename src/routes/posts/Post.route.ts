@@ -30,8 +30,9 @@ if (process.env.NODE_ENV === 'development') {
     primaryCache = new IORedis();
     postCache = new IORedis({ port: 6380 });
 } else {
-    const redisPortPrimary = Number(process.env.REDIS_PORT);
+    const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
     const redisPortPC = Number(process.env.REDIS_PORT_PC);
+
     primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
     postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
 
@@ -128,7 +129,7 @@ export const getPostsPath = '/newsfeed/home';
 router.get(getPostsPath, auth, async (req, res) => {
     try {
         // await Post.GetPosts(client, req.params.userID, {mostRecent: true});
-        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, req.query.check,{ mostRecent: true });
+        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, req.query.check, { mostRecent: true });
 
         result?.newsfeed === undefined ? res.json({ result }).status(200) : res.json({ result }).status(200);
     } catch (error) {
@@ -192,7 +193,7 @@ router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
     try {
         const result = await Post.CheckFeedStatus(req.token.userID, primaryCache);
 
-        res.json({result} ).status(OK);
+        res.json({ result }).status(OK);
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
