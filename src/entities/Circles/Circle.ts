@@ -86,7 +86,7 @@ export class Circle {
 
     public static async GetCircles(offset: number) {
         try {
-            const [circles] = await Promise.all([CircleModel.paginate({}, { offset, limit: 10 })]);
+            const [circles] = await Promise.all([CircleModel.paginate({}, { offset, limit: 15, sort: { members_count: -1 } })]);
 
             return { circles: circles.docs };
         } catch (error) {
