@@ -5,11 +5,11 @@ import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-cod
 import { logger } from '@shared';
 import validation from '../../middleware/auth';
 import { Post } from '../../entities/Post';
-import {IComment, IPost} from '../../interfaces/IPost';
+import { IComment, IPost } from '../../interfaces/IPost';
 import IORedis from 'ioredis';
 import { Utility } from '../../lib/utility';
 
-import {Newsfeed} from '../../lib/newsfeeds';
+// import {Newsfeed} from '../../lib/newsfeeds';
 import multer from 'multer';
 
 const router = Router();
@@ -18,23 +18,30 @@ const path = '/post';
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const auth = validation.validateToken;
-let client: IORedis.Redis;
+
+let primaryCache: IORedis.Redis;
+let postCache: IORedis.Redis;
+
 /******************************************************************************
  *                                 SETUP REDIS
  /******************************************************************************/
 
 if (process.env.NODE_ENV === 'development') {
-     client = new IORedis();
+    primaryCache = new IORedis();
+    postCache = new IORedis({ port: 6380 });
 } else {
-    const redisPort = Number(process.env.REDIS_PORT);
-    client = new IORedis(redisPort, process.env.REDIS_HOST, {password: process.env.REDIS_PASS});
+    const redisPortPrimary = Number(process.env.REDIS_PORT);
+    const redisPortPC = Number(process.env.REDIS_PORT_PC);
+    primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
+    postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
+
 }
 
-client.on('connect', args => {
+primaryCache.on('connect', args => {
     logger.info('Redis Connected');
 });
 
-client.on('error', err => {
+primaryCache.on('error', err => {
     logger.error(err);
 });
 
@@ -58,14 +65,16 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
             name: req.body.name,
         };
 
-        const newsfeed = res.locals.newsfeed as Newsfeed;
+        // const newsfeed = res.locals.newsfeed as Newsfeed;
 
         const options = {
-            anon: req.body.anon,
+            anonymous: req.body.anon,
         };
-        const result = await newsfeed.ConstructNewsFeed(post, req.token.userID, {anonymous: options.anon});
+
+        const result = await Post.CreatePost(post, req.token.userID, primaryCache, postCache, options);
+        // const result = await newsfeed.ConstructNewsFeed(post, req.token.userID, {anonymous: options.anon});
         // tslint:disable-next-line: max-line-length
-        result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({error: 'Sorry, error in the details your details'});
+        result?.opsValue === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({ error: 'Sorry, error in the details your details' });
 
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -104,7 +113,7 @@ router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
     try {
         // Actually, just return post with comments sub-field
         const result = await Post.GetComments(req.params.postID);
-        res.status(OK).json({result});
+        res.status(OK).json({ result });
         // TODO: Rank comments
     } catch (e) {
         Utility.ErrResponse(res, e);
@@ -113,16 +122,15 @@ router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
 /*********************************************************
  *                          Get Posts
  *********************************************************/
-export const getPostsPath = '/newsfeed/home/:userID';
+export const getPostsPath = '/newsfeed/home';
 
 // tslint:disable-next-line: no-shadowed-variable
-router.get(getPostsPath, async (req, res) => {
+router.get(getPostsPath, auth, async (req, res) => {
     try {
         // await Post.GetPosts(client, req.params.userID, {mostRecent: true});
-        // const result = await Post.GetPosts(client, req.token.userID, {mostRecent: true});
-        const io = res.locals.io;
-        const newsfeed = new Newsfeed(io);
-        res.status(200);
+        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, req.query.check,{ mostRecent: true });
+
+        result?.newsfeed === undefined ? res.json({ result }).status(200) : res.json({ result }).status(200);
     } catch (error) {
         logger.error(error, error.message);
         Utility.ErrResponse(res, error);
@@ -169,12 +177,26 @@ export const dislikePostPath = '/dislike';
 router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
     try {
         const result = await Post.DislikePost(req.token.userID, req.body.postID);
-        result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
 });
 
+
+/******************************************************************************
+*                                 Check Newsfeed Status
+/******************************************************************************/
+export const checkFeedStatus = '/newsfeed/check';
+router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await Post.CheckFeedStatus(req.token.userID, primaryCache);
+
+        res.json({result} ).status(OK);
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+})
 /******************************************************************************
  *                                 Trash Post
  /******************************************************************************/
