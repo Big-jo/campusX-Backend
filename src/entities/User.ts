@@ -131,7 +131,7 @@ export class User {
 
                 case 'user':
 
-                    const user = await UserModel.findById(userID, { password: 0 }).lean().exec();
+                    const user = await UserModel.findById(targetID, { password: 0 }).lean().exec();
 
                     const isFollowing = FollowsModel.findOne({ target: targetID, follower: userID }).exec();
                     if (user === null || undefined ) { return { exist: false }; }
