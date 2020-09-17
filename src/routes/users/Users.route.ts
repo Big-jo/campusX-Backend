@@ -97,8 +97,8 @@ export const getUserInfo = '/getUser/:searchKey';  // Accepted info search Keys:
 export const getUserInfoErrMessage = 'Oops sorry couldn/t get what you want';
 router.get(getUserInfo, auth, async (req: Request, res: Response) => {
     try {
-        const userID = req.query.userID === undefined ? req.token.userID : req.query.userID;
-        const result = await User.GetUser(req.params.searchKey, userID);
+        const userID = req.token.userID;
+        const result = await User.GetUser(req.params.searchKey, req.params.targetID, userID);
         res.status(OK).json({
             result,
         });

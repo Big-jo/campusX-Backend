@@ -101,7 +101,7 @@ export class User {
         }
     }
 
-    public static async GetUser(searchKey: string, userID: string) {
+    public static async GetUser(searchKey: string, targetID: string, userID: string) {
         try {
             switch (searchKey) {
                 case 'followers':
@@ -119,13 +119,35 @@ export class User {
                         .exec();
                     return { followings };
 
+                case 'self':
+
+                    const self = await UserModel.findById(userID, { password: 0 }).lean().exec();
+
+
+                    if (self != null) {
+                        return { self };
+                    }
+                    return { exist: false };
+
                 case 'user':
 
                     const user = await UserModel.findById(userID, { password: 0 }).lean().exec();
-                    if (user != null) {
-                        return { user };
+
+                    const isFollowing = FollowsModel.findOne({ target: targetID, follower: userID }).exec();
+                    if (user === null || undefined ) { return { exist: false }; }
+                    
+                    if (isFollowing != null) {
+                        return {
+                            user,
+                            isFollowing: true,
+                        };
+                    } else {
+                        return {
+                            user,
+                            isFollowing: false,
+                        };
                     }
-                    return { exist: false };
+                    
                 default:
                     break;
             }
@@ -213,7 +235,7 @@ export class User {
         )]);
 
         const connectUsers = [];
-        
+
         for (const userObject of users.docs as any) {
             if (userObject.id !== userID) {
                 userObject.userProfile.university === user.userProfile.university ? userObject.sameCampus = true : userObject.sameCampus = false;
