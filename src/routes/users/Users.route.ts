@@ -86,9 +86,20 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
-
 });
 
+/******************************************************************************
+*                                 Unfollow A User
+/******************************************************************************/
+export const unfollowed = '/unfollow';
+router.post(unfollowed, auth,async (req: Request, res: Response) => {
+    try {
+        const result = await User.unfollowUser(req.body.targetID, req.token.userID);
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
+    } catch (e) {
+        Utility.ErrResponse(res, e);
+    }
+})
 /******************************************************************************
  *                   Generic get route for getting user related data
  ******************************************************************************/
@@ -141,8 +152,8 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-     const result = await User.ConnectUser(req.token.userID, parseInt(req.query.offset, 10));
-     res.status(OK).json({result});
+        const result = await User.ConnectUser(req.token.userID, parseInt(req.query.offset, 10));
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }

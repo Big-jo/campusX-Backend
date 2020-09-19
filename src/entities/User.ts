@@ -86,6 +86,7 @@ export class User {
                 follower: userID,
                 target: targetUserID,
             });
+
             // TODO: Add typings support for FCM-NODE
             // TODO: Make notifications function async
             // const notif = new Notifications('Campus', `${target!.userTag} followed you`, target!.fcm_token);
@@ -95,6 +96,26 @@ export class User {
             await follow.save();
             return 0;
             // TODO: Send a notification to the target, informing about the follow
+        } catch (error) {
+            logger.error(error, error.message);
+            throw new Error(error);
+        }
+    }
+
+    public static async unfollowUser(targetUserID: string, userID: string) {
+        try {
+
+            FollowsModel.deleteOne({
+                target: targetUserID,
+                follower: userID,
+            }).exec();
+
+            FollowingModel.deleteOne({
+                follower: userID,
+                target: targetUserID,
+            }).exec();
+
+            return 0;
         } catch (error) {
             logger.error(error, error.message);
             throw new Error(error);
@@ -134,8 +155,8 @@ export class User {
                     const user = await UserModel.findById(targetID, { password: 0 }).lean().exec();
 
                     const isFollowing = FollowsModel.findOne({ target: targetID, follower: userID }).exec();
-                    if (user === null || undefined ) { return { exist: false }; }
-                    
+                    if (user === null || undefined) { return { exist: false }; }
+
                     if (isFollowing != null) {
                         return {
                             user,
@@ -147,7 +168,7 @@ export class User {
                             isFollowing: false,
                         };
                     }
-                    
+
                 default:
                     break;
             }
