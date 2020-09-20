@@ -97,7 +97,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             parentPost: req.body.parentPost,
             campus: req.body.university,
         };
-        const result = await Post.Comment(commentObject);
+        const result = await Post.Comment(commentObject, postCache);
         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
     } catch (e) {
         logger.error(e);
@@ -164,7 +164,7 @@ export const likePostPath = '/like';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Post.LikePost(req.token.userID, req.body.postID);
+        const result = await Post.LikePost(req.token.userID, req.body.postID, postCache);
         result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -177,7 +177,7 @@ router.post(likePostPath, auth, async (req: Request, res: Response) => {
 export const dislikePostPath = '/dislike';
 router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Post.DislikePost(req.token.userID, req.body.postID);
+        const result = await Post.DislikePost(req.token.userID, req.body.postID, postCache);
         result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -197,7 +197,7 @@ router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
-})
+});
 /******************************************************************************
  *                                 Trash Post
  /******************************************************************************/
