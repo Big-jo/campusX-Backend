@@ -37,7 +37,7 @@ export class User {
                     campus: user.userProfile.university,
                     // userProfile: user.userProfile,
                 };
-                return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id } };
+                return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
