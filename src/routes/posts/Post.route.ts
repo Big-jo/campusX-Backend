@@ -85,25 +85,25 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
 /*********************************************************
  *                      Create Comments
  *********************************************************/
-export const createComment = '/comment';
-router.post(createComment, auth, async (req: Request, res: Response) => {
-    try {
-        const commentObject: IComment = {
-            video: req.body.video,
-            image: req.body.image,
-            text: req.body.text,
-            author: req.body.author,
-            userTag: req.body.userTag,
-            parentPost: req.body.parentPost,
-            campus: req.body.university,
-        };
-        const result = await Post.Comment(commentObject, postCache);
-        result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
-    } catch (e) {
-        logger.error(e);
-        Utility.ErrResponse(res, e);
-    }
-});
+// export const createComment = '/comment';
+// router.post(createComment, auth, async (req: Request, res: Response) => {
+//     try {
+//         const commentObject: IComment = {
+//             video: req.body.video,
+//             image: req.body.image,
+//             text: req.body.text,
+//             author: req.body.author,
+//             userTag: req.body.userTag,
+//             parentPost: req.body.parentPost,
+//             campus: req.body.university,
+//         };
+//         const result = await Post.Comment(commentObject, postCache);
+//         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
+//     } catch (e) {
+//         logger.error(e);
+//         Utility.ErrResponse(res, e);
+//     }
+// });
 
 /*********************************************************
  *                      Get Comments
