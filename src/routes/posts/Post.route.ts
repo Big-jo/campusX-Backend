@@ -108,18 +108,18 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
 /*********************************************************
  *                      Get Comments
  *********************************************************/
-export const getCommentsPath = '/comments/:postID';
+// export const getCommentsPath = '/comments/:postID';
 
-router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
-    try {
-        // Actually, just return post with comments sub-field
-        const result = await Post.GetComments(req.params.postID);
-        res.status(OK).json({ result });
-        // TODO: Rank comments
-    } catch (e) {
-        Utility.ErrResponse(res, e);
-    }
-});
+// router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
+//     try {
+//         // Actually, just return post with comments sub-field
+//         const result = await Post.GetComments(req.params.postID);
+//         res.status(OK).json({ result });
+//         // TODO: Rank comments
+//     } catch (e) {
+//         Utility.ErrResponse(res, e);
+//     }
+// });
 /*********************************************************
  *                          Get Posts
  *********************************************************/
@@ -162,27 +162,27 @@ export const getCampusPostPath = '/getnewsfeed/:campusID';
 
 export const likePostPath = '/like';
 
-router.post(likePostPath, auth, async (req: Request, res: Response) => {
-    try {
-        const result = await Post.LikePost(req.token.userID, req.body.postID, postCache);
-        result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+// router.post(likePostPath, auth, async (req: Request, res: Response) => {
+//     try {
+//         const result = await Post.LikePost(req.token.userID, req.body.postID, postCache);
+//         result === 0 ? res.status(200).send() : res.status(BAD_REQUEST).send();
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
 
 /******************************************************************************
  *                                 Dislike Post
  /******************************************************************************/
-export const dislikePostPath = '/dislike';
-router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
-    try {
-        const result = await Post.DislikePost(req.token.userID, req.body.postID, postCache);
-        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+// export const dislikePostPath = '/dislike';
+// router.post(dislikePostPath, auth, async (req: Request, res: Response) => {
+//     try {
+//         const result = await Post.DislikePost(req.token.userID, req.body.postID, postCache);
+//         result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
 
 
 /******************************************************************************
@@ -197,7 +197,7 @@ router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
-});
+})
 /******************************************************************************
  *                                 Trash Post
  /******************************************************************************/
