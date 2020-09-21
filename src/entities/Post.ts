@@ -23,8 +23,6 @@ export interface IPostOptions {
 
 export class Post {
 
-    constructor() { }
-
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis, options: IPostOptions) {
         try {
@@ -98,6 +96,7 @@ export class Post {
 
             // Add post to post cache
             postCache.hmset(post.id, {
+                postID: post.id,
                 author: post.author,
                 userTag: post.userTag,
                 text: post.text,
@@ -106,17 +105,24 @@ export class Post {
                 createdAt: post.createdAt,
                 name: postObject.name,
                 campus: post.campus,
+                likes: 0,
+                dislikes: 0,
+                comments: 0,
             });
+
+            postCache.expire(post.id, 86400);
+
+            // Index each post
+            postCache.sadd('post-index', post.id);
 
             const followers: IFollower[] = await FollowerModel.find({ target: userID }).lean().exec();
 
             // Add post to campus Feed
-
             await primaryCache.lpush(post.campus, post.id);
 
             // TODO: Stop doing this on each post
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
-                primaryCache.sadd('campuses', post.campus);
+                primaryCache.sadd('campuses', post.campus.toLowerCase());
             }
 
             //  Offload this work to another thread
@@ -155,6 +161,7 @@ export class Post {
                     let newsfeed = await this.Hydrate(postKeys, postCache);
 
                     newsfeed = newsfeed.map(item => item[1]);
+                    
                     // const posts = await primaryCache.
                     return { newsfeed };
 
@@ -166,7 +173,7 @@ export class Post {
                             target: 1,
                         },
                     )
-                        .exec();
+                     .exec();
                     //  TODO: A worker should be spawned to do tasks from here
                     const arr: string[] = [];
 
@@ -185,13 +192,15 @@ export class Post {
 
     }
 
-    public static async LikePost(userID: string, postID: string) {
+    public static async LikePost(userID: string, postID: string, postCache: IORedis.Redis) {
         try {
             /**
              *  Increment Post likes and update the likedBy field
              */
             await PostModel.findByIdAndUpdate(postID, { $inc: { likes: 1 }, likedBy: userID }).exec();
             await UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
+            postCache.hincrby(postID, 'likes', 1);
+
             return 0;
         } catch (error) {
             logger.error(error);
@@ -199,19 +208,22 @@ export class Post {
         }
     }
 
-    public static async DislikePost(userID: string, postID: string) {
+    public static async DislikePost(userID: string, postID: string, postCache: IORedis.Redis) {
         try {
             PostModel.findByIdAndUpdate(postID, { $inc: { dislikes: 1 } }).exec();
             UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.20 } }).exec();
+            postCache.hincrby(postID, 'likes', 1);
+
             return 0;
         } catch (error) {
             throw new Error(error);
         }
     }
 
-    public static async Comment(commentObject: IComment) {
+    public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
         try {
-            const comment = new PostModel(commentObject).save();
+            new PostModel(commentObject).save();
+            postCache.hincrby(commentObject.parentPost, 'likes', 1);
 
             return 0;
         } catch (e) {
@@ -255,7 +267,60 @@ export class Post {
         } else {
             return { newsfeedStatus: 'sanitized' };
         }
+
     }
+
+    /**
+     * @desc  Calculates the top post on the platform 
+     * @param postCache 
+     */
+    // public static async CalcTopPosts(postCache: IORedis.Redis) {
+        
+    //     // Get all the posts on the platform
+    //     const postsIDs = await postCache.smembers('post-index');
+
+    //     const pipeline = postCache.pipeline();
+
+    //     for (let index = 0; index < postsIDs.length; index++) {
+    //         const post = postsIDs[index];
+            
+    //         pipeline.hgetall(post);
+
+    //     }
+    //     const piplelineResult = await pipeline.exec();
+
+    //     const scored: Array<{postID: string, score: string}> = [];
+
+    //     //  Calculate the score for each post 
+
+    //     for (let index = 0; index < piplelineResult.length; index++) {
+    //         const post = piplelineResult[index][1];
+    //         const likes = post.likes;
+    //         const likesWeight = 4;
+    //         // const dislikes = post.likes; // Not considering this yet
+    //         const comments  = post.comments;
+    //         const commentsWeight = 5;
+
+    //         const score = ((likes * likesWeight ) + (comments * commentsWeight)).toString();
+        
+    //         scored.push({postID: post.postID, score});
+    //     }
+
+    //     // Cache top posts in set
+    //     for (let index = 0; index < scored.length; index++) {
+    //         const scoredElement = scored[index];
+            
+    //         pipeline.zadd('top-posts', scoredElement.postID, scoredElement.score);
+    //     }
+
+    //     pipeline.exec();
+    // }
+
+    // public static async GetTopPosts(postCache: IORedis.Redis) {
+    //     const topPosts = await postCache.zrevrange('top-posts', 0, -1);
+
+    //     return topPosts;
+    // }
     // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
     //
     // }
