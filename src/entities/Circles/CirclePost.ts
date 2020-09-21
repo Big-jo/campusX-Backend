@@ -45,7 +45,7 @@ export class CirclePost extends Post {
 
             pipeline.hmset(`${circleID}:${post.id}`, CPost);
             pipeline.expire(`${circleID}:${post.id}`, 172800);
-            pipeline.sadd('circlePostIndex', `${circleID}:${post.id}`);
+            pipeline.sadd(`circlePostsIndexes:${circleID}`, `${circleID}:${post.id}`);
 
             pipeline.exec();
 
