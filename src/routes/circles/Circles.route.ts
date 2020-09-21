@@ -1,14 +1,14 @@
-import {BAD_REQUEST, CREATED, OK} from 'http-status-codes';
-import {Request, Response, Router} from 'express';
+import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
+import { Request, Response, Router } from 'express';
 
-import {Circle} from '../../entities/Circles/Circle';
-import {CirclePost} from '../../entities/Circles/CirclePost';
+import { Circle } from '../../entities/Circles/Circle';
+import { CirclePost } from '../../entities/Circles/CirclePost';
 import IORedis from 'ioredis';
-import {Utility} from '../../lib/utility';
-import {logger} from '../../shared/Logger';
+import { Utility } from '../../lib/utility';
+import { logger } from '../../shared/Logger';
 import validation from '../../middleware/auth';
 import multer from 'multer';
-import {ICircle} from '../../interfaces/ICircle';
+import { ICircle } from '../../interfaces/ICircle';
 import * as request from 'request';
 
 /******************************************************************************
@@ -19,23 +19,33 @@ const router = Router();
 const path = '/circles';
 const auth = validation.validateToken;
 const storage = multer.memoryStorage();
-const upload = multer({storage});
-let client: IORedis.Redis;
+const upload = multer({ storage });
+
+let primaryCache: IORedis.Redis;
+let postCache: IORedis.Redis;
+
 /******************************************************************************
  *                                 SETUP REDIS
  /******************************************************************************/
+
 if (process.env.NODE_ENV === 'development') {
-    client = new IORedis();
+    primaryCache = new IORedis();
+    postCache = new IORedis({ port: 6380 });
 } else {
-    const redisPort = Number(process.env.REDIS_PORT_PRIMARY);
-    client = new IORedis(redisPort, process.env.REDIS_HOST_PRIMARY, {password: process.env.REDIS_PASS_PRIMARY});
+    const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
+    const redisPortPC = Number(process.env.REDIS_PORT_PC);
+
+    primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
+    postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
+
 }
-client.on('connect', args => {
+
+primaryCache.on('connect', args => {
     logger.info('Redis Connected');
 });
 
-client.on('error', err => {
-    logger.error(err.message);
+primaryCache.on('error', err => {
+    logger.error(err);
 });
 /******************************************************************************
  *
@@ -54,7 +64,7 @@ router.post(createCircle, upload.single('image'), async (req: Request, res: Resp
         if (result === 0) {
             res.status(CREATED).json('created');
         } else {
-            res.status(BAD_REQUEST).json({exist: true});
+            res.status(BAD_REQUEST).json({ exist: true });
         }
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -66,9 +76,9 @@ router.post(joinCircle, auth, async (req: Request, res: Response) => {
     try {
         const result = await Circle.Join(req.token.userID, req.body.circleID);
         if (result.exist !== true) {
-            res.status(OK).json({memberID: result.memberID});
+            res.status(OK).json({ memberID: result.memberID });
         } else {
-            res.status(BAD_REQUEST).json({exist: true});
+            res.status(BAD_REQUEST).json({ exist: true });
         }
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -94,8 +104,8 @@ router.post(leaveCircle, auth, async (req: Request, res: Response) => {
 export const circleFeed = '/feed/:circleID';
 router.get(circleFeed, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircleFeed(req.params.circleID, client);
-        res.status(OK).json({circleFeed: result.circleFeed});
+        const result = await Circle.GetCircleFeed(req.params.circleID, postCache);
+        res.status(OK).json({ circleFeed: result.circleFeed });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
@@ -109,7 +119,7 @@ export const circlePost = '/post';
 router.post(circlePost, upload.single('image'), auth, async (req: Request, res: Response) => {
     try {
         const post = {
-            author: req.token,
+            author: req.token.userID,
             memberID: req.body.memberID,
             name: req.body.name,
             circleID: req.body.circleID,
@@ -117,8 +127,9 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
             userTag: req.body.userTag,
         };
 
-        const media =  (req.file.fieldname === 'image') ? {tag: 'image', file: req.file} : {tag: 'video', file: req.file};
-        const result = await CirclePost.CirclePost(post, media, client, post.circleID, post.memberID);
+        // tslint:disable-next-line: max-line-length
+        const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
+        const result = await CirclePost.CirclePost(post, media, postCache, post.circleID, post.memberID);
 
         if (result === 0) {
             res.status(CREATED).send();
@@ -135,7 +146,7 @@ export const getCircles = '/list';
 router.get(getCircles, async (req: Request, res: Response) => {
     try {
         const result = await Circle.GetCircles(parseInt(req.query.offset, 10));
-        res.status(OK).json({result});
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
@@ -147,7 +158,7 @@ router.get(getCircles, async (req: Request, res: Response) => {
 export const getCircle = '/circle/:circleID';
 router.get(getCircle, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircle(req.params.circleID, req.token.userID); 
+        const result = await Circle.GetCircle(req.params.circleID, req.token.userID);
 
         res.status(OK).json(result);
     } catch (error) {
@@ -163,10 +174,10 @@ export const userCircles = '/home';
 router.get(userCircles, auth, async (req: Request, res: Response) => {
     try {
         const result = await Circle.UserCircles(req.token.userID);
-        res.status(OK).json(result);    
+        res.status(OK).json(result);
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
 });
 
-export default {router, path};
+export default { router, path };
