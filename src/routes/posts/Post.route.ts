@@ -75,7 +75,7 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
         const result = await Post.CreatePost(post, req.token.userID, primaryCache, postCache, options);
         // const result = await newsfeed.ConstructNewsFeed(post, req.token.userID, {anonymous: options.anon});
         // tslint:disable-next-line: max-line-length
-        result?.opsValue === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({ error: 'Sorry, error in the details your details' });
+        result?.opsValue === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({ error: 'Oops an error occured' });
 
     } catch (error) {
         Utility.ErrResponse(res, error);
