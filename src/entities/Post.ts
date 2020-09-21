@@ -77,9 +77,9 @@ export class Post {
                 text: postObject.text,
                 video: '',
                 image: '',
-                createdAt: moment().format('lll'),
                 name: postObject.name,
                 campus: postObject.campus,
+                createdAt: new Date(),
             });
 
             if (postObject.image != null) {
@@ -161,29 +161,25 @@ export class Post {
                     let newsfeed = await this.Hydrate(postKeys, postCache);
 
                     newsfeed = newsfeed.map(item => item[1]);
-                    
+
                     // const posts = await primaryCache.
                     return { newsfeed };
 
                 } else {
-                    const followings = await FollowingModel.find({
+                    // Get people user follows
+                    const followings = await FollowerModel.find({
                         follower: userID,
-                    },
-                        {
-                            target: 1,
-                        },
-                    )
-                     .exec();
+                    }, { target: 1 }).lean().exec();
                     //  TODO: A worker should be spawned to do tasks from here
                     const arr: string[] = [];
 
-                    followings.forEach(x => {
+                    followings.forEach((x: { target: string; }) => {
                         arr.push(x.target);
                     });
 
-                    const Posts = await PostModel.find({ author: { $in: arr } });
+                    const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(150).sort({ createdAt: -1 }).exec();
                     // const newsfeed = await this.SortPost(Posts, {reverse: true});
-                    return { Posts };
+                    return { newsfeed };
                 }
             } catch (error) {
                 logger.error(error);
@@ -257,7 +253,7 @@ export class Post {
         for (const key of keys) {
             pipeline.hgetall(key);
         }
-        
+
         return await pipeline.exec();
     }
 
@@ -275,7 +271,7 @@ export class Post {
      * @param postCache 
      */
     // public static async CalcTopPosts(postCache: IORedis.Redis) {
-        
+
     //     // Get all the posts on the platform
     //     const postsIDs = await postCache.smembers('post-index');
 
@@ -283,7 +279,7 @@ export class Post {
 
     //     for (let index = 0; index < postsIDs.length; index++) {
     //         const post = postsIDs[index];
-            
+
     //         pipeline.hgetall(post);
 
     //     }
@@ -302,14 +298,14 @@ export class Post {
     //         const commentsWeight = 5;
 
     //         const score = ((likes * likesWeight ) + (comments * commentsWeight)).toString();
-        
+
     //         scored.push({postID: post.postID, score});
     //     }
 
     //     // Cache top posts in set
     //     for (let index = 0; index < scored.length; index++) {
     //         const scoredElement = scored[index];
-            
+
     //         pipeline.zadd('top-posts', scoredElement.postID, scoredElement.score);
     //     }
 
