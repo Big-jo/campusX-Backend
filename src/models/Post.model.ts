@@ -11,7 +11,7 @@ const PostSchema: Schema = new Schema({
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
     trash: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now() },
+    createdAt: { type: Date },
     campus: { type: String},
     // If this is a comment, this would be populated
     parentPost: {type: String},
