@@ -4,6 +4,7 @@ import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
 import { S3 } from '../../lib/s3';
+// import { circleFeed } from 'src/routes/circles/Circles.route';
 // import mongoose from 'mongoose';
 
 export class Circle {
@@ -72,9 +73,18 @@ export class Circle {
 
     public static async GetCircleFeed(circleID: string, redisClient: IORedis.Redis) {
         try {
-            const circleFeed = [];
-            const cachedPosts = await redisClient.hgetall(circleID);
-            circleFeed.push(cachedPosts);
+            const circlePostKeys = await redisClient.smembers(`circlePostsIndexes:${circleID}`);
+            const pipeline = redisClient.pipeline();
+
+            for (let index = 0; index < circlePostKeys.length; index++) {
+                const key = circlePostKeys[index];
+                pipeline.hgetall(key);
+            }
+
+            const piplelineResult = await pipeline.exec();
+
+            const circleFeed = piplelineResult.map(item => item[1]);
+
             return { circleFeed };
 
             // Write Sort Algorithm for Posts 😢 
