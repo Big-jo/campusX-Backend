@@ -91,10 +91,10 @@ router.post(leaveCircle, auth, async (req: Request, res: Response) => {
  *                                 GET CIRCLE FEED
  /******************************************************************************/
 
-export const circleFeed = '/feed';
+export const circleFeed = '/feed/:circleID';
 router.get(circleFeed, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircleFeed(req.body.circleID, client);
+        const result = await Circle.GetCircleFeed(req.params.circleID, client);
         res.status(OK).json({circleFeed: result.circleFeed});
     } catch (error) {
         Utility.ErrResponse(res, error);
