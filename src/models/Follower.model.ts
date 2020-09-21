@@ -1,6 +1,6 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
-// People client is following
 
+// Used to query for everyone user is following \
 export interface IFollower extends Document {
     target: string;
     follower: string;

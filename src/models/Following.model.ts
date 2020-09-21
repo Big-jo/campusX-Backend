@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document, mongo} from 'mongoose';
-// People that follows the client
+// Used to query for everyone that follows the user
 export interface IFollowing extends Document {
     follower: string;
     target: string;
