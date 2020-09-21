@@ -8,7 +8,7 @@ export interface IPostModel extends Document {
     video: string;
     image: string;
     tag?: string;
-    createdAt: string;
+    createdAt: Date;
     likes: number;
     dislikes: number;
     trash: number;
