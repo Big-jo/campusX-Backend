@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { logger } from '@shared';
 import FollowsModel from '../models/Follower.model';
-import FollowingModel from '../models/Following.model';
+import FollowingsModel from '../models/Following.model';
 import PostModel from '../models/Post.model';
 import { Utility } from '../lib/utility';
 import { S3 } from '../lib/s3';
@@ -18,8 +18,15 @@ export class User {
             return { exist: true };
         } else {
             try {
+
                 const user = new UserModel({
                     name: userObject.name,
+                    userProfile: {
+                        avatar: userObject.userProfile.avatar,
+                        bio: userObject.userProfile.bio,
+                        gender: userObject.userProfile.gender,
+                        university: userObject.userProfile.university,
+                    },
                     userID: '',
                     userTag: `${userObject.userTag}`,
                     email: userObject.email,
@@ -77,12 +84,20 @@ export class User {
         try {
             // const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
 
+            /**
+             * Belongs to client making request, model for people 
+             * the client follows
+             */
             const follow = await new FollowsModel({
                 target: targetUserID,
                 follower: userID,
             });
 
-            const following = await new FollowingModel({
+            /**
+             * Belongs to the person the client is following,
+             * model for people the target is being followed by 
+             */
+            const following = await new FollowingsModel({
                 follower: userID,
                 target: targetUserID,
             });
@@ -110,7 +125,7 @@ export class User {
                 follower: userID,
             }).exec();
 
-            FollowingModel.deleteOne({
+            FollowingsModel.deleteOne({
                 follower: userID,
                 target: targetUserID,
             }).exec();
@@ -125,15 +140,15 @@ export class User {
     public static async GetUser(searchKey: string, targetID: string, userID: string) {
         try {
             switch (searchKey) {
-                case 'followers':
-                    const followers = await FollowsModel.find({ target: userID })
-                        .lean()
-                        .populate('follower', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
+                case 'follows':
+                    const follows = await FollowsModel.find({ follower: targetID })
+                        // .lean()
+                        // .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
                         .exec();
-                    return { followers };
+                    return { follows };
 
                 case 'followings':
-                    const followings = await FollowingModel.find({ follower: userID })
+                    const followings = await FollowingsModel.find({ follower: userID })
                         // tslint:disable-next-line: max-line-length
                         .lean()
                         .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
@@ -156,7 +171,7 @@ export class User {
 
                     const isFollowing = await FollowsModel.findOne({ target: targetID, follower: userID }).exec();
                     if (user === null || undefined) { return { exist: false }; }
-                    
+
                     if (isFollowing != null) {
                         return {
                             user,

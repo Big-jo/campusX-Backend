@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strictNullChecks": false,
     "baseUrl": "./",
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
@@ -14,48 +15,19 @@
     "moduleResolution": "node",
     "allowJs": true,
     "paths": {
-      "@entities": [
-        "src/entities"
-      ],
-      "@shared": [
-        "src/shared"
-      ],
-      "@server": [
-        "src/Server"
-      ],
-      "@spec": [
-        "src/spec"
-      ],
-      "@routes": [
-        "src/routes"
-      ],
-      "@models": [
-        "src/models"
-      ],
-      "@middleware": [
-        "src/middleware"
-      ],
-      "@lib": [
-        "src/lib"
-      ],
-      "@interfaces": [
-        "src/interfaces"
-      ]
+      "@entities": ["src/entities"],
+      "@shared": ["src/shared"],
+      "@server": ["src/Server"],
+      "@spec": ["src/spec"],
+      "@routes": ["src/routes"],
+      "@models": ["src/models"],
+      "@middleware": ["src/middleware"],
+      "@lib": ["src/lib"],
+      "@interfaces": ["src/interfaces"]
     },
-    "types": [
-      "node"
-    ],
-    "typeRoots": [
-      "@types",
-      "node_modules/@types"
-    ]
+    "types": ["node"],
+    "typeRoots": ["@types", "node_modules/@types"]
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "src/public/",
-    "node_modules",
-    "src/spec"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/public/", "node_modules", "src/spec"]
 }
