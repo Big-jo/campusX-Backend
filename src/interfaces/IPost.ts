@@ -19,6 +19,7 @@ export interface IPostModel extends Document {
 }
 
 export interface IPost {
+    postID: string;
     name?: string;
     author?: string;
     text?: string;
@@ -26,7 +27,6 @@ export interface IPost {
     video?: any;
     image?: any;
     campus: string;
-    parentPost?: string;
 }
 
 export interface ICommentModel extends IPostModel{
@@ -34,6 +34,7 @@ export interface ICommentModel extends IPostModel{
 }
 
 export interface IComment extends IPost{
+    commnetID: string;
     parentPost: string;
 }
 
