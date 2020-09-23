@@ -6,13 +6,14 @@ import { describe } from 'mocha';
 import { User } from '../../entities/User';
 import { IUser } from '../../interfaces/IUser';
 
+const Db = mongoose.connection;
+
 before(() => {
     const URI = process.env.MONGO_URI as string;
     mongoose.connect(URI, {
         useNewUrlParser: true,
         useFindAndModify: false,
     });
-    const Db = mongoose.connection;
     // tslint:disable-next-line: no-console
     Db.on('error', console.error.bind(console, 'MongoDB connection error'));
     // tslint:disable-next-line: no-console
@@ -23,6 +24,10 @@ before(() => {
     }).catch(e => {
         console.log(e.message);
     });
+});
+
+after(() => {
+    Db.close();
 });
 
 describe('User Interactions', () => {
