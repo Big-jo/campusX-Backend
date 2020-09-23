@@ -21,12 +21,12 @@ export class User {
 
                 const user = new UserModel({
                     name: userObject.name,
-                    userProfile: {
+                    userProfile: userObject.userProfile != null ? {
                         avatar: userObject.userProfile.avatar,
                         bio: userObject.userProfile.bio,
                         gender: userObject.userProfile.gender,
                         university: userObject.userProfile.university,
-                    },
+                    } : null,
                     userID: '',
                     userTag: `${userObject.userTag}`,
                     email: userObject.email,
