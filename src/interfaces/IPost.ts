@@ -1,4 +1,4 @@
-import {Document} from 'mongoose';
+import { Document } from 'mongoose';
 
 export interface IPostModel extends Document {
     name: string,
@@ -19,7 +19,7 @@ export interface IPostModel extends Document {
 }
 
 export interface IPost {
-    postID: string;
+    postID?: string;
     name?: string;
     author?: string;
     text?: string;
@@ -29,11 +29,11 @@ export interface IPost {
     campus: string;
 }
 
-export interface ICommentModel extends IPostModel{
+export interface ICommentModel extends IPostModel {
     parentPost: string;
 }
 
-export interface IComment extends IPost{
+export interface IComment extends IPost {
     commnetID: string;
     parentPost: string;
 }
