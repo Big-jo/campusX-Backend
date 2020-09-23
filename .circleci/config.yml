@@ -3,7 +3,7 @@ jobs:
   run_tests:
     docker:
       - image: circleci/node:10
-      - image: 'circleci/mongo:latest'
+      - image: "circleci/mongo:latest"
     steps:
       - checkout
       - run:
@@ -13,7 +13,7 @@ jobs:
       - run:
           name: Run Unit Tests
           command: |
-            npm run test
+            npm run tests
 workflows:
   build_test:
     jobs:
