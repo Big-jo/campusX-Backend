@@ -218,8 +218,16 @@ export class Post {
 
     public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
         try {
-            new PostModel(commentObject).save();
-            postCache.hincrby(commentObject.parentPost, 'likes', 1);
+            const comment = new CommentModel(commentObject);
+            comment.save();
+            // const pipeline = postCache.pipeline();
+
+            // pipeline.hincrby(commentObject.parentPost, 'comments', 1);
+            // pipeline.hmset(`comment:${comment.id}`, commentObject);
+            // pipeline.expire(`comment:${comment.id}`, 86400);
+            // pipeline.zadd('comments-index', '0', `comment:${comment.id}`);
+
+            // pipeline.exec();
 
             return 0;
         } catch (e) {
