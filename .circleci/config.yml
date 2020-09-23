@@ -3,6 +3,7 @@ jobs:
   run_tests:
     docker:
       - image: circleci/node:10
+      - image: 'circleci/mongo:latest'
     steps:
       - checkout
       - run:
