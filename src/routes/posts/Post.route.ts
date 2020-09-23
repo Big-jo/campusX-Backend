@@ -87,6 +87,8 @@ export const createComment = '/comment';
 router.post(createComment, auth, async (req: Request, res: Response) => {
     try {
         const commentObject: IComment = {
+            commnetID: '',
+            postID: '',
             video: req.body.video,
             image: req.body.image,
             text: req.body.text,
