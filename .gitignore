@@ -121,4 +121,4 @@ node_modules
 .nyc_output
 .idea
 .mocharc.json
-src/spec
+# src/spec
