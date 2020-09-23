@@ -4,16 +4,25 @@
     "member-ordering": false,
     "object-literal-sort-keys": false,
     "ordered-imports": false,
-    "quotemark": [true, "single"],
-    "no-trailing-whitespace":false,
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "no-trailing-whitespace": false,
     "arrow-parens": {
       "options": "ban-single-arg-parens"
     },
     "max-line-length": {
-      "options": {"limit":  150}
+      "options": {
+        "limit": 150
+      }
     },
-    "prefer-for-of":false,
-    "indent": [true, "spaces", 2]
+    "prefer-for-of": false,
+    "indent": [
+      true,
+      "spaces",
+      2
+    ]
   },
   "linterOptions": {
     "exclude": [
