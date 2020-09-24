@@ -9,7 +9,7 @@ export interface ICircle extends Document {
 }
 
 interface IModerator {
-    user: string;
+    moderator: string;
 }
 
 export interface ICircleModel <T extends Document> extends PaginateModel<T> {}
