@@ -10,6 +10,7 @@ import validation from '../../middleware/auth';
 import multer from 'multer';
 import { ICircle } from '../../interfaces/ICircle';
 import * as request from 'request';
+import { ICirclePost } from 'src/interfaces/ICirclePost';
 
 /******************************************************************************
  *                                 Router Setup
@@ -118,13 +119,15 @@ router.get(circleFeed, auth, async (req: Request, res: Response) => {
 export const circlePost = '/post';
 router.post(circlePost, upload.single('image'), auth, async (req: Request, res: Response) => {
     try {
-        const post = {
+        const post: ICirclePost = {
             author: req.token.userID,
             memberID: req.body.memberID,
             name: req.body.name,
             circleID: req.body.circleID,
             text: req.body.text,
             userTag: req.body.userTag,
+            authorAvatar: req.token.avatar,
+            campus: req.body.campus, 
         };
 
         // tslint:disable-next-line: max-line-length
