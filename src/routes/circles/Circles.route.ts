@@ -52,7 +52,7 @@ primaryCache.on('error', err => {
  /******************************************************************************/
 
 export const createCircle = '/create';
-router.post(createCircle, upload.single('image'), async (req: Request, res: Response) => {
+router.post(createCircle, auth, upload.single('image'), async (req: Request, res: Response) => {
     try {
         const circleObject = {
             avatar: req.file,
@@ -60,7 +60,7 @@ router.post(createCircle, upload.single('image'), async (req: Request, res: Resp
             description: req.body.description,
         } as ICircle;
 
-        const result = await Circle.Create(circleObject);
+        const result = await Circle.Create(circleObject, req.token.userID);
         if (result === 0) {
             res.status(CREATED).json('created');
         } else {
