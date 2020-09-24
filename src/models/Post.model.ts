@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, mongo } from 'mongoose';
 import { IPostModel } from 'src/interfaces/IPost';
 
 const PostSchema: Schema = new Schema({
+    authorAvatar: { type: String},
     author: { type: String, ref: 'User' },
     userTag: { type: String},
     text: { type: String },
