@@ -58,14 +58,15 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
         // TODO: Move this to controller dir
         // TODO: Add Annonymous feature
         const post: IPost = {
-            userTag: req.body.userTag,
+            userTag: req.token.userTag,
             author: req.token.userID,
             image: req.file,
             text: req.body.text,
-            campus: req.body.campus,
-            name: req.body.name,
+            campus: req.token.campus,
+            name: req.token.name,
         };
 
+        console.log(req.token);
         // const newsfeed = res.locals.newsfeed as Newsfeed;
 
         const options = {
@@ -73,7 +74,12 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
         };
 
         const result = await Post.CreatePost(post, req.token.userID, primaryCache, postCache, options);
-        result?.opsValue === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).json({ error: 'Oops an error occured' });
+        
+        if (result.opsValue === 0) {
+            res.status(CREATED).send();
+        } else {
+            throw new Error();
+        }
 
     } catch (error) {
         Utility.ErrResponse(res, error);
