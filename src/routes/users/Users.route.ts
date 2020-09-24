@@ -33,6 +33,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
             phone_number: req.body.phoneNumber,
             userTag: req.body.userTag,
         } as IUser;
+
         const result = await User.CreateUser(user);
         if (result.exist) {
             res.status(BAD_REQUEST).json({ exist: true });
@@ -92,7 +93,7 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
 *                                 Unfollow A User
 /******************************************************************************/
 export const unfollowed = '/unfollow';
-router.post(unfollowed, auth,async (req: Request, res: Response) => {
+router.post(unfollowed, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.unfollowUser(req.body.targetID, req.token.userID);
         result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
@@ -140,7 +141,7 @@ const updateUserProfile = '/update/profile';
 router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.UpdateUserProfile(req.token.userID, req.body.update);
-        result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
