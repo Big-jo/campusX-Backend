@@ -8,7 +8,7 @@ import FollowingsModel from '../models/Following.model';
 import PostModel from '../models/Post.model';
 import { Utility } from '../lib/utility';
 import { S3 } from '../lib/s3';
-import { ITokenPayload } from 'src/interfaces/ITokenPayload';
+import { ITokenPayload } from '../interfaces/ITokenPayload';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 export class User {

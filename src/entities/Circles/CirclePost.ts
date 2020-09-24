@@ -5,7 +5,7 @@ import { logger } from '../../shared/Logger';
 import IORedis from 'ioredis';
 import CirclePostModel from '../../models/CirclePost.model';
 import { S3 } from '../../lib/s3';
-import CircleMemberModel from 'src/models/CircleMember.model';
+import CircleMemberModel from '../../models/CircleMember.model';
 
 // interface ICPost {
     
