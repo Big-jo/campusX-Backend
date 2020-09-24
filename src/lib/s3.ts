@@ -88,7 +88,6 @@ export class S3 {
                         reject();
                         throw new Error(err);
                     }
-                    UserModel.findByIdAndUpdate(this.ID, { 'userProfile.avatar': data.Location });
                     resolve(data);
                 });
             });
