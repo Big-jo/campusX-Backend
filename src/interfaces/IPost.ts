@@ -1,24 +1,11 @@
 import { Document } from 'mongoose';
 
-export interface IPostModel extends Document {
-    name: string,
-    author: string;
-    text: string;
-    userTag: string;
-    video: string;
-    image: string;
-    tag?: string;
+export interface IPostModel extends Document, IPost {
     createdAt: Date;
-    likes: number;
-    dislikes: number;
-    trash: number;
-    campus: string;
-    scorePost(): number;
-    checkLiked(id: string): boolean;
-    parentPost: string;
 }
 
 export interface IPost {
+    authorAvatar: string;
     postID?: string;
     name?: string;
     author?: string;
@@ -27,6 +14,10 @@ export interface IPost {
     video?: any;
     image?: any;
     campus: string;
+    likes?: number;
+    dislikes?: number;
+    comments?: number;
+    createdAt?: Date;
 }
 
 export interface ICommentModel extends IPostModel {
