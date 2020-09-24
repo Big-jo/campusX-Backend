@@ -12,15 +12,15 @@ export class Circle {
     public static async Create(circleObject: ICircle, userID: string) {
         try {
             const circleName = circleObject.name.toLowerCase();
-            const circle = await CircleModel.findOne({ name: circleName }).exec();
-            if (circle) {
+            const circle = await CircleModel.findOne({ name: circleName }).lean().exec();
+            if (circle !== null ) {
                 return { exist: true };
             } else {
                 const newCircle = new CircleModel({
-                    name: circleObject.name,
+                    name: circleName,
                     avatar: ' ',
                     description: circleObject.description,
-                    moderators: [{moderator: userID}],
+                    moderators: [{ moderator: userID }],
                 });
 
                 const s3 = new S3(newCircle.id, circleObject.avatar, 'circle-avatars');
@@ -28,7 +28,7 @@ export class Circle {
                 await newCircle.save();
 
                 // Add the user to that circle
-                this.Join(userID, circle.id);
+                this.Join(userID, newCircle.id);
                 return 0;
             }
 
