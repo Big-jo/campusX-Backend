@@ -8,13 +8,8 @@ import { S3 } from '../../lib/s3';
 // import mongoose from 'mongoose';
 
 export class Circle {
-    // private ObjectId = mongoose.Types.ObjectId; 
 
-    // constructor() {
-
-    // }
-
-    public static async Create(circleObject: ICircle) {
+    public static async Create(circleObject: ICircle, userID: string) {
         try {
             const circleName = circleObject.name.toLowerCase();
             const circle = await CircleModel.findOne({ name: circleName }).exec();
@@ -25,12 +20,15 @@ export class Circle {
                     name: circleObject.name,
                     avatar: ' ',
                     description: circleObject.description,
+                    moderators: [{moderator: userID}],
                 });
 
                 const s3 = new S3(newCircle.id, circleObject.avatar, 'circle-avatars');
                 newCircle.avatar = await s3.UploadCircleAvatar() as string;
-
                 await newCircle.save();
+
+                // Add the user to that circle
+                this.Join(userID, circle.id);
                 return 0;
             }
 
