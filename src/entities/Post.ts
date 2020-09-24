@@ -5,7 +5,7 @@ import { IComment, IPost, IPostModel } from '../interfaces/IPost';
 import { logger } from '../shared/Logger';
 import arraySort from 'array-sort';
 import moment from 'moment';
-import FollowerModel, { IFollower } from '../models/Follower.model';
+import FollowsModel, { IFollower } from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
 import { S3 } from '../lib/s3';
@@ -39,7 +39,7 @@ export class Post {
 
             //     post = await post.save();
 
-            //     const followers: IFollower[] = await FollowerModel.find({target: userID});
+            //     const followers: IFollower[] = await FollowsModel.find({target: userID});
             //     const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
 
             //     // Add post to campus Feed
@@ -115,7 +115,11 @@ export class Post {
             // Index each post
             postCache.sadd('post-index', post.id);
 
-            const followers: IFollower[] = await FollowerModel.find({ target: userID }).lean().exec();
+            const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
+
+            if (followers === []) {
+                return;
+            }
 
             // Add post to campus Feed
             await primaryCache.lpush(post.campus, post.id);
@@ -167,7 +171,7 @@ export class Post {
 
                 } else {
                     // Get people user follows
-                    const followings = await FollowerModel.find({
+                    const followings = await FollowsModel.find({
                         follower: userID,
                     }, { target: 1 }).lean().exec();
                     //  TODO: A worker should be spawned to do tasks from here
