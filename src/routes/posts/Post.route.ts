@@ -58,6 +58,7 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
         // TODO: Move this to controller dir
         // TODO: Add Annonymous feature
         const post: IPost = {
+            authorAvatar: req.token.avatar,
             userTag: req.token.userTag,
             author: req.token.userID,
             image: req.file,
@@ -66,8 +67,6 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
             name: req.token.name,
         };
 
-        console.log(req.token);
-        // const newsfeed = res.locals.newsfeed as Newsfeed;
 
         const options = {
             anonymous: req.body.anon,
@@ -93,6 +92,7 @@ export const createComment = '/comment';
 router.post(createComment, auth, async (req: Request, res: Response) => {
     try {
         const commentObject: IComment = {
+            authorAvatar: req.token.avatar,
             commnetID: '',
             postID: '',
             video: req.body.video,
@@ -203,7 +203,7 @@ router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
-})
+});
 /******************************************************************************
  *                                 Trash Post
  /******************************************************************************/

@@ -9,6 +9,7 @@ import FollowsModel, { IFollower } from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
 import { S3 } from '../lib/s3';
+import { post } from 'request';
 
 // import { bool } from 'aws-sdk/clients/signer';
 
@@ -26,53 +27,10 @@ export class Post {
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis, options: IPostOptions) {
         try {
-
-            // TODO: Optimize this block
-            // if (options.anonymous) {
-            //     let post = await new PostModel({
-            //         text: postObject.text,
-            //         video: postObject.video,
-            //         image: postObject.image,
-            //         createdAt: moment().format('lll'),
-            //         campus: postObject.campus,
-            //     });
-
-            //     post = await post.save();
-
-            //     const followers: IFollower[] = await FollowsModel.find({target: userID});
-            //     const updatedFeeds: Array<{ updatedHash: string, newPostID: string }> = [];
-
-            //     // Add post to campus Feed
-            //     await primaryCache.hmset(post.campus, {[post._id]: post, state: 'dirty'});
-
-            //     // Check if a campus is a member of the set, if not, add them
-
-            //     // TODO: Stop doing this on each post
-            //     if ( await primaryCache.sismember('campuses', post.campus) === 0) {
-            //         await primaryCache.sadd('campuses', post.campus);
-            //     }
-
-            //     for (const follower of followers) {
-
-            //         /**
-            //          * Set the state of a users newsfeed in the cache
-            //          * - sanitized: It hasnt been updated
-            //          * - dirty: It has been updated
-            //          */
-            //         await primaryCache.hmset(follower.follower, {[post._id]: post, state: 'dirty'});
-            //         updatedFeeds.push({updatedHash: follower.follower, newPostID: post._id});
-            //     }
-
-            //     // Also return ID of the newsfeed updated
-            //     return {
-            //         opsValue: 0,
-            //         updatedFeeds,
-            //     };
-
-            // } else {
-
+            // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
-                author: userID,
+                authorAvatar: postObject.authorAvatar,
+                author: postObject.author,
                 userTag: postObject.userTag,
                 text: postObject.text,
                 video: '',
@@ -94,8 +52,8 @@ export class Post {
 
             post = await post.save();
 
-            // Add post to post cache
-            postCache.hmset(post.id, {
+            const cachedPost: IPost = {
+                authorAvatar: post.authorAvatar,
                 postID: post.id,
                 author: post.author,
                 userTag: post.userTag,
@@ -108,7 +66,10 @@ export class Post {
                 likes: 0,
                 dislikes: 0,
                 comments: 0,
-            });
+            };
+
+            // Add post to post cache
+            postCache.hmset(post.id, cachedPost);
 
             postCache.expire(post.id, 86400);
 
