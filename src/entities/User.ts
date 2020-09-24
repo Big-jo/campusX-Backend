@@ -8,6 +8,7 @@ import FollowingsModel from '../models/Following.model';
 import PostModel from '../models/Post.model';
 import { Utility } from '../lib/utility';
 import { S3 } from '../lib/s3';
+import { ITokenPayload } from 'src/interfaces/ITokenPayload';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 export class User {
@@ -38,12 +39,16 @@ export class User {
                 // Hash Password
                 user.password = await bcrypt.hash(user.password, rounds);
                 await user.save();
-                const payload = {
-                    userID: user._id,
+
+                const payload: ITokenPayload = {
+                    userID: user.id,
                     userTag: user.userTag,
                     campus: user.userProfile.university,
+                    name: user.name,
+                    avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
                     // userProfile: user.userProfile,
                 };
+
                 return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
             } catch (error) {
                 logger.error(error);
@@ -59,12 +64,16 @@ export class User {
                 const userPassword = user.password;
                 const result = await bcrypt.compare(password, userPassword);
                 if (result) {
-                    const payload = {
-                        userID: user._id,
-                        // userProfile: user.userProfile,
+                    const payload: ITokenPayload = {
+                        userID: user.id,
+                        userTag: user.userTag,
+                        campus: user.userProfile.university,
+                        name: user.name,
+                        avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
                     };
-                    const secret = process.env.JWT_SECRET as string;
-                    const token = jwt.sign(payload, secret);
+
+                    const token = Utility.createToken(payload);
+
                     return {
                         token,
                         user: { userTag: user.userTag, university: user.userProfile.university, avatar: user.userProfile.avatar, userID: user._id },
@@ -215,15 +224,23 @@ export class User {
 
     public static async UpdateUserProfile(userID: string, update: any) {
         try {
-            await UserModel.update({ _id: userID }, {
+            const user = await UserModel.findOneAndUpdate({ _id: userID }, {
                 $set: {
                     'userProfile.university': update.university,
                     'userProfile.gender': update.gender,
                     'userProfile.bio': update.bio,
                 },
-            });
+            }).exec();
+            
+            const payload: ITokenPayload = {
+                avatar: user.userProfile.avatar, 
+                campus: update.university,
+                name: user.name,
+                userID: user.id,
+                userTag: user.userTag,
+            }; 
 
-            return 0;
+            return {token: Utility.createToken(payload)};
 
         } catch (error) {
             logger.error(error.error);
@@ -233,7 +250,18 @@ export class User {
     public static async UploadAvatar(file: any, userID: string) {
         try {
             const s3 = new S3(userID, file, 'avatars');
-            return await s3.UploadAvatar();
+            const data = await s3.UploadAvatar() as any;
+            const user = await UserModel.findByIdAndUpdate(userID, { 'userProfile.avatar': data.Location }).exec();
+
+            const payload: ITokenPayload = {
+                avatar: data.Location, 
+                campus: user.userProfile.university,
+                name: user.name,
+                userID: user.id,
+                userTag: user.userTag,
+            }; 
+
+            return {token: Utility.createToken(payload), data};
         } catch (error) {
             logger.error(error, error.message);
         }
