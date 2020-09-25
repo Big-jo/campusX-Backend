@@ -63,9 +63,10 @@ export class User {
             if (user !== null) {
                 const userPassword = user.password;
                 const result = await bcrypt.compare(password, userPassword);
+
                 if (result) {
                     const payload: ITokenPayload = {
-                        userID: user.id,
+                        userID: user._id,
                         userTag: user.userTag,
                         campus: user.userProfile.university,
                         name: user.name,
@@ -231,16 +232,16 @@ export class User {
                     'userProfile.bio': update.bio,
                 },
             }).exec();
-            
+
             const payload: ITokenPayload = {
-                avatar: user.userProfile.avatar, 
+                avatar: user.userProfile.avatar,
                 campus: update.university,
                 name: user.name,
                 userID: user.id,
                 userTag: user.userTag,
-            }; 
+            };
 
-            return {token: Utility.createToken(payload)};
+            return { token: Utility.createToken(payload) };
 
         } catch (error) {
             logger.error(error.error);
@@ -254,14 +255,14 @@ export class User {
             const user = await UserModel.findByIdAndUpdate(userID, { 'userProfile.avatar': data.Location }).exec();
 
             const payload: ITokenPayload = {
-                avatar: data.Location, 
+                avatar: data.Location,
                 campus: user.userProfile.university,
                 name: user.name,
                 userID: user.id,
                 userTag: user.userTag,
-            }; 
+            };
 
-            return {token: Utility.createToken(payload), data};
+            return { token: Utility.createToken(payload), data };
         } catch (error) {
             logger.error(error, error.message);
         }
