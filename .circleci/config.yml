@@ -1,20 +1,7 @@
 version: 2.1
-jobs:
-  run_tests:
-    docker:
-      - image: circleci/node:10
-      - image: "circleci/mongo:latest"
-    steps:
-      - checkout
-      - run:
-          name: Install npm Dependencies
-          command: |
-            npm install --save
-      - run:
-          name: Run Unit Tests
-          command: |
-            npm run tests
+orbs:
+  node: circleci/node@3.0.0
 workflows:
-  build_test:
+  node-tests:
     jobs:
-      - run_tests
+      - node/test
