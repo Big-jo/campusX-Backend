@@ -135,7 +135,7 @@ export const getPostsPath = '/newsfeed/home';
 router.get(getPostsPath, auth, async (req, res) => {
     try {
         // await Post.GetPosts(client, req.params.userID, {mostRecent: true});
-        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, req.query.check, { mostRecent: true });
+        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, { mostRecent: true });
 
         result?.newsfeed === undefined ? res.json({ result }).status(200) : res.json({ result }).status(200);
     } catch (error) {
