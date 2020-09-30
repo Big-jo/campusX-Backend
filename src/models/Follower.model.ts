@@ -6,7 +6,7 @@ export interface IFollower extends Document {
   follower: string;
 }
 
-const FollowerSchema: Schema = new Schema({
+const FollowsSchema: Schema = new Schema({
   // Target: Person being followed
   target: { type: Schema.Types.ObjectId, ref: 'User' },
   // Follower: Person following target follower
@@ -14,4 +14,4 @@ const FollowerSchema: Schema = new Schema({
 
 });
 
-export default mongoose.model<IFollower>('Follows', FollowerSchema);
+export default mongoose.model<IFollower>('Follows', FollowsSchema);

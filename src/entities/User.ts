@@ -9,9 +9,15 @@ import PostModel from '../models/Post.model';
 import { Utility } from '../lib/utility';
 import { S3 } from '../lib/s3';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
+import { Types } from 'mongoose';
+
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
+const  ObjectId = require('mongoose').Types.ObjectId;
+
 export class User {
+
+
 
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({ email: userObject.email });
@@ -92,34 +98,42 @@ export class User {
 
     public static async FollowUser(targetUserID: string, userID: string) {
         try {
-            // const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
-
-            /**
-             * Belongs to client making request, model for people 
-             * the client follows
-             */
-            const follow = await new FollowsModel({
+            // Check is user is following target already
+            const isFollowing = await FollowsModel.findOne({
                 target: targetUserID,
                 follower: userID,
-            });
+            }).lean().exec();
 
-            /**
-             * Belongs to the person the client is following,
-             * model for people the target is being followed by 
-             */
-            const following = await new FollowingsModel({
-                follower: userID,
-                target: targetUserID,
-            });
+            if (isFollowing === null || undefined) {
+                // const target = await UserModel.findById(targetUserID, {userTag: 1}).lean().exec();
 
-            // TODO: Add typings support for FCM-NODE
-            // TODO: Make notifications function async
-            // const notif = new Notifications('Campus', `${target!.userTag} followed you`, target!.fcm_token);
-            // notif.send();
+                /**
+                 * Contains documents of everyone the user follows
+                 */
+                const follow = await new FollowsModel({
+                    target: targetUserID,
+                    follower: userID,
+                });
 
-            await following.save();
-            await follow.save();
-            return 0;
+                /**
+                 * Contains documents of everyone that follows a user
+                 */
+                const following = await new FollowingsModel({
+                    follower: userID,
+                    target: targetUserID,
+                });
+
+                // TODO: Add typings support for FCM-NODE
+                // TODO: Make notifications function async
+                // const notif = new Notifications('Campus', `${target!.userTag} followed you`, target!.fcm_token);
+                // notif.send();
+
+                following.save();
+                follow.save();
+                return 0;
+            } else {
+                return {error: 'You follow this user already'};
+            }
             // TODO: Send a notification to the target, informing about the follow
         } catch (error) {
             logger.error(error, error.message);
@@ -147,18 +161,18 @@ export class User {
         }
     }
 
-    public static async GetUser(searchKey: string, targetID: string, userID: string) {
+    public static async GetUser(searchKey: string, targetID?: string, userID?: string) {
         try {
             switch (searchKey) {
                 case 'follows':
-                    const follows = await FollowsModel.find({ follower: targetID })
-                        // .lean()
-                        // .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
+                    const follows = await FollowsModel.find({follower: userID})
+                        .lean()
+                        .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
                         .exec();
                     return { follows };
 
                 case 'followings':
-                    const followings = await FollowingsModel.find({ follower: userID })
+                    const followings = await FollowingsModel.find({ follower: userID, target: targetID })
                         // tslint:disable-next-line: max-line-length
                         .lean()
                         .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
