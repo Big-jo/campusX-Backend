@@ -71,14 +71,17 @@ export class Post {
             // Add post to post cache
             postCache.hmset(post.id, cachedPost);
 
-            postCache.expire(post.id, 86400);
+            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number
 
-            // Index each post
+            postCache.expire(post.id, expireTime); // Development Expire time
+
+
+            // Index post
             postCache.sadd('post-index', post.id);
 
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
 
-            if (followers === []) {
+            if (followers.length === 0) {
                 return;
             }
 
@@ -92,7 +95,8 @@ export class Post {
 
             //  Offload this work to another thread
             for (const follower of followers) {
-                primaryCache.lpush(follower.follower, post.id);
+                // primaryCache.lpush(follower.follower, post.id);
+                primaryCache.sadd(follower.follower, post.id);
                 primaryCache.sadd('dirty', follower.follower);
             }
 
@@ -106,7 +110,7 @@ export class Post {
         }
     }
 
-    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, check: boolean, options?: IOptions) {
+    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, options?: IOptions) {
         if (options!.mostRecent) {
             try {
                 /**
@@ -117,18 +121,32 @@ export class Post {
                 if (exists) {
 
                     // Get all the postIDs in the users newsfeed
-                    const postKeys = await primaryCache.lrange(userID, 0, -1);
+                    // const postKeys = await primaryCache.lrange(userID, 0, -1);
+                    const postKeys = await primaryCache.smembers(userID);
 
-                    // Since feed has been retrieved, remove its dirty status
+                    // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
 
-                    // Hydrate the feed list 
+                    // Hydrate the feed list (Get posts with the keys retrieved)
                     let newsfeed = await this.Hydrate(postKeys, postCache);
 
-                    newsfeed = newsfeed.map(item => item[1]);
+                    // newsfeed = newsfeed.map(item => {
+                    //    if (Object.entries(item[1]).length !== 0) {
+                    //        return item[1];
+                    //    }
+                    // });
+
+                    const filteredFeed = [];
+
+                    // TODO: Find a way to remove expired posts from users feed, if not it just keeps taking up space
+                    for (let i = 0; i < newsfeed.length; i++) {
+                        if (Object.entries(newsfeed[i][1]).length !== 0 ) {
+                            filteredFeed.push(newsfeed[i][1]);
+                        }
+                    }
 
                     // const posts = await primaryCache.
-                    return { newsfeed };
+                    return { newsfeed: filteredFeed };
 
                 } else {
                     // Get people user follows
