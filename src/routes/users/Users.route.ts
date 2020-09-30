@@ -83,7 +83,7 @@ export const followErrorMessage = 'Oops, something went wrong';
 router.post(followUser, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.FollowUser(req.body.targetUserID, req.token.userID);
-        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).json({error: result.error});
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
