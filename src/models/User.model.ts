@@ -18,6 +18,8 @@ const UserSchema: Schema = new Schema({
         phoneNumber: {type: Number},
         visits: {type: Number, default: 0},
         lastSeen: {type: Date},
+        followers: {type: Number, default: 0},
+        followings: {type: Number, default: 0},
     },
     fcm_token: {type: String},
     // lastActive: {type: Date},  Implement last active
