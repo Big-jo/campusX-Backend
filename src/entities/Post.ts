@@ -37,7 +37,7 @@ export class Post {
                 image: '',
                 name: postObject.name,
                 campus: postObject.campus,
-                createdAt: new Date(),
+                createdAt: Date.now(),
             });
 
             if (postObject.image != null) {
