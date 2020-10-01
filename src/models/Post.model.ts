@@ -16,10 +16,7 @@ const PostSchema: Schema = new Schema({
     campus: { type: String},
     // If this is a comment, this would be populated
     parentPost: {type: String},
+    likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
 });
-
-PostSchema.methods.score = function score() {
-    
-}
 
 export default mongoose.model<IPostModel>('Post', PostSchema);
