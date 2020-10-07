@@ -1,11 +1,10 @@
-import mongoose, { Schema, Document, mongo } from 'mongoose';
-import {IPostModel, IComment, ICommentModel} from 'src/interfaces/IPost';
-
-
+import mongoose, {Schema} from 'mongoose';
+import {ICommentModel} from 'src/interfaces/IPost';
 
 const commentSchema: Schema = new Schema({
     author: { type: Schema.Types.ObjectId, ref: 'User' },
     parentPost: {type: Schema.Types.ObjectId, ref: 'Post'},
+    parentPostID: {type: String},
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },
