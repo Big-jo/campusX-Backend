@@ -25,8 +25,9 @@ export interface ICommentModel extends IPostModel {
 }
 
 export interface IComment extends IPost {
-    commnetID: string;
+    commentID: string;
     parentPost: string;
+    parentPostID: string;
 }
 
 export interface IRepostModel extends IPostModel {
