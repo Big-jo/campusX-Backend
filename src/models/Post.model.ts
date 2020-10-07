@@ -1,10 +1,10 @@
-
-import mongoose, { Schema, Document, mongo } from 'mongoose';
+import mongoose, {Schema} from 'mongoose';
 import { IPostModel } from 'src/interfaces/IPost';
 
 const PostSchema: Schema = new Schema({
     authorAvatar: { type: String},
     author: { type: String, ref: 'User' },
+    postID: {type: String},
     userTag: { type: String},
     text: { type: String },
     video: { type: String, default: null },
@@ -18,5 +18,4 @@ const PostSchema: Schema = new Schema({
     parentPost: {type: String},
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
 });
-
 export default mongoose.model<IPostModel>('Post', PostSchema);
