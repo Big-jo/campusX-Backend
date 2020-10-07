@@ -1,15 +1,11 @@
 import PostModel from '../models/Post.model';
-import FollowingModel, { IFollowing } from '../models/Following.model';
 import UserModel from '../models/User.model';
-import { IComment, IPost, IPostModel } from '../interfaces/IPost';
-import { logger } from '../shared/Logger';
-import arraySort from 'array-sort';
-import moment from 'moment';
+import {IComment, IPost} from '../interfaces/IPost';
+import {logger} from '@shared';
 import FollowsModel, { IFollower } from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
 import { S3 } from '../lib/s3';
-import { post } from 'request';
 
 // import { bool } from 'aws-sdk/clients/signer';
 
@@ -25,7 +21,7 @@ export interface IPostOptions {
 export class Post {
 
     // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis, options: IPostOptions) {
+    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis) {
         try {
             // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
@@ -71,10 +67,9 @@ export class Post {
             // Add post to post cache
             postCache.hmset(post.id, cachedPost);
 
-            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number
+            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
 
             postCache.expire(post.id, expireTime); // Development Expire time
-
 
             // Index post
             postCache.sadd('post-index', post.id);
@@ -88,7 +83,6 @@ export class Post {
             // Add post to campus Feed
             await primaryCache.lpush(post.campus, post.id);
 
-            // TODO: Stop doing this on each post
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
                 primaryCache.sadd('campuses', post.campus.toLowerCase());
             }
@@ -128,7 +122,7 @@ export class Post {
                     primaryCache.srem('dirty', userID);
 
                     // Hydrate the feed list (Get posts with the keys retrieved)
-                    let newsfeed = await this.Hydrate(postKeys, postCache);
+                    const newsfeed = await this.Hydrate(postKeys, postCache);
 
                     // newsfeed = newsfeed.map(item => {
                     //    if (Object.entries(item[1]).length !== 0) {
@@ -149,6 +143,8 @@ export class Post {
                     return { newsfeed: filteredFeed };
 
                 } else {
+                    // TODO: Optimize this block
+
                     // Get people user follows
                     const followings = await FollowsModel.find({
                         follower: userID,
@@ -233,10 +229,20 @@ export class Post {
         }
     }
 
+    public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
+        if (await primaryCache.sismember('dirty', userID) === 1) {
+            return {newsfeedStatus: 'dirty'};
+        } else {
+            return {newsfeedStatus: 'sanitized'};
+        }
+
+    }
+
     /**
      * Retrives posts from cache`
-     * 
+     *
      * @param keys Keys of the post
+     * @param postCache
      */
     private static async Hydrate(keys: string[], postCache: IORedis.Redis) {
         const pipeline = postCache.pipeline();
@@ -246,15 +252,6 @@ export class Post {
         }
 
         return await pipeline.exec();
-    }
-
-    public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
-        if (await primaryCache.sismember('dirty', userID) === 1) {
-            return { newsfeedStatus: 'dirty' };
-        } else {
-            return { newsfeedStatus: 'sanitized' };
-        }
-
     }
 
     /**
