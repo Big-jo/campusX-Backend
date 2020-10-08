@@ -6,6 +6,7 @@ import FollowsModel, { IFollower } from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
 import { S3 } from '../lib/s3';
+import LikedByModel from '../models/LikedBy.model';
 
 // import { bool } from 'aws-sdk/clients/signer';
 
@@ -169,14 +170,39 @@ export class Post {
 
     public static async LikePost(userID: string, postID: string, postCache: IORedis.Redis) {
         try {
-            /**
-             *  Increment Post likes and update the likedBy field
-             */
-            await PostModel.findByIdAndUpdate(postID, { $inc: { likes: 1 }, likedBy: userID }).exec();
-            await UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
-            postCache.hincrby(postID, 'likes', 1);
+            const likedBy = await LikedByModel.find({postID, userID}).exec();
 
-            return 0;
+            if (likedBy.length === 0) {
+
+                PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
+                UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
+
+                // @ts-ignore
+                new LikedByModel({
+                    postID,
+                    userID,
+                }).save();
+
+                const pipeline = postCache.pipeline();
+
+                pipeline.hincrby(postID, 'likes', 1);
+                pipeline.sadd(`likes:${postID}`, userID);
+                pipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
+                pipeline.exec();
+
+                return {ops: 'liked'};
+            } else {
+                PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
+                UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
+                LikedByModel.deleteOne({postID, userID}).exec();
+
+                const pipeline = postCache.pipeline();
+                pipeline.hincrby(postID, 'likes', -1);
+                pipeline.srem(`likes:${postID}`, userID);
+                pipeline.exec();
+
+                return {ops: 'unliked'};
+            }
         } catch (error) {
             logger.error(error);
             throw new Error(error);
@@ -184,7 +210,10 @@ export class Post {
     }
 
     public static async DislikePost(userID: string, postID: string, postCache: IORedis.Redis) {
+
+        // TODO: Check if post has been disliked already, if it has, undislike it, check if it has been liked too
         try {
+
             PostModel.findByIdAndUpdate(postID, { $inc: { dislikes: 1 } }).exec();
             UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.20 } }).exec();
             postCache.hincrby(postID, 'likes', 1);
@@ -197,16 +226,33 @@ export class Post {
 
     public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
         try {
-            const comment = new CommentModel(commentObject);
+            const newComment = {
+                commentID: '',
+                userTag: commentObject.userTag,
+                name: commentObject.name,
+                campus: commentObject.campus,
+                text: commentObject.text,
+                video: commentObject.video,
+                image: commentObject.image,
+                parentPost: commentObject.parentPost,
+                authorAvatar: commentObject.authorAvatar,
+                author: commentObject.author,
+            } as IComment;
+
+            const comment = new CommentModel(newComment);
+            comment.commentID = comment.id;
             comment.save();
-            // const pipeline = postCache.pipeline();
 
-            // pipeline.hincrby(commentObject.parentPost, 'comments', 1);
-            // pipeline.hmset(`comment:${comment.id}`, commentObject);
-            // pipeline.expire(`comment:${comment.id}`, 86400);
-            // pipeline.zadd('comments-index', '0', `comment:${comment.id}`);
+            const pipeline = postCache.pipeline();
+            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
 
-            // pipeline.exec();
+            pipeline.hincrby(commentObject.parentPost, 'comments', 1);
+            pipeline.hmset(`comments:${comment.id}`, commentObject);
+            pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
+            pipeline.expire(`comments:${comment.id}`, expireTime);
+            pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
+
+            pipeline.exec();
 
             return 0;
         } catch (e) {
@@ -215,14 +261,31 @@ export class Post {
         }
     }
 
-    public static async GetComments(postID: string) {
+    public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string) {
         try {
-            const comments = await CommentModel.find({ parentPost: postID })
-                .lean()
-                .populate('author', { name: 1, userProfile: 1, userTag: 1 })
-                .populate('parentPost')
-                .exec();
-            return { comments };
+
+            if (await postCache.exists(`post_comments_index:${parentPostID}`) === 1) {
+                const commentIDs = await postCache.zrevrange(`post_comments_index:${parentPostID}`, 0, limit);
+
+                const pipeline = postCache.pipeline();
+
+                for (const commentID of commentIDs) {
+                    pipeline.hgetall(`comments:${commentID}`);
+                    pipeline.sismember(`$likes:${commentID}`, userID);
+                }
+
+                const pipelineResult = await pipeline.exec();
+
+                return {comments: filtered};
+            } else {
+                const comments = await CommentModel.find({parentPost: parentPostID})
+                    .lean()
+                    .populate('author', {name: 1, userProfile: 1, userTag: 1})
+                    .populate('parentPost')
+                    .exec();
+                return {comments};
+            }
+
         } catch (e) {
             logger.error(e);
             throw new Error(e);
