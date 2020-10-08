@@ -61,18 +61,18 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async LikePost(postID: string, userID: string) {
-        try {
-            /**
-             *  Increment Post likes and update the likedBy field
-             */
-            CirclePostModel.findByIdAndUpdate(postID, { $inc: { likes: 1 }, likedBy: userID }).exec();
-            return 0;
-        } catch (error) {
-            logger.error(error);
-            throw new Error(error);
-        }
-    }
+    // public static async LikePost(postID: string, userID: string) {
+    //     try {
+    //         /**
+    //          *  Increment Post likes and update the likedBy field
+    //          */
+    //         CirclePostModel.findByIdAndUpdate(postID, { $inc: { likes: 1 }, likedBy: userID }).exec();
+    //         return 0;
+    //     } catch (error) {
+    //         logger.error(error);
+    //         throw new Error(error);
+    //     }
+    // }
 
     public static async DislikePost(postID: string, userID: string) {
         try {
