@@ -224,42 +224,42 @@ export class Post {
         }
     }
 
-    public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
-        try {
-            const newComment = {
-                commentID: '',
-                userTag: commentObject.userTag,
-                name: commentObject.name,
-                campus: commentObject.campus,
-                text: commentObject.text,
-                video: commentObject.video,
-                image: commentObject.image,
-                parentPost: commentObject.parentPost,
-                authorAvatar: commentObject.authorAvatar,
-                author: commentObject.author,
-            } as IComment;
-
-            const comment = new CommentModel(newComment);
-            comment.commentID = comment.id;
-            comment.save();
-
-            const pipeline = postCache.pipeline();
-            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
-
-            pipeline.hincrby(commentObject.parentPost, 'comments', 1);
-            pipeline.hmset(`comments:${comment.id}`, commentObject);
-            pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
-            pipeline.expire(`comments:${comment.id}`, expireTime);
-            pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
-
-            pipeline.exec();
-
-            return 0;
-        } catch (e) {
-            logger.error(e);
-            throw new Error(e);
-        }
-    }
+    // public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
+    //     try {
+    //         const newComment = {
+    //             commentID: '',
+    //             userTag: commentObject.userTag,
+    //             name: commentObject.name,
+    //             campus: commentObject.campus,
+    //             text: commentObject.text,
+    //             video: commentObject.video,
+    //             image: commentObject.image,
+    //             parentPost: commentObject.parentPost,
+    //             authorAvatar: commentObject.authorAvatar,
+    //             author: commentObject.author,
+    //         } as IComment;
+    //
+    //         const comment = new CommentModel(newComment);
+    //         comment.commentID = comment.id;
+    //         comment.save();
+    //
+    //         const pipeline = postCache.pipeline();
+    //         const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
+    //
+    //         pipeline.hincrby(commentObject.parentPost, 'comments', 1);
+    //         pipeline.hmset(`comments:${comment.id}`, commentObject);
+    //         pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
+    //         pipeline.expire(`comments:${comment.id}`, expireTime);
+    //         pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
+    //
+    //         pipeline.exec();
+    //
+    //         return 0;
+    //     } catch (e) {
+    //         logger.error(e);
+    //         throw new Error(e);
+    //     }
+    // }
 
     public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string) {
         try {
