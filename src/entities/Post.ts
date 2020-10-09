@@ -261,36 +261,36 @@ export class Post {
     //     }
     // }
 
-    public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string) {
-        try {
-
-            if (await postCache.exists(`post_comments_index:${parentPostID}`) === 1) {
-                const commentIDs = await postCache.zrevrange(`post_comments_index:${parentPostID}`, 0, limit);
-
-                const pipeline = postCache.pipeline();
-
-                for (const commentID of commentIDs) {
-                    pipeline.hgetall(`comments:${commentID}`);
-                    pipeline.sismember(`$likes:${commentID}`, userID);
-                }
-
-                const pipelineResult = await pipeline.exec();
-
-                return {comments: filtered};
-            } else {
-                const comments = await CommentModel.find({parentPost: parentPostID})
-                    .lean()
-                    .populate('author', {name: 1, userProfile: 1, userTag: 1})
-                    .populate('parentPost')
-                    .exec();
-                return {comments};
-            }
-
-        } catch (e) {
-            logger.error(e);
-            throw new Error(e);
-        }
-    }
+    // public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string) {
+    //     try {
+    //
+    //         if (await postCache.exists(`post_comments_index:${parentPostID}`) === 1) {
+    //             const commentIDs = await postCache.zrevrange(`post_comments_index:${parentPostID}`, 0, limit);
+    //
+    //             const pipeline = postCache.pipeline();
+    //
+    //             for (const commentID of commentIDs) {
+    //                 pipeline.hgetall(`comments:${commentID}`);
+    //                 pipeline.sismember(`$likes:${commentID}`, userID);
+    //             }
+    //
+    //             const pipelineResult = await pipeline.exec();
+    //
+    //             return {comments: filtered};
+    //         } else {
+    //             const comments = await CommentModel.find({parentPost: parentPostID})
+    //                 .lean()
+    //                 .populate('author', {name: 1, userProfile: 1, userTag: 1})
+    //                 .populate('parentPost')
+    //                 .exec();
+    //             return {comments};
+    //         }
+    //
+    //     } catch (e) {
+    //         logger.error(e);
+    //         throw new Error(e);
+    //     }
+    // }
 
     public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
         if (await primaryCache.sismember('dirty', userID) === 1) {

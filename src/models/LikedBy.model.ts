@@ -1,6 +1,6 @@
-import mongoose, {Schema} from 'mongoose';
+import mongoose, {Schema, Document} from 'mongoose';
 
-interface ILikedBy {
+interface ILikedBy extends Document {
     userID: string;
     postID: string;
 }
