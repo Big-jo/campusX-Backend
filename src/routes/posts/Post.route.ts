@@ -89,44 +89,44 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
  *                      Create Comments
  *********************************************************/
 export const createComment = '/comment';
-// router.post(createComment, auth, async (req: Request, res: Response) => {
-//     try {
-//         const commentObject: IComment = {
-//             authorAvatar: req.token.avatar,
-//             postID: '',
-//             video: req.body.video,
-//             image: req.body.image,
-//             text: req.body.text,
-//             author: req.body.author,
-//             userTag: req.body.userTag,
-//             parentPost: req.body.parentPost,
-//             campus: req.body.university,
-//         };
-//
-//         const result = await Post.Comment(commentObject, postCache);
-//         result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
-//     } catch (e) {
-//         logger.error(e);
-//         Utility.ErrResponse(res, e);
-//     }
-// });
+router.post(createComment, auth, async (req: Request, res: Response) => {
+    try {
+        const commentObject: IComment = {
+            authorAvatar: req.token.avatar,
+            postID: '',
+            video: req.body.video,
+            image: req.body.image,
+            text: req.body.text,
+            author: req.body.author,
+            userTag: req.body.userTag,
+            parentPost: req.body.parentPost,
+            campus: req.body.university,
+        };
+
+        const result = await Post.Comment(commentObject, postCache);
+        result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
+    } catch (e) {
+        logger.error(e);
+        Utility.ErrResponse(res, e);
+    }
+});
 
 /*********************************************************
  *                      Get Comments
  *********************************************************/
-export const getCommentsPath = '/comments/:postID';
+export const getCommentsPath = '/comments/:postID?offset';
 
-// router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
-//
-//     try {
-//         // Actually, just return post with comments sub-field
-//         const result = await Post.GetComments(req.params.postID);
-//         res.status(OK).json({ result });
-//         // TODO: Rank comments
-//     } catch (e) {
-//         Utility.ErrResponse(res, e);
-//     }
-// });
+router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
+
+    try {
+        // Actually, just return post with comments sub-field
+        const result = await Post.GetComments(req.params.postID, postCache, 30, req.token.userID, req.query.offset);
+        res.status(OK).json({result});
+        // TODO: Rank comments
+    } catch (e) {
+        Utility.ErrResponse(res, e);
+    }
+});
 /*********************************************************
  *                          Get Posts
  *********************************************************/
