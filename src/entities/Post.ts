@@ -213,73 +213,91 @@ export class Post {
         }
     }
 
-    // public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
-    //     try {
-    //         const newComment = {
-    //             commentID: '',
-    //             userTag: commentObject.userTag,
-    //             name: commentObject.name,
-    //             campus: commentObject.campus,
-    //             text: commentObject.text,
-    //             video: commentObject.video,
-    //             image: commentObject.image,
-    //             parentPost: commentObject.parentPost,
-    //             authorAvatar: commentObject.authorAvatar,
-    //             author: commentObject.author,
-    //         } as IComment;
-    //
-    //         const comment = new CommentModel(newComment);
-    //         comment.commentID = comment.id;
-    //         comment.save();
-    //
-    //         const pipeline = postCache.pipeline();
-    //         const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
-    //
-    //         pipeline.hincrby(commentObject.parentPost, 'comments', 1);
-    //         pipeline.hmset(`comments:${comment.id}`, commentObject);
-    //         pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
-    //         pipeline.expire(`comments:${comment.id}`, expireTime);
-    //         pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
-    //
-    //         pipeline.exec();
-    //
-    //         return 0;
-    //     } catch (e) {
-    //         logger.error(e);
-    //         throw new Error(e);
-    //     }
-    // }
+    public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
+        try {
+            const newComment = {
+                commentID: '',
+                userTag: commentObject.userTag,
+                name: commentObject.name,
+                campus: commentObject.campus,
+                text: commentObject.text,
+                video: commentObject.video,
+                image: commentObject.image,
+                parentPost: commentObject.parentPost,
+                authorAvatar: commentObject.authorAvatar,
+                author: commentObject.author,
+            } as IComment;
 
-    // public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string) {
-    //     try {
-    //
-    //         if (await postCache.exists(`post_comments_index:${parentPostID}`) === 1) {
-    //             const commentIDs = await postCache.zrevrange(`post_comments_index:${parentPostID}`, 0, limit);
-    //
-    //             const pipeline = postCache.pipeline();
-    //
-    //             for (const commentID of commentIDs) {
-    //                 pipeline.hgetall(`comments:${commentID}`);
-    //                 pipeline.sismember(`$likes:${commentID}`, userID);
-    //             }
-    //
-    //             const pipelineResult = await pipeline.exec();
-    //
-    //             return {comments: filtered};
-    //         } else {
-    //             const comments = await CommentModel.find({parentPost: parentPostID})
-    //                 .lean()
-    //                 .populate('author', {name: 1, userProfile: 1, userTag: 1})
-    //                 .populate('parentPost')
-    //                 .exec();
-    //             return {comments};
-    //         }
-    //
-    //     } catch (e) {
-    //         logger.error(e);
-    //         throw new Error(e);
-    //     }
-    // }
+            const comment = new CommentModel(newComment);
+            comment.commentID = comment.id;
+            comment.save();
+
+            const pipeline = postCache.pipeline();
+            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
+
+            pipeline.hincrby(commentObject.parentPost, 'comments', 1);
+            pipeline.hmset(`comments:${comment.id}`, commentObject);
+            pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
+            pipeline.expire(`comments:${comment.id}`, expireTime);
+            pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
+
+            pipeline.exec();
+
+            return 0;
+        } catch (e) {
+            logger.error(e);
+            throw new Error(e);
+        }
+    }
+
+    /**
+     *
+     * @param parentPostID
+     * @param postCache
+     * @param limit - The limit of comments to fetch from the feed
+     * @param userID
+     * @param offset - Offset
+     * @constructor
+     */
+    public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string, offset: number) {
+        try {
+
+            if (await postCache.exists(`post_comments_index:${parentPostID}`) === 1) {
+                const commentIDs = await postCache.zrevrange(`post_comments_index:${parentPostID}`, offset, limit);
+
+                const pipeline = postCache.pipeline();
+
+                for (const commentID of commentIDs) {
+                    pipeline.hgetall(`comments:${commentID}`);
+                    pipeline.sismember(`$likes:${commentID}`, userID);
+                }
+
+                const pipelineResult = await pipeline.exec();
+
+                const filtered: any = [];
+
+                for (let i = 0; i < pipelineResult.length; i++) {
+                    const currentItem = pipelineResult[i][1];
+                    const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
+
+                    nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+                }
+
+                return {comments: filtered};
+            } else {
+                const comments = await CommentModel.find({parentPost: parentPostID})
+                    .lean()
+                    .populate('author', {name: 1, userProfile: 1, userTag: 1})
+                    .populate('parentPost')
+                    .exec();
+                return {comments};
+            }
+
+        } catch (e) {
+            logger.error(e);
+            throw new Error(e);
+        }
+    }
 
     public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
         if (await primaryCache.sismember('dirty', userID) === 1) {
