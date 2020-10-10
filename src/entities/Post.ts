@@ -78,11 +78,13 @@ export class Post {
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
 
             if (followers.length === 0) {
-                return;
+                return {
+                    opsValue: 0,
+                };
             }
 
             // Add post to campus Feed
-            await primaryCache.lpush(post.campus, post.id);
+            primaryCache.lpush(post.campus, post.id);
 
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
                 primaryCache.sadd('campuses', post.campus.toLowerCase());
@@ -91,7 +93,7 @@ export class Post {
             //  Offload this work to another thread
             for (const follower of followers) {
                 // primaryCache.lpush(follower.follower, post.id);
-                primaryCache.sadd(follower.follower, post.id);
+                primaryCache.sadd(follower.follower.toString(), post.id);
                 primaryCache.sadd('dirty', follower.follower);
             }
 
@@ -123,25 +125,10 @@ export class Post {
                     primaryCache.srem('dirty', userID);
 
                     // Hydrate the feed list (Get posts with the keys retrieved)
-                    const newsfeed = await this.Hydrate(postKeys, postCache);
-
-                    // newsfeed = newsfeed.map(item => {
-                    //    if (Object.entries(item[1]).length !== 0) {
-                    //        return item[1];
-                    //    }
-                    // });
-
-                    const filteredFeed = [];
-
-                    // TODO: Find a way to remove expired posts from users feed, if not it just keeps taking up space
-                    for (let i = 0; i < newsfeed.length; i++) {
-                        if (Object.entries(newsfeed[i][1]).length !== 0 ) {
-                            filteredFeed.push(newsfeed[i][1]);
-                        }
-                    }
+                    const newsfeed = await this.Hydrate(postKeys, postCache, userID);
 
                     // const posts = await primaryCache.
-                    return { newsfeed: filteredFeed };
+                    return {newsfeed};
 
                 } else {
                     // TODO: Optimize this block
@@ -150,6 +137,7 @@ export class Post {
                     const followings = await FollowsModel.find({
                         follower: userID,
                     }, { target: 1 }).lean().exec();
+
                     //  TODO: A worker should be spawned to do tasks from here
                     const arr: string[] = [];
 
@@ -306,15 +294,46 @@ export class Post {
      *
      * @param keys Keys of the post
      * @param postCache
+     * @param userID
      */
-    private static async Hydrate(keys: string[], postCache: IORedis.Redis) {
+    private static async Hydrate(keys: string[], postCache: IORedis.Redis, userID: string) {
         const pipeline = postCache.pipeline();
 
         for (const key of keys) {
             pipeline.hgetall(key);
+            pipeline.sismember(`posts:${key}`, userID);
         }
 
-        return await pipeline.exec();
+        const pipelineResult = await pipeline.exec();
+
+        // Filter the result
+        const filtered: any = [];
+
+        // TODO: Find a way to remove expired posts from users feed, if not it just keeps taking up space
+        for (let i = 0; i < pipelineResult.length; i++) {
+            const currentItem = pipelineResult[i][1];
+            const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
+
+            if (Object.entries(pipelineResult[i][1]).length !== 0) {
+                nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+            }
+        }
+
+        return filtered;
+    }
+
+    private static async CheckLikedBy(feed: any[], userID: string) {
+
+        const filtered: any = [];
+        for (let i = 0; i < feed.length; i++) {
+            const currentElement = feed[i];
+
+            if ((currentElement[i + 1] === 0) || (currentElement[i + 1] === 1)) {
+                currentElement[i + 1] === 1 ? filtered.push([currentElement, {isliked: true}]) : filtered.push([currentElement, {isliked: false}]);
+            }
+        }
+
+        return filtered;
     }
 
     /**
