@@ -7,6 +7,7 @@ import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
 import { S3 } from '../lib/s3';
 import LikedByModel from '../models/LikedBy.model';
+import moment = require('moment');
 
 // import { bool } from 'aws-sdk/clients/signer';
 
@@ -34,7 +35,7 @@ export class Post {
                 image: '',
                 name: postObject.name,
                 campus: postObject.campus,
-                createdAt: Date.now(),
+                createdAt: moment().valueOf(),
             });
 
             if (postObject.image != null) {
@@ -301,7 +302,7 @@ export class Post {
 
         for (const key of keys) {
             pipeline.hgetall(key);
-            pipeline.sismember(`posts:${key}`, userID);
+            pipeline.sismember(`likes:${key}`, userID);
         }
 
         const pipelineResult = await pipeline.exec();
