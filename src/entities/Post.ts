@@ -157,40 +157,84 @@ export class Post {
 
     }
 
-    public static async LikePost(userID: string, postID: string, postCache: IORedis.Redis) {
+    public static async LikePost(userID: string, postID: string, postCache: IORedis.Redis, collection: string, parentPostID?: string) {
         try {
             const likedBy = await LikedByModel.find({postID, userID}).exec();
+            const isInCache = await postCache.exists(postID);
+            if ((likedBy.length === 0) && (isInCache === 1)) {
+                switch (collection) {
+                    case 'post':
+                        PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
+                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
 
-            if (likedBy.length === 0) {
+                        // @ts-ignore
+                        new LikedByModel({
+                            postID,
+                            userID,
+                        }).save();
 
-                PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
-                UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
+                        const postPipeline = postCache.pipeline();
 
-                // @ts-ignore
-                new LikedByModel({
-                    postID,
-                    userID,
-                }).save();
+                        postPipeline.hincrby(postID, 'likes', 1);
+                        postPipeline.sadd(`likes:${postID}`, userID);
+                        postPipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
+                        postPipeline.exec();
+                        return {ops: 'liked'};
 
-                const pipeline = postCache.pipeline();
+                    case 'comment':
+                        CommentModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
+                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
 
-                pipeline.hincrby(postID, 'likes', 1);
-                pipeline.sadd(`likes:${postID}`, userID);
-                pipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
-                pipeline.exec();
+                        // @ts-ignore
+                        new LikedByModel({
+                            postID,
+                            userID,
+                        }).save();
 
-                return {ops: 'liked'};
+                        const commentPipeline = postCache.pipeline();
+
+                        commentPipeline.hincrby(postID, 'likes', 1);
+                        commentPipeline.sadd(`likes:${postID}`, userID);
+                        commentPipeline.zincrby(`post_comments_index:${parentPostID}`, 1, postID);
+                        commentPipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
+                        commentPipeline.exec();
+
+                        return {ops: 'liked'};
+                    default:
+                        return;
+                }
             } else {
-                PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
-                UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
-                LikedByModel.deleteOne({postID, userID}).exec();
 
-                const pipeline = postCache.pipeline();
-                pipeline.hincrby(postID, 'likes', -1);
-                pipeline.srem(`likes:${postID}`, userID);
-                pipeline.exec();
+                switch (collection) {
+                    case 'post':
+                        PostModel.findByIdAndUpdate(postID, {$inc: {likes: -1}, likedBy: userID}).exec();
+                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': -0.25}}).exec();
+                        LikedByModel.deleteOne({postID, userID}).exec();
 
-                return {ops: 'unliked'};
+                        if (isInCache === 1) {
+                            const postPipeline = postCache.pipeline();
+                            postPipeline.hincrby(postID, 'likes', -1);
+                            postPipeline.srem(`likes:${postID}`, userID);
+                            postPipeline.exec();
+                        }
+
+                        return {ops: 'unliked'};
+
+                    case 'comment':
+                        CommentModel.findByIdAndUpdate(postID, {$inc: {likes: -1}, likedBy: userID}).exec();
+                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': -0.25}}).exec();
+                        LikedByModel.deleteOne({postID, userID}).exec();
+
+                        if (isInCache === 1) {
+                            const commentPipeline = postCache.pipeline();
+                            commentPipeline.hincrby(postID, 'likes', -1);
+                            commentPipeline.zincrby(`post_comments_index:${parentPostID}`, -1, postID);
+                            commentPipeline.srem(`likes:${postID}`, userID);
+                            commentPipeline.exec();
+                        }
+
+                        return {ops: 'unliked'};
+                }
             }
         } catch (error) {
             logger.error(error);
@@ -236,10 +280,12 @@ export class Post {
             const pipeline = postCache.pipeline();
             const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
 
-            pipeline.hincrby(commentObject.parentPost, 'comments', 1);
-            pipeline.hmset(`comments:${comment.id}`, commentObject);
+            if (await postCache.exists(commentObject.parentPost) === 1) {
+                pipeline.hincrby(commentObject.parentPost, 'comments', 1);
+            }
+            pipeline.hmset(comment.id, commentObject);
             pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
-            pipeline.expire(`comments:${comment.id}`, expireTime);
+            pipeline.expire(comment.id, expireTime);
             pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
 
             pipeline.exec();
@@ -269,8 +315,8 @@ export class Post {
                 const pipeline = postCache.pipeline();
 
                 for (const commentID of commentIDs) {
-                    pipeline.hgetall(`comments:${commentID}`);
-                    pipeline.sismember(`$likes:${commentID}`, userID);
+                    pipeline.hgetall(commentID);
+                    pipeline.sismember(`likes:${commentID}`, userID.toString());
                 }
 
                 const pipelineResult = await pipeline.exec();
@@ -281,7 +327,10 @@ export class Post {
                     const currentItem = pipelineResult[i][1];
                     const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
 
-                    nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+                    if (Object.entries(currentItem).length !== 0) {
+                        nextItem !== 0 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+                    }
+                    // nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
                 }
 
                 return {comments: filtered};
