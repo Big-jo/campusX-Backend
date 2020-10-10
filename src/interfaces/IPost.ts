@@ -1,7 +1,7 @@
 import { Document } from 'mongoose';
 
 export interface IPostModel extends Document, IPost {
-    createdAt: Date;
+    createdAt: number;
 }
 
 export interface IPost {
