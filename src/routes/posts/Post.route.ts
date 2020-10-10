@@ -171,7 +171,7 @@ export const likePostPath = '/like';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Post.LikePost(req.token.userID, req.body.postID, postCache);
+        const result = await Post.LikePost(req.token.userID, req.body.postID, postCache, 'post', req.body.parentPostID);
         res.status(OK).json({result});
     } catch (error) {
         Utility.ErrResponse(res, error);
