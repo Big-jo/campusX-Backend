@@ -8,7 +8,7 @@ const commentSchema: Schema = new Schema({
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },
-    createdAt: { type: Date, default: Date.now() },
+    createdAt: {type: Number},
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },

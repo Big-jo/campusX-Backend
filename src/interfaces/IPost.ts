@@ -17,7 +17,7 @@ export interface IPost {
     likes?: number;
     dislikes?: number;
     comments?: number;
-    createdAt?: Date;
+    createdAt?: number;
 }
 
 export interface ICommentModel extends IPostModel {

@@ -226,6 +226,7 @@ export class Post {
                 parentPost: commentObject.parentPost,
                 authorAvatar: commentObject.authorAvatar,
                 author: commentObject.author,
+                createdAt: moment().valueOf(),
             } as IComment;
 
             const comment = new CommentModel(newComment);
