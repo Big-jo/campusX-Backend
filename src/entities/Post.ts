@@ -384,7 +384,9 @@ export class Post {
             const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
 
             if (Object.entries(pipelineResult[i][1]).length !== 0) {
-                nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+
+                nextItem === 1 ? currentItem.isliked = true : currentItem.isliked = false;
+                filtered.push(currentItem);
             }
         }
 
