@@ -13,11 +13,10 @@ import { Types } from 'mongoose';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
+// tslint:disable-next-line:no-var-requires
 const  ObjectId = require('mongoose').Types.ObjectId;
 
 export class User {
-
-
 
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({ email: userObject.email });
@@ -145,25 +144,33 @@ export class User {
     }
 
     public static async unfollowUser(targetUserID: string, userID: string) {
-        try {
+        const foundFollows = await FollowsModel.findOne({
+            target: targetUserID,
+            follower: userID,
+        }).exec();
+        if (foundFollows !== null) {
+            try {
 
-            FollowsModel.deleteOne({
-                target: targetUserID,
-                follower: userID,
-            }).exec();
+                FollowsModel.deleteOne({
+                    target: targetUserID,
+                    follower: userID,
+                }).exec();
 
-            FollowingsModel.deleteOne({
-                follower: userID,
-                target: targetUserID,
-            }).exec();
+                FollowingsModel.deleteOne({
+                    follower: userID,
+                    target: targetUserID,
+                }).exec();
 
-            UserModel.updateOne({_id: userID}, {$inc: {followings: -1}}).exec();
-            UserModel.updateOne({_id: targetUserID}, {$inc: {followers: -1}}).exec();
+                UserModel.updateOne({_id: userID}, {$inc: {followings: -1}}).exec();
+                UserModel.updateOne({_id: targetUserID}, {$inc: {followers: -1}}).exec();
 
-            return 0;
-        } catch (error) {
-            logger.error(error, error.message);
-            throw new Error(error);
+                return 0;
+            } catch (error) {
+                logger.error(error, error.message);
+                throw new Error(error);
+            }
+        } else {
+            return {error: 'Not following this user'};
         }
     }
 
@@ -188,7 +195,6 @@ export class User {
                 case 'self':
 
                     const self = await UserModel.findById(userID, { password: 0 }).lean().exec();
-
 
                     if (self != null) {
                         return { self };

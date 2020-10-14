@@ -95,12 +95,12 @@ router.post(followUser, auth, async (req: Request, res: Response) => {
 export const unfollowed = '/unfollow';
 router.post(unfollowed, auth, async (req: Request, res: Response) => {
     try {
-        const result = await User.unfollowUser(req.body.targetID, req.token.userID);
-        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).send();
+        const result = await User.unfollowUser(req.body.targetUserID, req.token.userID);
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).json(result.error);
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
-})
+});
 /******************************************************************************
  *                   Generic get route for getting user related data
  ******************************************************************************/
