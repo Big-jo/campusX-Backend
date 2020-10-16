@@ -13,7 +13,7 @@ export class Circle {
         try {
             const circleName = circleObject.name.toLowerCase();
             const circle = await CircleModel.findOne({ name: circleName }).lean().exec();
-            if (circle !== null ) {
+            if (circle !== null) {
                 return { exist: true };
             } else {
                 const newCircle = new CircleModel({
@@ -61,8 +61,14 @@ export class Circle {
 
     public static async Leave(circleID: string, userID: string) {
         try {
-            await CircleMemberModel.findOneAndDelete({ circle: circleID, userID }).exec();
-            return 0;
+
+            const isMember = await CircleMemberModel.findOne({ userID, circle: circleID }).exec();
+            if (isMember !== null) {
+                CircleMemberModel.findOneAndDelete({ circle: circleID, userID }).exec();
+                CircleModel.findByIdAndUpdate({ _id: circleID }, { $inc: { members_count: -1 } }).exec();
+            } else {
+                return {error: 'Not a member of this circle'};
+            }
         } catch (error) {
             logger.error(error);
             throw new Error(error);
@@ -72,18 +78,35 @@ export class Circle {
     public static async GetCircleFeed(circleID: string, redisClient: IORedis.Redis) {
         try {
             const circlePostKeys = await redisClient.smembers(`circlePostsIndexes:${circleID}`);
-            const pipeline = redisClient.pipeline();
+            console.log(circlePostKeys);
+            if (circlePostKeys.length !== 0) {
+                const pipeline = redisClient.pipeline();
 
-            for (let index = 0; index < circlePostKeys.length; index++) {
-                const key = circlePostKeys[index];
-                pipeline.hgetall(key);
+                for (let index = 0; index < circlePostKeys.length; index++) {
+                    const key = circlePostKeys[index];
+                    pipeline.hgetall(key.split(':')[1]);
+                }
+
+                const pipelineResult = await pipeline.exec();
+
+                // const circleFeed = piplelineResult.map(item => item[1]);
+                const filtered: any = [];
+
+                for (let i = 0; i < pipelineResult.length; i++) {
+                    const currentItem = pipelineResult[i][1];
+                    const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
+
+                    if (Object.entries(currentItem).length !== 0) {
+                        filtered.push(currentItem);
+                        // nextItem !== 0 ? filtered.push([currentItem, { isliked: true }]) : filtered.push([currentItem, { isliked: false }]);
+                    }
+                    // nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+                }
+
+                return { circleFeed: filtered };
+            } else {
+                return { circleFeed: [] };
             }
-
-            const piplelineResult = await pipeline.exec();
-
-            const circleFeed = piplelineResult.map(item => item[1]);
-
-            return { circleFeed };
 
             // Write Sort Algorithm for Posts 😢 
         } catch (error) {
