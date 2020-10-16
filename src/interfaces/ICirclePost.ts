@@ -7,5 +7,11 @@ export interface ICirclePost extends IPost {
 }
 
 export interface ICirclePostModel extends ICirclePost, Document {
-	
+
+}
+
+export interface ICircleComment extends IPost {
+  parentPost: string;
+  circleID: string;
+  memberID: string;
 }
