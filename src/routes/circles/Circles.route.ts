@@ -9,8 +9,7 @@ import { logger } from '../../shared/Logger';
 import validation from '../../middleware/auth';
 import multer from 'multer';
 import { ICircle } from '../../interfaces/ICircle';
-import * as request from 'request';
-import { ICirclePost } from 'src/interfaces/ICirclePost';
+import { ICirclePost, ICircleComment } from '../../interfaces/ICirclePost';
 
 /******************************************************************************
  *                                 Router Setup
@@ -93,7 +92,9 @@ router.post(joinCircle, auth, async (req: Request, res: Response) => {
 export const leaveCircle = '/leave';
 router.post(leaveCircle, auth, async (req: Request, res: Response) => {
     const result = await Circle.Leave(req.body.circleID, req.token.userID);
-    if (result === 0) {
+    if (result) {
+        res.status(BAD_REQUEST).json({ result });
+    } else {
         res.status(OK).send();
     }
 });
@@ -122,12 +123,12 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
         const post: ICirclePost = {
             author: req.token.userID,
             memberID: req.body.memberID,
-            name: req.body.name,
+            name: req.token.name,
             circleID: req.body.circleID,
             text: req.body.text,
-            userTag: req.body.userTag,
+            userTag: req.token.userTag,
             authorAvatar: req.token.avatar,
-            campus: req.body.campus, 
+            campus: req.token.campus,
         };
 
         // tslint:disable-next-line: max-line-length
@@ -178,6 +179,60 @@ router.get(userCircles, auth, async (req: Request, res: Response) => {
     try {
         const result = await Circle.UserCircles(req.token.userID);
         res.status(OK).json(result);
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
+*                                 Comment On A Cirlce's Post
+/******************************************************************************/
+export const comment = '/post/comment';
+router.post(comment, auth, upload.single('image'), async (req: Request, res: Response) => {
+    try {
+        const commentObject: ICircleComment = {
+            authorAvatar: req.token.avatar,
+            campus: req.token.campus,
+            circleID: req.body.circleID,
+            memberID: req.body.memberID,
+            parentPost: req.body.parentPost,
+            userTag: req.token.userTag,
+            author: req.token.userID,
+            text: req.body.text,
+        };
+
+        // tslint:disable-next-line: max-line-length
+        const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
+
+        CirclePost.Comment(commentObject, postCache, media);
+
+        res.status(OK).send();
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
+*                                 LIKE A POST
+/******************************************************************************/
+export const like = '/post/like';
+router.post(like, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'post');
+        res.status(OK).json({ result });
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
+*                                 Like A Comment
+/******************************************************************************/
+export const likeComment = '/comment/like';
+router.post(likeComment, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'comment');
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
