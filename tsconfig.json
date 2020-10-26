@@ -28,6 +28,6 @@
     "types": ["node"],
     "typeRoots": ["@types", "node_modules/@types"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/lib/trends.ts"],
   "exclude": ["src/public/", "node_modules", "src/spec"]
 }
