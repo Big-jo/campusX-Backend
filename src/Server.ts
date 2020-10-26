@@ -10,10 +10,10 @@ import BaseRouter from './routes/Base';
 import cors from 'cors';
 import * as socketIO from 'socket.io';
 import * as http from 'http';
-import * as SocketIO from 'socket.io';
 // import {Newsfeed} from './lib/newsfeeds';
-import {NOT_FOUND} from 'http-status-codes';
+import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
+import { Tasks } from './lib/tasks';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -31,9 +31,6 @@ Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
-
-
-
 // Init express
 
 const app = express();
@@ -47,7 +44,7 @@ const io = socketIO.listen(server);
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
 // });
-  
+
 app.use(cors());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -82,7 +79,12 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
     console.log(err.message);
     res.statusCode = 500;
     res.end(res.sentry + '\n');
-  });
+});
+
+// Schedule task
+const task = new Tasks(URI);
+task.TrendTask();
+// task.GenerateFakePosts();
 
 // Export express instance
-export { server, io};
+export { server, io };
