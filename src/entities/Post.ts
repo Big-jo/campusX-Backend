@@ -20,10 +20,17 @@ export interface IPostOptions {
     anonymous: boolean;
 }
 
+interface IPostType {
+    name: string;
+}
+
+// enum PostTypes {
+//     name = 'REPOST',
+// }
 export class Post {
 
     // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis, postCache: IORedis.Redis) {
+    public static async CreatePost(postObject: IPost, userID: string, type: IPostType, primaryCache: IORedis.Redis, postCache: IORedis.Redis) {
         try {
             // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
@@ -35,6 +42,7 @@ export class Post {
                 image: '',
                 name: postObject.name,
                 campus: postObject.campus,
+                parentPost: type.name === 'REPOST' ? postObject.parentPost : '',
                 createdAt: moment().valueOf(),
             });
 
@@ -62,6 +70,7 @@ export class Post {
                 name: postObject.name,
                 campus: post.campus,
                 likes: 0,
+                parentPost: type.name === 'REPOST' ? postObject.parentPost : '',
                 dislikes: 0,
                 comments: 0,
             };
@@ -74,6 +83,7 @@ export class Post {
             postCache.expire(post.id, expireTime); // Development Expire time
 
             // Index post
+            // TODO: Create mechanism to remove expired posts from index and user feed
             postCache.sadd('post-index', post.id);
 
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
@@ -85,18 +95,22 @@ export class Post {
             }
 
             // Add post to campus Feed
-            primaryCache.lpush(post.campus, post.id);
+            primaryCache.sadd(post.campus, post.id);
 
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
                 primaryCache.sadd('campuses', post.campus.toLowerCase());
             }
 
+            // Create Pipeline here to drastically reduce time spent
             //  Offload this work to another thread
+
+            const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
                 // primaryCache.lpush(follower.follower, post.id);
-                primaryCache.sadd(follower.follower.toString(), post.id);
-                primaryCache.sadd('dirty', follower.follower);
+                pipeline.sadd(follower.follower.toString(), post.id);
+                pipeline.sadd('dirty', follower.follower);
             }
+            pipeline.exec();
 
             // Also return ID of the newsfeed updated
             return {
@@ -126,7 +140,7 @@ export class Post {
                     primaryCache.srem('dirty', userID);
 
                     // Hydrate the feed list (Get posts with the keys retrieved)
-                    const newsfeed = await this.Hydrate(postKeys, postCache, userID);
+                    const newsfeed = await this.Hydrate(postKeys, postCache, userID, {hydrationMethod: 'mongo'});
 
                     // const posts = await primaryCache.
                     return {newsfeed};
@@ -283,7 +297,7 @@ export class Post {
             if (await postCache.exists(commentObject.parentPost) === 1) {
                 pipeline.hincrby(commentObject.parentPost, 'comments', 1);
             }
-            pipeline.hmset(comment.id, commentObject);
+            pipeline.hmset(comment.id, newComment);
             pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
             pipeline.expire(comment.id, expireTime);
             pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
@@ -306,6 +320,7 @@ export class Post {
      * @param offset - Offset
      * @constructor
      */
+
     public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string, offset: number) {
         try {
 
@@ -328,7 +343,8 @@ export class Post {
                     const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
 
                     if (Object.entries(currentItem).length !== 0) {
-                        nextItem !== 0 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
+                        nextItem !== 0 ? currentItem.isLiked = true : currentItem.isLiked = false;
+                        filtered.push(currentItem);
                     }
                     // nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
                 }
@@ -365,32 +381,40 @@ export class Post {
      * @param postCache
      * @param userID
      */
-    private static async Hydrate(keys: string[], postCache: IORedis.Redis, userID: string) {
-        const pipeline = postCache.pipeline();
+    private static async Hydrate(keys: string[], postCache: IORedis.Redis, userID: string, options: { hydrationMethod: string }) {
+        switch (options.hydrationMethod) {
+            case 'redis':
+                const pipeline = postCache.pipeline();
 
-        for (const key of keys) {
-            pipeline.hgetall(key);
-            pipeline.sismember(`likes:${key}`, userID);
+                for (const key of keys) {
+                    pipeline.hgetall(key);
+                    pipeline.sismember(`likes:${key}`, userID);
+                }
+
+                const pipelineResult = await pipeline.exec();
+
+                // Filter the result
+                const filtered: any = [];
+
+                // TODO: Find a way to remove expired posts from users feed, if not it just keeps taking up space
+                for (let i = 0; i < pipelineResult.length; i++) {
+                    const currentItem = pipelineResult[i][1];
+                    const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
+
+                    // Check if the currentItem is empty
+                    if (Object.entries(currentItem).length !== 0) {
+                        // Check if the post has a parentPostID
+                        nextItem === 1 ? currentItem.isliked = true : currentItem.isliked = false;
+                        filtered.push(currentItem);
+                    }
+                }
+
+                return filtered;
+
+            case 'mongo':
+            default:
+                break;
         }
-
-        const pipelineResult = await pipeline.exec();
-
-        // Filter the result
-        const filtered: any = [];
-
-        // TODO: Find a way to remove expired posts from users feed, if not it just keeps taking up space
-        for (let i = 0; i < pipelineResult.length; i++) {
-            const currentItem = pipelineResult[i][1];
-            const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
-
-            if (Object.entries(pipelineResult[i][1]).length !== 0) {
-
-                nextItem === 1 ? currentItem.isliked = true : currentItem.isliked = false;
-                filtered.push(currentItem);
-            }
-        }
-
-        return filtered;
     }
 
     private static async CheckLikedBy(feed: any[], userID: string) {
@@ -400,6 +424,7 @@ export class Post {
             const currentElement = feed[i];
 
             if ((currentElement[i + 1] === 0) || (currentElement[i + 1] === 1)) {
+                // tslint:disable-next-line: max-line-length
                 currentElement[i + 1] === 1 ? filtered.push([currentElement, {isliked: true}]) : filtered.push([currentElement, {isliked: false}]);
             }
         }

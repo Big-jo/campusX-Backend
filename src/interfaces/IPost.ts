@@ -18,6 +18,7 @@ export interface IPost {
     dislikes?: number;
     comments?: number;
     createdAt?: number;
+    parentPost: string;
 }
 
 export interface ICommentModel extends IPostModel {
