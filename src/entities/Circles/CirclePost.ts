@@ -1,7 +1,7 @@
 import { Post } from '../Post';
 import CircleCirclePostModel from '../../models/CirclePost.model';
 import { ICirclePost, ICircleComment } from '../../interfaces/ICirclePost';
-import { logger } from '../../shared/Logger';
+import {logger} from '@shared';
 import IORedis from 'ioredis';
 import CirclePostModel from '../../models/CirclePost.model';
 import { S3 } from '../../lib/s3';
@@ -23,7 +23,7 @@ export class CirclePost {
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, media: any, redisClient: IORedis.Redis, circleID: string, memberID: string) {
+    public static async CirclePost(circlePost: ICirclePost, media: any, redisClient: IORedis.Redis, circleID: string) {
         try {
             const isMember = await CircleMemberModel.findById(circlePost.memberID).lean().exec();
             if (isMember !== null) {
@@ -38,6 +38,7 @@ export class CirclePost {
                     author: circlePost.author,
                     authorAvatar: circlePost.authorAvatar,
                     campus: circlePost.campus,
+                    parentPost: circlePost.parentPost,
                 };
 
                 const post = new CirclePostModel(CPost);
