@@ -1,7 +1,6 @@
 import UserModel from '../models/User.model';
-import { IUser, IUserModel } from 'src/interfaces/IUser';
+import {IUser} from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { logger } from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
@@ -9,12 +8,11 @@ import PostModel from '../models/Post.model';
 import { Utility } from '../lib/utility';
 import { S3 } from '../lib/s3';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
-import { Types } from 'mongoose';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 // tslint:disable-next-line:no-var-requires
-const  ObjectId = require('mongoose').Types.ObjectId;
+// const  ObjectId = require('mongoose').Types.ObjectId;
 
 export class User {
 
@@ -294,14 +292,18 @@ export class User {
         }
     }
 
-    public static async GetUserPosts(userID: string) {
+    public static async GetUserPosts(userID: string, page: number, limit: number) {
         try {
-            const posts = await PostModel.find({ author: userID })
-                .populate({ path: 'author', select: { name: 1, userProfile: 1, userTag: 1 } })
-                .exec();
-            return posts.reverse();
+            const posts = await PostModel.paginate({author: userID}, {
+                    page,
+                    limit: Number(limit),
+                    // populate: {path: 'author', select: ['name', 'userProfile', 'userTag']},
+                })
+            ;
+            return {userPosts: posts.docs.reverse()};
         } catch (error) {
-            logger.log(error);
+            logger.error(error);
+            throw new Error(error);
         }
     }
 

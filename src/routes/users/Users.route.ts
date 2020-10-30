@@ -1,5 +1,5 @@
 import { Response, Router, Request } from 'express';
-import { CREATED, OK, INTERNAL_SERVER_ERROR, BAD_REQUEST } from 'http-status-codes';
+import {CREATED, OK, BAD_REQUEST} from 'http-status-codes';
 import validation from '../../middleware/auth';
 import { User } from '../../entities/User';
 import { IUser } from '../../interfaces/IUser';
@@ -186,6 +186,18 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
     }
 });
 
+/******************************************************************************
+ *                                 GET USER POSTS
+ /******************************************************************************/
+const getUserPosts = '/posts';
+router.get(getUserPosts, auth, async (req, res) => {
+    try {
+        const result = await User.GetUserPosts(req.token.userID, req.query.page, req.query.limit);
+        res.status(OK).json({result});
+    } catch (e) {
+        Utility.ErrResponse(res, e);
+    }
+});
 /******************************************************************************
  *                          Get Follower Notification
  /******************************************************************************/
