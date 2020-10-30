@@ -242,8 +242,15 @@ export class User {
                 }
             }
 
-            UserModel.findOneAndUpdate({_id: userID}, {$set: update}).exec();
-            return 0;
+            const updated = await UserModel.findOneAndUpdate({_id: userID}, {$set: update}).lean().exec();
+            const payload: ITokenPayload = {
+                avatar: updated.userProfile.avatar,
+                campus: updated.userProfile.university,
+                name: updated.userProfile.name,
+                userID: updated.id,
+                userTag: updated.userTag,
+            };
+            return Utility.createToken(payload);
 
         } catch (error) {
             logger.error(error);

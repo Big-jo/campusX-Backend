@@ -127,7 +127,7 @@ const errMessage = 'Oops could not update';
 router.post(updateUserPath, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.UpdateUser(req.token.userID, req.body.update);
-        result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
+        res.status(OK).json({msg: 'Updated', token: result});
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
