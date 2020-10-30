@@ -42,7 +42,7 @@ export class Post {
                 image: '',
                 name: postObject.name,
                 campus: postObject.campus,
-                parentPost: type.name === 'REPOST' ? postObject.parentPost : '',
+                parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),
             });
 
@@ -70,7 +70,7 @@ export class Post {
                 name: postObject.name,
                 campus: post.campus,
                 likes: 0,
-                parentPost: type.name === 'REPOST' ? postObject.parentPost : '',
+                parentPost: post.parentPost,
                 dislikes: 0,
                 comments: 0,
             };
