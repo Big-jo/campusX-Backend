@@ -18,5 +18,5 @@ const CirclePostSchema: Schema = new Schema({
 });
 
 CirclePostSchema.plugin(mongoosePaginate);
-
+CirclePostSchema.index({text: 'text'});
 export default mongoose.model<ICirclePostModel>('CirclePost', CirclePostSchema);
