@@ -134,7 +134,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 
         // tslint:disable-next-line: max-line-length
         const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
-        const result = await CirclePost.CirclePost(post, media, postCache, post.circleID, post.memberID);
+        const result = await CirclePost.CirclePost(post, media, postCache, post.circleID);
 
         if (result === 0) {
             res.status(CREATED).send();
