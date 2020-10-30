@@ -129,6 +129,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
             userTag: req.token.userTag,
             authorAvatar: req.token.avatar,
             campus: req.token.campus,
+            parentPost: req.body.parentPost,
         };
 
         // tslint:disable-next-line: max-line-length
