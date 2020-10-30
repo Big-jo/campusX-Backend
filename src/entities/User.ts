@@ -5,8 +5,8 @@ import { logger } from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
 import PostModel from '../models/Post.model';
-import { Utility } from '../lib/utility';
-import { S3 } from '../lib/s3';
+import {Utility} from '@lib';
+import {S3} from '@lib';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
 
 // import * as Notifications from '../lib/notifications';
@@ -232,14 +232,17 @@ export class User {
      * @memberof User
      */
 
-    public static async UpdateUser(field: string, userID: string, update: any) {
+    public static async UpdateUser(userID: string, updates: { [x: string]: string }) {
         try {
-            /**
-             *  Field: Field to update in database
-             *  Update: Data to update the field with
-             */
+            const update: { [x: string]: string } = {};
 
-            await UserModel.findOneAndUpdate({ _id: userID }, { [field]: update });
+            for (const key in updates) {
+                if (updates.hasOwnProperty(key)) {
+                    update[key] = updates[key];
+                }
+            }
+
+            UserModel.findOneAndUpdate({_id: userID}, {$set: update}).exec();
             return 0;
 
         } catch (error) {

@@ -4,7 +4,7 @@ import validation from '../../middleware/auth';
 import { User } from '../../entities/User';
 import { IUser } from '../../interfaces/IUser';
 import multer from 'multer';
-import { Utility } from '../../lib/utility';
+import {Utility} from '@lib';
 
 // Init router and path
 const router = Router();
@@ -126,8 +126,7 @@ const updateUserPath = '/update';
 const errMessage = 'Oops could not update';
 router.post(updateUserPath, auth, async (req: Request, res: Response) => {
     try {
-        const field = req.body.field.toLowerCase();
-        const result = await User.UpdateUser(field, req.token.userID, req.body.update);
+        const result = await User.UpdateUser(req.token.userID, req.body.update);
         result === 0 ? res.status(OK).json({ msg: 'Updated' }) : res.status(BAD_REQUEST).json(errMessage);
     } catch (error) {
         Utility.ErrResponse(res, error);
