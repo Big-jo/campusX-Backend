@@ -1,5 +1,5 @@
-import mongoose, {Schema, Document} from 'mongoose';
-import { IUser, IUserModel } from 'src/interfaces/IUser';
+import mongoose, {Schema} from 'mongoose';
+import {IUser} from 'src/interfaces/IUser';
 import mongoosePaginate from 'mongoose-paginate';
 
 const UserSchema: Schema = new Schema({
@@ -25,6 +25,6 @@ const UserSchema: Schema = new Schema({
     // lastActive: {type: Date},  Implement last active
 });
 UserSchema.plugin(mongoosePaginate);
-
+UserSchema.index({'name': 'text', 'userTag': 'text', 'userProfile.university': 1});
 // Export the model and return IUser interface
 export default mongoose.model<IUser>('User', UserSchema);
