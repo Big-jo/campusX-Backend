@@ -3,7 +3,7 @@ import CircleModel from '../../models/Circle.model';
 import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
-import { S3 } from '../../lib/s3';
+import {S3} from '@lib';
 // import { circleFeed } from 'src/routes/circles/Circles.route';
 // import mongoose from 'mongoose';
 
@@ -78,7 +78,6 @@ export class Circle {
     public static async GetCircleFeed(circleID: string, redisClient: IORedis.Redis) {
         try {
             const circlePostKeys = await redisClient.smembers(`circlePostsIndexes:${circleID}`);
-            console.log(circlePostKeys);
             if (circlePostKeys.length !== 0) {
                 const pipeline = redisClient.pipeline();
 
