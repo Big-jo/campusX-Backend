@@ -1,9 +1,10 @@
 import mongoose, {Schema} from 'mongoose';
 import { IPostModel } from 'src/interfaces/IPost';
+import mongoosePaginate from 'mongoose-paginate';
 
 const PostSchema: Schema = new Schema({
     authorAvatar: { type: String},
-    author: { type: String, ref: 'User' },
+    author: {type: Schema.Types.ObjectId, ref: 'User'},
     postID: {type: String},
     userTag: { type: String},
     text: { type: String },
@@ -18,4 +19,9 @@ const PostSchema: Schema = new Schema({
     parentPost: {type: String},
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
 });
+
+PostSchema.plugin(mongoosePaginate);
+
+PostSchema.index({text: 'text'});
+
 export default mongoose.model<IPostModel>('Post', PostSchema);
