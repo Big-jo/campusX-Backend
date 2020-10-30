@@ -65,6 +65,7 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
             text: req.body.text,
             campus: req.token.campus,
             name: req.token.name,
+            parentPost: req.body.parentPost,
         };
 
 
@@ -72,7 +73,7 @@ router.post(createPostPath, auth, upload.single('image'), async (req: Request, r
             anonymous: req.body.anon,
         };
 
-        const result = await Post.CreatePost(post, req.token.userID, primaryCache, postCache);
+        const result = await Post.CreatePost(post, req.token.userID, null, primaryCache, postCache);
         
         if (result.opsValue === 0) {
             res.status(CREATED).send();
