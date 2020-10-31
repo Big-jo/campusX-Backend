@@ -247,7 +247,7 @@ export class User {
                 avatar: updated.userProfile.avatar,
                 campus: updated.userProfile.university,
                 name: updated.userProfile.name,
-                userID: updated.id,
+                userID,
                 userTag: updated.userTag,
             };
             return Utility.createToken(payload);
