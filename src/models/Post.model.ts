@@ -3,10 +3,10 @@ import { IPostModel } from 'src/interfaces/IPost';
 import mongoosePaginate from 'mongoose-paginate';
 
 const PostSchema: Schema = new Schema({
-    authorAvatar: { type: String},
+    authorAvatar: {type: String, required: true},
     author: {type: Schema.Types.ObjectId, ref: 'User'},
     postID: {type: String},
-    userTag: { type: String},
+    userTag: {type: String, required: true},
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },
@@ -14,7 +14,7 @@ const PostSchema: Schema = new Schema({
     dislikes: { type: Number, default: 0 },
     trash: { type: Number, default: 0 },
     createdAt: {type: Number},
-    campus: { type: String},
+    campus: {type: String, required: true},
     // If this is a comment, this would be populated
     parentPost: {type: String},
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
