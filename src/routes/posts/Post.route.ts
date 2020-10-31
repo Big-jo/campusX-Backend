@@ -51,36 +51,35 @@ primaryCache.on('error', err => {
  *********************************************************/
 export const createPostPath = '/create';
 // TODO: Remove exported error messages in other routes;
-router.post(createPostPath, auth, upload.single('image'), async (req: Request, res: Response) => {
+router.post(createPostPath, auth, upload.fields([{name: 'image', maxCount: 1}, {name: 'video', maxCount: 1}]),
+    async (req: Request, res: Response) => {
     // TODO: Move to post lib .
     // TODO: Add option for anonymous posts.
     try {
         // TODO: Move this to controller dir
         // TODO: Add Annonymous feature
+
         const post: IPost = {
             authorAvatar: req.token.avatar,
             userTag: req.token.userTag,
             author: req.token.userID,
-            image: req.file,
+            // @ts-ignore
+            image: req.files.image !== undefined ? req.files.image[0] : '',
+            // @ts-ignore
+            video: req.files.video !== undefined ? req.files.video[0] : '',
             text: req.body.text,
             campus: req.token.campus,
             name: req.token.name,
             parentPost: req.body.parentPost,
         };
 
-
         const options = {
             anonymous: req.body.anon,
         };
 
-        const result = await Post.CreatePost(post, req.token.userID, null, primaryCache, postCache);
-        
-        if (result.opsValue === 0) {
-            res.status(CREATED).send();
-        } else {
-            throw new Error();
-        }
+        Post.CreatePost(post, req.token.userID, null, primaryCache, postCache);
 
+        res.status(OK).send();
     } catch (error) {
         Utility.ErrResponse(res, error);
     }

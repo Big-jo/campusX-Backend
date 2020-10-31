@@ -46,12 +46,12 @@ export class Post {
                 createdAt: moment().valueOf(),
             });
 
-            if (postObject.image != null) {
+            if (postObject.image !== '') {
                 const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
             }
 
-            if (postObject.video) {
+            if (postObject.video !== '') {
                 const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
@@ -89,9 +89,7 @@ export class Post {
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
 
             if (followers.length === 0) {
-                return {
-                    opsValue: 0,
-                };
+                return;
             }
 
             // Add post to campus Feed
@@ -113,10 +111,6 @@ export class Post {
             pipeline.exec();
 
             // Also return ID of the newsfeed updated
-            return {
-                opsValue: 0,
-            };
-
         } catch (error) {
             logger.error(error);
         }
