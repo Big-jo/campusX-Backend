@@ -138,48 +138,52 @@ export class Post {
 
     }
 
-    public static async LikePost(userID: string, postID: string, postCache: IORedis.Redis, collection: string, parentPostID?: string) {
+    public static async LikePost(userID: string, postID: string, collection: string) {
         try {
-            // const likedBy = await LikedByModel.find({postID, userID}).exec();
-            const likedBy = await PostModel.findOne({_id: postID, likedBy: {$in: [userID]}}).exec();
-            // const isInCache = await postCache.exists(postID);
+            let likedBy: any;
+            const findLikedByQuery = {_id: postID, likedBy: {$in: [userID]}};
+            const updateLikeQuery = {$inc: {likes: 1}, $push: {likedBy: userID}};
+            const updateUserQuery = {$inc: {'userProfile.rep_points': 0.25}};
+
+            switch (collection) {
+                case 'post':
+                    likedBy = await PostModel.findOne(findLikedByQuery).lean().exec();
+                    break;
+                case 'comment':
+                    likedBy = await CommentModel.findOne(findLikedByQuery).lean().exec();
+                    break;
+                default:
+                    break;
+            }
+
             if (likedBy === null) {
                 switch (collection) {
                     case 'post':
-                        const post = await PostModel.findByIdAndUpdate(postID, {
-                            $inc: {likes: 1},
-                            $push: {likedBy: userID},
-                        }).lean().exec();
-                        UserModel.findByIdAndUpdate(post.author, {$inc: {'userProfile.rep_points': 0.25}}).exec();
+                        const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
+                        UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
                         break;
 
                     case 'comment':
-                        const comment = await CommentModel.findByIdAndUpdate(postID, {
-                            $inc: {likes: 1},
-                            $push: {likedBy: userID},
-                        }).lean().exec();
-                        UserModel.findByIdAndUpdate(comment.author, {$inc: {'userProfile.rep_points': 0.15}}).exec();
+                        const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
+                        UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
                         break;
+
                     default:
                         return;
                 }
             } else {
+                const updateUnLikeQuery = {$inc: {likes: -1}, $pull: {likedBy: {$in: [userID]}}};
+                const updateUserQueryNegate = {$inc: {'userProfile.rep_points': -0.25}};
 
                 switch (collection) {
                     case 'post':
                         // TODO: Remove userID from list
-                        const post = await PostModel.findByIdAndUpdate(postID, {
-                            $inc: {likes: 1},
-                            $push: {likedBy: userID},
-                        }).lean().exec();
-                        UserModel.findByIdAndUpdate(post.author, {$inc: {'userProfile.rep_points': -0.25}}).exec();
+                        const post = await PostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
+                        UserModel.findByIdAndUpdate(post.author, updateUserQueryNegate).exec();
                         break;
                     case 'comment':
-                        const comment = await CommentModel.findByIdAndUpdate(postID, {
-                            $inc: {likes: 1},
-                            $push: {likedBy: userID},
-                        }).lean().exec();
-                        UserModel.findByIdAndUpdate(comment.author, {$inc: {'userProfile.rep_points': -0.25}}).exec();
+                        const comment = await CommentModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
+                        UserModel.findByIdAndUpdate(comment.author, updateUserQueryNegate).exec();
                         break;
                 }
             }
@@ -204,18 +208,15 @@ export class Post {
         }
     }
 
-    public static async Comment(commentObject: IComment, postCache: IORedis.Redis) {
+    public static async Comment(commentObject: IComment) {
         try {
             const newComment = {
                 commentID: '',
-                userTag: commentObject.userTag,
-                name: commentObject.name,
                 campus: commentObject.campus,
                 text: commentObject.text,
                 video: commentObject.video,
                 image: commentObject.image,
                 parentPost: commentObject.parentPost,
-                authorAvatar: commentObject.authorAvatar,
                 author: commentObject.author,
                 createdAt: moment().valueOf(),
             } as IComment;
@@ -233,50 +234,56 @@ export class Post {
     /**
      *
      * @param parentPostID
-     * @param postCache
      * @param limit - The limit of comments to fetch from the feed
      * @param userID
-     * @param offset - Offset
+     * @param page
      * @constructor
      */
 
-    public static async GetComments(parentPostID: string, postCache: IORedis.Redis, limit: number, userID: string, offset: number) {
+    public static async GetComments(parentPostID: string, userID: string, limit: number, page: number) {
         try {
+            const aggregate = [
+                {
+                    $match: {parentPost: parentPostID},
+                },
+                {
+                    $addFields: {
+                        isLiked: {$in: [userID, '$likedBy']},
+                    },
+                },
+                {
+                    $project: {
+                        likedBy: 0,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        let: {authorID: '$author'},
+                        pipeline: [
+                            {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
+                            {$project: {password: 0, email: 0}},
+                        ],
+                        as: 'author',
+                    },
+                },
+                {
+                    $sort: {
+                        likes: -1,
+                    },
+                },
+            ];
 
-            if (await postCache.exists(`post_comments_index:${parentPostID}`) === 1) {
-                const commentIDs = await postCache.zrevrange(`post_comments_index:${parentPostID}`, offset, limit);
+            const options = {
+                page,
+                limit,
+            };
 
-                const pipeline = postCache.pipeline();
+            const agg = CommentModel.aggregate(aggregate);
+            // @ts-ignore
+            const comments = await CommentModel.aggregatePaginate(agg, options);
 
-                for (const commentID of commentIDs) {
-                    pipeline.hgetall(commentID);
-                    pipeline.sismember(`likes:${commentID}`, userID.toString());
-                }
-
-                const pipelineResult = await pipeline.exec();
-
-                const filtered: any = [];
-
-                for (let i = 0; i < pipelineResult.length; i++) {
-                    const currentItem = pipelineResult[i][1];
-                    const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
-
-                    if (Object.entries(currentItem).length !== 0) {
-                        nextItem !== 0 ? currentItem.isLiked = true : currentItem.isLiked = false;
-                        filtered.push(currentItem);
-                    }
-                    // nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
-                }
-
-                return {comments: filtered};
-            } else {
-                const comments = await CommentModel.find({parentPost: parentPostID})
-                    .lean()
-                    .populate('author', {name: 1, userProfile: 1, userTag: 1})
-                    .populate('parentPost')
-                    .exec();
-                return {comments};
-            }
+            return {comments: comments.docs};
 
         } catch (e) {
             logger.error(e);
@@ -333,74 +340,4 @@ export class Post {
         }
 
     }
-
-    private static async CheckLikedBy(feed: any[], userID: string) {
-
-        const filtered: any = [];
-        for (let i = 0; i < feed.length; i++) {
-            const currentElement = feed[i];
-
-            if ((currentElement[i + 1] === 0) || (currentElement[i + 1] === 1)) {
-                // tslint:disable-next-line: max-line-length
-                currentElement[i + 1] === 1 ? filtered.push([currentElement, {isliked: true}]) : filtered.push([currentElement, {isliked: false}]);
-            }
-        }
-
-        return filtered;
-    }
-
-    /**
-     * @desc  Calculates the top post on the platform 
-     * @param postCache 
-     */
-    // public static async CalcTopPosts(postCache: IORedis.Redis) {
-
-    //     // Get all the posts on the platform
-    //     const postsIDs = await postCache.smembers('post-index');
-
-    //     const pipeline = postCache.pipeline();
-
-    //     for (let index = 0; index < postsIDs.length; index++) {
-    //         const post = postsIDs[index];
-
-    //         pipeline.hgetall(post);
-
-    //     }
-    //     const piplelineResult = await pipeline.exec();
-
-    //     const scored: Array<{postID: string, score: string}> = [];
-
-    //     //  Calculate the score for each post 
-
-    //     for (let index = 0; index < piplelineResult.length; index++) {
-    //         const post = piplelineResult[index][1];
-    //         const likes = post.likes;
-    //         const likesWeight = 4;
-    //         // const dislikes = post.likes; // Not considering this yet
-    //         const comments  = post.comments;
-    //         const commentsWeight = 5;
-
-    //         const score = ((likes * likesWeight ) + (comments * commentsWeight)).toString();
-
-    //         scored.push({postID: post.postID, score});
-    //     }
-
-    //     // Cache top posts in set
-    //     for (let index = 0; index < scored.length; index++) {
-    //         const scoredElement = scored[index];
-
-    //         pipeline.zadd('top-posts', scoredElement.postID, scoredElement.score);
-    //     }
-
-    //     pipeline.exec();
-    // }
-
-    // public static async GetTopPosts(postCache: IORedis.Redis) {
-    //     const topPosts = await postCache.zrevrange('top-posts', 0, -1);
-
-    //     return topPosts;
-    // }
-    // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
-    //
-    // }
 }
