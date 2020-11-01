@@ -1,4 +1,9 @@
 import mongoose, {Schema} from 'mongoose';
+// @ts-ignore
+// tslint:disable-next-line:no-var-requires
+const aggregatePlugin = require('mongoose-aggregate-paginate-v2');
+// import * as aggregatePaginate from 'mongoose-aggregate-paginate-v2';
+
 import {ICommentModel} from 'src/interfaces/IPost';
 
 const commentSchema: Schema = new Schema({
@@ -13,6 +18,8 @@ const commentSchema: Schema = new Schema({
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
 });
+
+commentSchema.plugin(aggregatePlugin);
 
 commentSchema.index('parentPost');
 
