@@ -34,24 +34,20 @@ export class Post {
         try {
             // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
-                authorAvatar: postObject.authorAvatar,
                 author: postObject.author,
-                userTag: postObject.userTag,
                 text: postObject.text,
-                video: '',
-                image: '',
                 name: postObject.name,
                 campus: postObject.campus,
                 parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),
             });
 
-            if (postObject.image !== ('' || undefined)) {
+            if (postObject.image !== '') {
                 const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
             }
 
-            if (postObject.video !== ('' || undefined)) {
+            if (postObject.video !== '') {
                 const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
@@ -99,7 +95,7 @@ export class Post {
                 if (exists) {
 
                     // Get all the postIDs in the users newsfeed
-                    const postKeys = await primaryCache.zrevrange(userID, options.offset, -1);
+                    const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
@@ -169,7 +165,7 @@ export class Post {
                         break;
 
                     default:
-                        return;
+                        break;
                 }
             } else {
                 const updateUnLikeQuery = {$inc: {likes: -1}, $pull: {likedBy: {$in: [userID]}}};
@@ -244,7 +240,7 @@ export class Post {
         try {
             const aggregate = [
                 {
-                    $match: {parentPost: parentPostID},
+                    $match: {parentPost: Types.ObjectId(parentPostID)},
                 },
                 {
                     $addFields: {
