@@ -271,7 +271,7 @@ export class User {
                 avatar: user.userProfile.avatar,
                 campus: update.university,
                 name: user.name,
-                userID: user.id,
+                userID: user._id,
                 userTag: user.userTag,
             };
 
