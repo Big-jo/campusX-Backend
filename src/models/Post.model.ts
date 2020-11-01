@@ -3,10 +3,8 @@ import { IPostModel } from 'src/interfaces/IPost';
 import mongoosePaginate from 'mongoose-paginate';
 
 const PostSchema: Schema = new Schema({
-    authorAvatar: {type: String, required: true},
     author: {type: Schema.Types.ObjectId, ref: 'User'},
     postID: {type: String},
-    userTag: {type: String, required: true},
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },

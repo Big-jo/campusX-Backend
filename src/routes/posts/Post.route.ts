@@ -60,8 +60,6 @@ router.post(createPostPath, auth, upload.fields([{name: 'image', maxCount: 1}, {
         // TODO: Add Annonymous feature
 
         const post: IPost = {
-            authorAvatar: req.token.avatar,
-            userTag: req.token.userTag,
             author: req.token.userID,
             // @ts-ignore
             image: req.files.image !== undefined ? req.files.image[0] : '',
@@ -77,7 +75,7 @@ router.post(createPostPath, auth, upload.fields([{name: 'image', maxCount: 1}, {
             anonymous: req.body.anon,
         };
 
-        Post.CreatePost(post, req.token.userID, null, primaryCache, postCache);
+        Post.CreatePost(post, req.token.userID, null, primaryCache);
 
         res.status(OK).send();
     } catch (error) {
@@ -92,19 +90,17 @@ export const createComment = '/comment';
 router.post(createComment, auth, async (req: Request, res: Response) => {
     try {
         const commentObject: IComment = {
-            authorAvatar: req.token.avatar,
             postID: '',
             video: req.body.video,
             image: req.body.image,
             text: req.body.text,
             author: req.body.author,
-            userTag: req.body.userTag,
             parentPost: req.body.parentPost,
             campus: req.body.university,
         };
 
-        const result = await Post.Comment(commentObject, postCache);
-        result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
+        const result = await Post.Comment(commentObject);
+        res.status(CREATED).send();
     } catch (e) {
         logger.error(e);
         Utility.ErrResponse(res, e);
@@ -114,13 +110,13 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
 /*********************************************************
  *                      Get Comments
  *********************************************************/
-export const getCommentsPath = '/comments/:postID?offset';
+export const getCommentsPath = '/comments/:postID';
 
 router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
 
     try {
         // Actually, just return post with comments sub-field
-        const result = await Post.GetComments(req.params.postID, postCache, 30, req.token.userID, req.query.offset);
+        const result = await Post.GetComments(req.params.postID, req.token.userID, req.query.limit, req.query.page);
         res.status(OK).json({result});
         // TODO: Rank comments
     } catch (e) {
@@ -136,9 +132,15 @@ export const getPostsPath = '/newsfeed/home';
 router.get(getPostsPath, auth, async (req, res) => {
     try {
         // await Post.GetPosts(client, req.params.userID, {mostRecent: true});
-        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, { mostRecent: true });
+        const offset = req.query.offset;
+        const limit = req.query.limit;
+        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, {
+            mostRecent: true,
+            offset,
+            limit,
+        });
 
-        result?.newsfeed === undefined ? res.json({ result }).status(200) : res.json({ result }).status(200);
+        res.status(200).json({result});
     } catch (error) {
         logger.error(error, error.message);
         Utility.ErrResponse(res, error);
@@ -167,17 +169,30 @@ export const getCampusPostPath = '/getnewsfeed/:campusID';
  *              Like Post
  *********************************************************/
 
-export const likePostPath = '/like';
+export const likePostPath = '/like/post';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Post.LikePost(req.token.userID, req.body.postID, postCache, 'post', req.body.parentPostID);
-        res.status(OK).json({result});
+
+        Post.LikePost(req.token.userID, req.body.postID, 'post');
+        res.status(OK).json();
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
 });
 
+/******************************************************************************
+ *                                 LIKE COMMENT
+ /******************************************************************************/
+const likeComment = '/like/comment';
+router.post(likeComment, auth, async (req, res) => {
+    try {
+        Post.LikePost(req.token.userID, req.body.commentID, 'comment');
+        res.status(OK).send();
+    } catch (e) {
+        Utility.ErrResponse(res, e);
+    }
+});
 /******************************************************************************
  *                                 Dislike Post
  /******************************************************************************/

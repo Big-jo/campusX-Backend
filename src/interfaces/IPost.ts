@@ -5,12 +5,10 @@ export interface IPostModel extends Document, IPost {
 }
 
 export interface IPost {
-    authorAvatar: string;
     postID?: string;
     name?: string;
     author?: string;
     text?: string;
-    userTag: string;
     video?: any;
     image?: any;
     campus: string;

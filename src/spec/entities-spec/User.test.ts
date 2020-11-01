@@ -19,7 +19,7 @@ before(() => {
     // tslint:disable-next-line: no-console
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
-    Db.dropDatabase().then(() => {
+    Db.dropCollection('users').then(() => {
         console.log('dropped');
     }).catch(e => {
         console.log(e.message);
