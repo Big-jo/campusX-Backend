@@ -2,18 +2,18 @@ import PostModel from '../models/Post.model';
 import UserModel from '../models/User.model';
 import {IComment, IPost} from '../interfaces/IPost';
 import {logger} from '@shared';
-import FollowsModel, { IFollower } from '../models/Follower.model';
+import FollowsModel, {IFollower} from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
-import { S3 } from '../lib/s3';
-import LikedByModel from '../models/LikedBy.model';
+import {S3} from '@lib';
+import {Types} from 'mongoose';
 import moment = require('moment');
-
-// import { bool } from 'aws-sdk/clients/signer';
 
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
+    offset: number;
+    limit: number;
 }
 
 export interface IPostOptions {
@@ -30,7 +30,7 @@ interface IPostType {
 export class Post {
 
     // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, type: IPostType, primaryCache: IORedis.Redis, postCache: IORedis.Redis) {
+    public static async CreatePost(postObject: IPost, userID: string, type: IPostType, primaryCache: IORedis.Redis) {
         try {
             // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
@@ -46,45 +46,17 @@ export class Post {
                 createdAt: moment().valueOf(),
             });
 
-            if (postObject.image !== '') {
+            if (postObject.image !== ('' || undefined)) {
                 const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
             }
 
-            if (postObject.video !== '') {
+            if (postObject.video !== ('' || undefined)) {
                 const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
 
             post = await post.save();
-
-            const cachedPost: IPost = {
-                authorAvatar: post.authorAvatar,
-                postID: post.id,
-                author: post.author,
-                userTag: post.userTag,
-                text: post.text,
-                video: post.video,
-                image: post.image,
-                createdAt: post.createdAt,
-                name: postObject.name,
-                campus: post.campus,
-                likes: 0,
-                parentPost: post.parentPost,
-                dislikes: 0,
-                comments: 0,
-            };
-
-            // Add post to post cache
-            postCache.hmset(post.id, cachedPost);
-
-            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
-
-            postCache.expire(post.id, expireTime); // Development Expire time
-
-            // Index post
-            // TODO: Create mechanism to remove expired posts from index and user feed
-            postCache.sadd('post-index', post.id);
 
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
 
@@ -93,7 +65,7 @@ export class Post {
             }
 
             // Add post to campus Feed
-            primaryCache.sadd(post.campus, post.id);
+            primaryCache.sadd(post.campus, `${post.id}:${post.createdAt}`);
 
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
                 primaryCache.sadd('campuses', post.campus.toLowerCase());
@@ -105,7 +77,7 @@ export class Post {
             const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
                 // primaryCache.lpush(follower.follower, post.id);
-                pipeline.sadd(follower.follower.toString(), post.id);
+                pipeline.zadd(follower.follower.toString(), post.createdAt.toString(), post.id);
                 pipeline.sadd('dirty', follower.follower);
             }
             pipeline.exec();
@@ -116,7 +88,7 @@ export class Post {
         }
     }
 
-    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, options?: IOptions) {
+    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, options: IOptions) {
         if (options!.mostRecent) {
             try {
                 /**
@@ -127,14 +99,15 @@ export class Post {
                 if (exists) {
 
                     // Get all the postIDs in the users newsfeed
-                    // const postKeys = await primaryCache.lrange(userID, 0, -1);
-                    const postKeys = await primaryCache.smembers(userID);
+                    const postKeys = await primaryCache.zrevrange(userID, options.offset, -1);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
 
+                    const objectIDs = postKeys.map(key => Types.ObjectId(key));
+
                     // Hydrate the feed list (Get posts with the keys retrieved)
-                    const newsfeed = await this.Hydrate(postKeys, postCache, userID, {hydrationMethod: 'mongo'});
+                    const newsfeed = await this.Hydrate(objectIDs, userID);
 
                     // const posts = await primaryCache.
                     return {newsfeed};
@@ -167,47 +140,26 @@ export class Post {
 
     public static async LikePost(userID: string, postID: string, postCache: IORedis.Redis, collection: string, parentPostID?: string) {
         try {
-            const likedBy = await LikedByModel.find({postID, userID}).exec();
-            const isInCache = await postCache.exists(postID);
-            if ((likedBy.length === 0) && (isInCache === 1)) {
+            // const likedBy = await LikedByModel.find({postID, userID}).exec();
+            const likedBy = await PostModel.findOne({_id: postID, likedBy: {$in: [userID]}}).exec();
+            // const isInCache = await postCache.exists(postID);
+            if (likedBy === null) {
                 switch (collection) {
                     case 'post':
-                        PostModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
-                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
-
-                        // @ts-ignore
-                        new LikedByModel({
-                            postID,
-                            userID,
-                        }).save();
-
-                        const postPipeline = postCache.pipeline();
-
-                        postPipeline.hincrby(postID, 'likes', 1);
-                        postPipeline.sadd(`likes:${postID}`, userID);
-                        postPipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
-                        postPipeline.exec();
-                        return {ops: 'liked'};
+                        const post = await PostModel.findByIdAndUpdate(postID, {
+                            $inc: {likes: 1},
+                            $push: {likedBy: userID},
+                        }).lean().exec();
+                        UserModel.findByIdAndUpdate(post.author, {$inc: {'userProfile.rep_points': 0.25}}).exec();
+                        break;
 
                     case 'comment':
-                        CommentModel.findByIdAndUpdate(postID, {$inc: {likes: 1}, likedBy: userID}).exec();
-                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.25}}).exec();
-
-                        // @ts-ignore
-                        new LikedByModel({
-                            postID,
-                            userID,
-                        }).save();
-
-                        const commentPipeline = postCache.pipeline();
-
-                        commentPipeline.hincrby(postID, 'likes', 1);
-                        commentPipeline.sadd(`likes:${postID}`, userID);
-                        commentPipeline.zincrby(`post_comments_index:${parentPostID}`, 1, postID);
-                        commentPipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
-                        commentPipeline.exec();
-
-                        return {ops: 'liked'};
+                        const comment = await CommentModel.findByIdAndUpdate(postID, {
+                            $inc: {likes: 1},
+                            $push: {likedBy: userID},
+                        }).lean().exec();
+                        UserModel.findByIdAndUpdate(comment.author, {$inc: {'userProfile.rep_points': 0.15}}).exec();
+                        break;
                     default:
                         return;
                 }
@@ -215,33 +167,20 @@ export class Post {
 
                 switch (collection) {
                     case 'post':
-                        PostModel.findByIdAndUpdate(postID, {$inc: {likes: -1}, likedBy: userID}).exec();
-                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': -0.25}}).exec();
-                        LikedByModel.deleteOne({postID, userID}).exec();
-
-                        if (isInCache === 1) {
-                            const postPipeline = postCache.pipeline();
-                            postPipeline.hincrby(postID, 'likes', -1);
-                            postPipeline.srem(`likes:${postID}`, userID);
-                            postPipeline.exec();
-                        }
-
-                        return {ops: 'unliked'};
-
+                        // TODO: Remove userID from list
+                        const post = await PostModel.findByIdAndUpdate(postID, {
+                            $inc: {likes: 1},
+                            $push: {likedBy: userID},
+                        }).lean().exec();
+                        UserModel.findByIdAndUpdate(post.author, {$inc: {'userProfile.rep_points': -0.25}}).exec();
+                        break;
                     case 'comment':
-                        CommentModel.findByIdAndUpdate(postID, {$inc: {likes: -1}, likedBy: userID}).exec();
-                        UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': -0.25}}).exec();
-                        LikedByModel.deleteOne({postID, userID}).exec();
-
-                        if (isInCache === 1) {
-                            const commentPipeline = postCache.pipeline();
-                            commentPipeline.hincrby(postID, 'likes', -1);
-                            commentPipeline.zincrby(`post_comments_index:${parentPostID}`, -1, postID);
-                            commentPipeline.srem(`likes:${postID}`, userID);
-                            commentPipeline.exec();
-                        }
-
-                        return {ops: 'unliked'};
+                        const comment = await CommentModel.findByIdAndUpdate(postID, {
+                            $inc: {likes: 1},
+                            $push: {likedBy: userID},
+                        }).lean().exec();
+                        UserModel.findByIdAndUpdate(comment.author, {$inc: {'userProfile.rep_points': -0.25}}).exec();
+                        break;
                 }
             }
         } catch (error) {
@@ -285,20 +224,6 @@ export class Post {
             comment.commentID = comment.id;
             comment.save();
 
-            const pipeline = postCache.pipeline();
-            const expireTime = process.env.POST_EXPIRE_TIME as unknown as number;
-
-            if (await postCache.exists(commentObject.parentPost) === 1) {
-                pipeline.hincrby(commentObject.parentPost, 'comments', 1);
-            }
-            pipeline.hmset(comment.id, newComment);
-            pipeline.zadd(`post_comments_index:${comment.parentPost}`, '0', comment.id);
-            pipeline.expire(comment.id, expireTime);
-            pipeline.expire(`post_comments_index:${comment.parentPost}`, expireTime);
-
-            pipeline.exec();
-
-            return 0;
         } catch (e) {
             logger.error(e);
             throw new Error(e);
@@ -372,43 +297,41 @@ export class Post {
      * Retrives posts from cache`
      *
      * @param keys Keys of the post
-     * @param postCache
      * @param userID
      */
-    private static async Hydrate(keys: string[], postCache: IORedis.Redis, userID: string, options: { hydrationMethod: string }) {
-        switch (options.hydrationMethod) {
-            case 'redis':
-                const pipeline = postCache.pipeline();
-
-                for (const key of keys) {
-                    pipeline.hgetall(key);
-                    pipeline.sismember(`likes:${key}`, userID);
-                }
-
-                const pipelineResult = await pipeline.exec();
-
-                // Filter the result
-                const filtered: any = [];
-
-                // TODO: Find a way to remove expired posts from users feed, if not it just keeps taking up space
-                for (let i = 0; i < pipelineResult.length; i++) {
-                    const currentItem = pipelineResult[i][1];
-                    const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
-
-                    // Check if the currentItem is empty
-                    if (Object.entries(currentItem).length !== 0) {
-                        // Check if the post has a parentPostID
-                        nextItem === 1 ? currentItem.isliked = true : currentItem.isliked = false;
-                        filtered.push(currentItem);
-                    }
-                }
-
-                return filtered;
-
-            case 'mongo':
-            default:
-                break;
+    private static async Hydrate(keys: Types.ObjectId[], userID: string) {
+        try {
+            const aggregate = [
+                {
+                    $match: {_id: {$in: keys}},
+                },
+                {
+                    $addFields: {
+                        isLiked: {$in: [userID, '$likedBy']},
+                    },
+                },
+                {
+                    $project: {
+                        likedBy: 0,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        let: {authorID: '$author'},
+                        pipeline: [
+                            {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
+                            {$project: {password: 0, email: 0}},
+                        ],
+                        as: 'author',
+                    },
+                },
+            ];
+            return await PostModel.aggregate(aggregate).exec();
+        } catch (e) {
+            logger.error(e);
         }
+
     }
 
     private static async CheckLikedBy(feed: any[], userID: string) {
