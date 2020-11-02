@@ -32,11 +32,9 @@ export class CirclePost {
                     memberID: circlePost.memberID,
                     text: circlePost.text,
                     name: circlePost.name,
-                    userTag: circlePost.userTag,
                     video: '',
                     image: '',
                     author: circlePost.author,
-                    authorAvatar: circlePost.authorAvatar,
                     campus: circlePost.campus,
                     parentPost: circlePost.parentPost,
                 };
@@ -161,10 +159,8 @@ export class CirclePost {
     public static async Comment(commentObject: ICircleComment, postCache: IORedis.Redis, media: any) {
         try {
             const comment = {
-                authorAvatar: commentObject.authorAvatar,
                 campus: commentObject.campus,
                 parentPost: commentObject.parentPost,
-                userTag: commentObject.userTag,
                 createdAt: moment().valueOf(),
                 author: commentObject.author,
                 comments: 0,
