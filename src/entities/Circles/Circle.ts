@@ -32,7 +32,6 @@ export class Circle {
 
                 // Add the user to that circle
                 this.Join(userID, newCircle.id);
-                return 0;
             }
 
         } catch (error) {
@@ -80,48 +79,48 @@ export class Circle {
 
     public static async GetCircleFeed(circleID: string, userID: string, page: number, limit: number) {
         try {
-                const query = [
-                    {
-                        $match: {circle: Types.ObjectId(circleID)},
+            const query = [
+                {
+                    $match: { circle: Types.ObjectId(circleID) },
+                },
+                {
+                    $addFields: {
+                        isLiked: { $in: [userID, '$likedBy'] },
                     },
-                    {
-                        $addFields: {
-                            isLiked: {$in: [userID, '$likedBy']},
-                        },
+                },
+                {
+                    $project: {
+                        likedBy: 0,
                     },
-                    {
-                        $project: {
-                            likedBy: 0,
-                        },
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        let: { authorID: '$author' },
+                        pipeline: [
+                            { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                            { $project: { password: 0, email: 0 } },
+                        ],
+                        as: 'author',
                     },
-                    {
-                        $lookup: {
-                            from: 'users',
-                            let: {authorID: '$author'},
-                            pipeline: [
-                                {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
-                                {$project: {password: 0, email: 0}},
-                            ],
-                            as: 'author',
-                        },
+                },
+                {
+                    $sort: {
+                        likes: -1,
                     },
-                    {
-                        $sort: {
-                            likes: -1,
-                        },
-                    },
-                ];
-    
-                const options = {
-                    page,
-                    limit,
-                };
-                const aggregate = CirclePostModel.aggregate(query);
+                },
+            ];
 
-                // @ts-ignore
-                const circleFeed = CirclePostModel.aggregatePaginate(aggregate, options);
+            const options = {
+                page,
+                limit,
+            };
+            const aggregate = CirclePostModel.aggregate(query);
 
-                return { circleFeed };
+            // @ts-ignore
+            const circleFeed = CirclePostModel.aggregatePaginate(aggregate, options);
+
+            return { circleFeed };
             // Write Sort Algorithm for Posts 😢 
         } catch (error) {
             logger.error(error.message);

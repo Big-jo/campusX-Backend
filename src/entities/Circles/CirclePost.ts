@@ -1,7 +1,7 @@
 import { Post } from '../Post';
 import CircleCirclePostModel from '../../models/CirclePost.model';
 import { ICirclePost, ICircleComment } from '../../interfaces/ICirclePost';
-import {logger} from '@shared';
+import { logger } from '@shared';
 import IORedis from 'ioredis';
 import CirclePostModel from '../../models/CirclePost.model';
 import { S3 } from '../../lib/s3';
@@ -25,7 +25,7 @@ export class CirclePost extends Post {
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, media: any, redisClient: IORedis.Redis, circleID: string) {
+    public static async CirclePost(circlePost: ICirclePost, media: any, circleID: string) {
         try {
             const isMember = await CircleMemberModel.findById(circlePost.memberID).lean().exec();
             if (isMember !== null) {
@@ -33,7 +33,6 @@ export class CirclePost extends Post {
                     circle: circlePost.circle,
                     memberID: circlePost.memberID,
                     text: circlePost.text,
-                    name: circlePost.name,
                     video: '',
                     image: '',
                     author: circlePost.author,
@@ -54,7 +53,6 @@ export class CirclePost extends Post {
                 post.save();
 
                 const expireTime = process.env.CIRCLEPOST_EXPIRE_TIME as unknown as number;
-                redisClient.zadd(`${circleID}`, '0', post.id);
             } else {
                 return { error: 'Sorry cannot post if you are not a member' };
             }
@@ -64,7 +62,7 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async LikePost(userID: string, postID: string,  collection: string) {
+    public static async LikePost(userID: string, postID: string, collection: string) {
         try {
             super.LikePost(userID, postID, 'circlePost');
         } catch (error) {
@@ -73,7 +71,7 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async CircleComment(commentObject: ICircleComment, media: {type: string, file: any }) {
+    public static async CircleComment(commentObject: ICircleComment, media: { type: string, file: any }) {
         try {
             const comment: ICircleComment = {
                 campus: commentObject.campus,
@@ -90,19 +88,19 @@ export class CirclePost extends Post {
                 memberID: commentObject.memberID,
             };
 
-            const createdComment =  new CircleCommentModel(comment);
+            const createdComment = new CircleCommentModel(comment);
 
             let s3;
 
             if (media.type === 'image') {
-               s3  = new S3(createdComment.id, media.file, 'image');
-               createdComment.image = await s3.UploadImage();
+                s3 = new S3(createdComment.id, media.file, 'image');
+                createdComment.image = await s3.UploadImage();
             } else {
-                s3  = new S3(createdComment.id, media.file, 'video');
+                s3 = new S3(createdComment.id, media.file, 'video');
                 createdComment.video = await s3.UploadVideo();
             }
 
-            createdComment.postID = createdComment.id; 
+            createdComment.postID = createdComment.id;
 
             createdComment.save();
 
