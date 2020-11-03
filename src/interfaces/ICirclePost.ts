@@ -1,8 +1,8 @@
-import { IPost } from './IPost';
+import {IComment, IPost} from './IPost';
 import { Document } from 'mongoose';
 
 export interface ICirclePost extends IPost {
-  circleID: string;
+  circle: string;
   memberID: string;
 }
 
@@ -10,8 +10,8 @@ export interface ICirclePostModel extends ICirclePost, Document {
 
 }
 
-export interface ICircleComment extends IPost {
+export interface ICircleComment extends IComment {
   parentPost: string;
-  circleID: string;
+  circle: string;
   memberID: string;
 }

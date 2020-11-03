@@ -3,7 +3,10 @@ import CircleModel from '../../models/Circle.model';
 import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
-import {S3} from '@lib';
+import { S3 } from '@lib';
+import { Types } from 'mongoose';
+import PostModel from '../../models/Post.model';
+import CirclePostModel from '../../models/CirclePost.model';
 // import { circleFeed } from 'src/routes/circles/Circles.route';
 // import mongoose from 'mongoose';
 
@@ -67,7 +70,7 @@ export class Circle {
                 CircleMemberModel.findOneAndDelete({ circle: circleID, userID }).exec();
                 CircleModel.findByIdAndUpdate({ _id: circleID }, { $inc: { members_count: -1 } }).exec();
             } else {
-                return {error: 'Not a member of this circle'};
+                return { error: 'Not a member of this circle' };
             }
         } catch (error) {
             logger.error(error);
@@ -75,38 +78,50 @@ export class Circle {
         }
     }
 
-    public static async GetCircleFeed(circleID: string, redisClient: IORedis.Redis) {
+    public static async GetCircleFeed(circleID: string, userID: string, page: number, limit: number) {
         try {
-            const circlePostKeys = await redisClient.smembers(`circlePostsIndexes:${circleID}`);
-            if (circlePostKeys.length !== 0) {
-                const pipeline = redisClient.pipeline();
+                const query = [
+                    {
+                        $match: {circle: Types.ObjectId(circleID)},
+                    },
+                    {
+                        $addFields: {
+                            isLiked: {$in: [userID, '$likedBy']},
+                        },
+                    },
+                    {
+                        $project: {
+                            likedBy: 0,
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            let: {authorID: '$author'},
+                            pipeline: [
+                                {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
+                                {$project: {password: 0, email: 0}},
+                            ],
+                            as: 'author',
+                        },
+                    },
+                    {
+                        $sort: {
+                            likes: -1,
+                        },
+                    },
+                ];
+    
+                const options = {
+                    page,
+                    limit,
+                };
+                const aggregate = CirclePostModel.aggregate(query);
 
-                for (let index = 0; index < circlePostKeys.length; index++) {
-                    const key = circlePostKeys[index];
-                    pipeline.hgetall(key.split(':')[1]);
-                }
+                // @ts-ignore
+                const circleFeed = CirclePostModel.aggregatePaginate(aggregate, options);
 
-                const pipelineResult = await pipeline.exec();
-
-                // const circleFeed = piplelineResult.map(item => item[1]);
-                const filtered: any = [];
-
-                for (let i = 0; i < pipelineResult.length; i++) {
-                    const currentItem = pipelineResult[i][1];
-                    const nextItem = pipelineResult[i === pipelineResult.length - 1 ? 0 : i + 1][1];
-
-                    if (Object.entries(currentItem).length !== 0) {
-                        filtered.push(currentItem);
-                        // nextItem !== 0 ? filtered.push([currentItem, { isliked: true }]) : filtered.push([currentItem, { isliked: false }]);
-                    }
-                    // nextItem === 1 ? filtered.push([currentItem, {isliked: true}]) : filtered.push([currentItem, {isliked: false}]);
-                }
-
-                return { circleFeed: filtered };
-            } else {
-                return { circleFeed: [] };
-            }
-
+                return { circleFeed };
             // Write Sort Algorithm for Posts 😢 
         } catch (error) {
             logger.error(error.message);
