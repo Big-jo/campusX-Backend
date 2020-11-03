@@ -64,16 +64,16 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async LikeCirclePost(userID: string, postID: string, postCache: IORedis.Redis, collection: string, parentPostID?: string) {
+    public static async LikePost(userID: string, postID: string,  collection: string) {
         try {
-
+            super.LikePost(userID, postID, 'circlePost');
         } catch (error) {
             logger.error(error);
             throw new Error(error);
         }
     }
 
-    public static async Comment(commentObject: ICircleComment, media: {type: string, file: any }) {
+    public static async CircleComment(commentObject: ICircleComment, media: {type: string, file: any }) {
         try {
             const comment: ICircleComment = {
                 campus: commentObject.campus,

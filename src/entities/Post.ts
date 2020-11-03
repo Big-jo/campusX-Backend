@@ -1,13 +1,14 @@
 import PostModel from '../models/Post.model';
 import UserModel from '../models/User.model';
-import {IComment, IPost} from '../interfaces/IPost';
-import {logger} from '@shared';
-import FollowsModel, {IFollower} from '../models/Follower.model';
+import { IComment, IPost } from '../interfaces/IPost';
+import { logger } from '@shared';
+import FollowsModel, { IFollower } from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
-import {S3} from '@lib';
-import {Types} from 'mongoose';
+import { S3 } from '@lib';
+import { Types } from 'mongoose';
 import moment = require('moment');
+import CirclePostModel from '../models/CirclePost.model';
 
 interface IOptions {
     mostRecent?: boolean;
@@ -106,7 +107,7 @@ export class Post {
                     const newsfeed = await this.Hydrate(objectIDs, userID);
 
                     // const posts = await primaryCache.
-                    return {newsfeed};
+                    return { newsfeed };
 
                 } else {
                     // TODO: Optimize this block
@@ -137,9 +138,9 @@ export class Post {
     public static async LikePost(userID: string, postID: string, collection: string) {
         try {
             let likedBy: any;
-            const findLikedByQuery = {_id: postID, likedBy: {$in: [userID]}};
-            const updateLikeQuery = {$inc: {likes: 1}, $push: {likedBy: userID}};
-            const updateUserQuery = {$inc: {'userProfile.rep_points': 0.25}};
+            const findLikedByQuery = { _id: postID, likedBy: { $in: [userID] } };
+            const updateLikeQuery = { $inc: { likes: 1 }, $push: { likedBy: userID } };
+            const updateUserQuery = { $inc: { 'userProfile.rep_points': 0.25 } };
 
             switch (collection) {
                 case 'post':
@@ -147,6 +148,9 @@ export class Post {
                     break;
                 case 'comment':
                     likedBy = await CommentModel.findOne(findLikedByQuery).lean().exec();
+                    break;
+                case 'circlePost':
+                    likedBy = await CirclePostModel.findOne(findLikedByQuery).lean().exec();
                     break;
                 default:
                     break;
@@ -163,13 +167,16 @@ export class Post {
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
                         break;
-
+                    case 'circlePost':
+                        const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
+                        UserModel.findByIdAndUpdate(circlePost.author, updateUserQuery).exec();
+                        break;
                     default:
                         break;
                 }
             } else {
-                const updateUnLikeQuery = {$inc: {likes: -1}, $pull: {likedBy: {$in: [userID]}}};
-                const updateUserQueryNegate = {$inc: {'userProfile.rep_points': -0.25}};
+                const updateUnLikeQuery = { $inc: { likes: -1 }, $pull: { likedBy: { $in: [userID] } } };
+                const updateUserQueryNegate = { $inc: { 'userProfile.rep_points': -0.25 } };
 
                 switch (collection) {
                     case 'post':
@@ -180,6 +187,12 @@ export class Post {
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQueryNegate).exec();
+                        break;
+                    case 'circlePost':
+                        const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
+                        UserModel.findByIdAndUpdate(circlePost.author, updateUserQueryNegate).exec();
+                        break;
+                    default:
                         break;
                 }
             }
@@ -240,11 +253,11 @@ export class Post {
         try {
             const aggregate = [
                 {
-                    $match: {parentPost: Types.ObjectId(parentPostID)},
+                    $match: { parentPost: Types.ObjectId(parentPostID) },
                 },
                 {
                     $addFields: {
-                        isLiked: {$in: [userID, '$likedBy']},
+                        isLiked: { $in: [userID, '$likedBy'] },
                     },
                 },
                 {
@@ -255,10 +268,10 @@ export class Post {
                 {
                     $lookup: {
                         from: 'users',
-                        let: {authorID: '$author'},
+                        let: { authorID: '$author' },
                         pipeline: [
-                            {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
-                            {$project: {password: 0, email: 0}},
+                            { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                            { $project: { password: 0, email: 0 } },
                         ],
                         as: 'author',
                     },
@@ -279,7 +292,7 @@ export class Post {
             // @ts-ignore
             const comments = await CommentModel.aggregatePaginate(agg, options);
 
-            return {comments: comments.docs};
+            return { comments: comments.docs };
 
         } catch (e) {
             logger.error(e);
@@ -289,9 +302,9 @@ export class Post {
 
     public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
         if (await primaryCache.sismember('dirty', userID) === 1) {
-            return {newsfeedStatus: 'dirty'};
+            return { newsfeedStatus: 'dirty' };
         } else {
-            return {newsfeedStatus: 'sanitized'};
+            return { newsfeedStatus: 'sanitized' };
         }
 
     }
@@ -306,11 +319,11 @@ export class Post {
         try {
             const aggregate = [
                 {
-                    $match: {_id: {$in: keys}},
+                    $match: { _id: { $in: keys } },
                 },
                 {
                     $addFields: {
-                        isLiked: {$in: [userID, '$likedBy']},
+                        isLiked: { $in: [userID, '$likedBy'] },
                     },
                 },
                 {
@@ -321,10 +334,10 @@ export class Post {
                 {
                     $lookup: {
                         from: 'users',
-                        let: {authorID: '$author'},
+                        let: { authorID: '$author' },
                         pipeline: [
-                            {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
-                            {$project: {password: 0, email: 0}},
+                            { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                            { $project: { password: 0, email: 0 } },
                         ],
                         as: 'author',
                     },

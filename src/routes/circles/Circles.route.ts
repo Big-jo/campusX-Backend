@@ -201,7 +201,7 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
         };
 
         // if()
-        CirclePost.Comment(commentObject, media);
+        CirclePost.CircleComment(commentObject, media);
 
         res.status(OK).send();
     } catch (error) {
