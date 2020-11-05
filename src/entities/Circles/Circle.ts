@@ -23,8 +23,8 @@ export class Circle {
                     moderators: [{ moderator: userID }],
                 });
 
-                const s3 = new S3(newCircle.id, circleObject.avatar, 'circle-avatars');
-                newCircle.avatar = await s3.UploadCircleAvatar() as string;
+                // const s3 = new S3(newCircle.id, circleObject.avatar, 'circle-avatars');
+                // newCircle.avatar = await s3.UploadCircleAvatar() as string;
                 await newCircle.save();
 
                 // Add the user to that circle

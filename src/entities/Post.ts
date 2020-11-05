@@ -36,7 +36,6 @@ export class Post {
             let post = new PostModel({
                 author: postObject.author,
                 text: postObject.text,
-                name: postObject.name,
                 campus: postObject.campus,
                 parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),

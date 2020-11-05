@@ -23,7 +23,7 @@ export class CirclePost {
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, media: any, redisClient: IORedis.Redis, circleID: string) {
+    public static async CirclePost(circlePost: ICirclePost, media: any) {
         try {
             const isMember = await CircleMemberModel.findById(circlePost.memberID).lean().exec();
             if (isMember !== null) {

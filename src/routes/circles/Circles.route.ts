@@ -228,7 +228,7 @@ router.post(like, auth, async (req: Request, res: Response) => {
 export const likeComment = '/comment/like';
 router.post(likeComment, auth, async (req: Request, res: Response) => {
     try {
-        const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'comment');
+        const result = await CirclePost.LikePost(req.token.userID, req.body.postID, postCache, 'comment');
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);

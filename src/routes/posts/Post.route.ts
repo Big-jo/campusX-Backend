@@ -51,37 +51,36 @@ primaryCache.on('error', err => {
  *********************************************************/
 export const createPostPath = '/create';
 // TODO: Remove exported error messages in other routes;
-router.post(createPostPath, auth, upload.fields([{name: 'image', maxCount: 1}, {name: 'video', maxCount: 1}]),
+router.post(createPostPath, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]),
     async (req: Request, res: Response) => {
-    // TODO: Move to post lib .
-    // TODO: Add option for anonymous posts.
-    try {
-        // TODO: Move this to controller dir
-        // TODO: Add Annonymous feature
+        // TODO: Move to post lib .
+        // TODO: Add option for anonymous posts.
+        try {
+            // TODO: Move this to controller dir
+            // TODO: Add Annonymous feature
 
-        const post: IPost = {
-            author: req.token.userID,
-            // @ts-ignore
-            image: req.files.image !== undefined ? req.files.image[0] : '',
-            // @ts-ignore
-            video: req.files.video !== undefined ? req.files.video[0] : '',
-            text: req.body.text,
-            campus: req.token.campus,
-            name: req.token.name,
-            parentPost: req.body.parentPost,
-        };
+            const post: IPost = {
+                author: req.token.userID,
+                // @ts-ignore
+                image: req.files.image !== undefined ? req.files.image[0] : '',
+                // @ts-ignore
+                video: req.files.video !== undefined ? req.files.video[0] : '',
+                text: req.body.text,
+                campus: req.token.campus,
+                parentPost: req.body.parentPost,
+            };
 
-        const options = {
-            anonymous: req.body.anon,
-        };
+            const options = {
+                anonymous: req.body.anon,
+            };
 
-        Post.CreatePost(post, req.token.userID, null, primaryCache);
+            Post.CreatePost(post, req.token.userID, null, primaryCache);
 
-        res.status(OK).send();
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+            res.status(OK).send();
+        } catch (error) {
+            Utility.ErrResponse(res, error);
+        }
+    });
 
 /*********************************************************
  *                      Create Comments
@@ -117,7 +116,7 @@ router.get(getCommentsPath, auth, async (req: Request, res: Response) => {
     try {
         // Actually, just return post with comments sub-field
         const result = await Post.GetComments(req.params.postID, req.token.userID, req.query.limit, req.query.page);
-        res.status(OK).json({result});
+        res.status(OK).json({ result });
         // TODO: Rank comments
     } catch (e) {
         Utility.ErrResponse(res, e);
@@ -140,7 +139,7 @@ router.get(getPostsPath, auth, async (req, res) => {
             limit,
         });
 
-        res.status(200).json({result});
+        res.status(200).json({ result });
     } catch (error) {
         logger.error(error, error.message);
         Utility.ErrResponse(res, error);
