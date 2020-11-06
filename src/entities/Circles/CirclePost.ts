@@ -68,7 +68,7 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async Comment(commentObject: ICircleComment, media: any) {
+    public static async CircleComment(commentObject: ICircleComment, media: any) {
         try {
             const comment: ICircleComment = {
                 campus: commentObject.campus,
