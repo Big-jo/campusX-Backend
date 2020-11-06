@@ -123,11 +123,8 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
         const post: ICirclePost = {
             author: req.token.userID,
             memberID: req.body.memberID,
-            name: req.token.name,
             circleID: req.body.circleID,
             text: req.body.text,
-            userTag: req.token.userTag,
-            authorAvatar: req.token.avatar,
             campus: req.token.campus,
             parentPost: req.body.parentPost,
         };
@@ -192,12 +189,10 @@ export const comment = '/post/comment';
 router.post(comment, auth, upload.single('image'), async (req: Request, res: Response) => {
     try {
         const commentObject: ICircleComment = {
-            authorAvatar: req.token.avatar,
             campus: req.token.campus,
             circleID: req.body.circleID,
             memberID: req.body.memberID,
             parentPost: req.body.parentPost,
-            userTag: req.token.userTag,
             author: req.token.userID,
             text: req.body.text,
         };
