@@ -31,12 +31,9 @@ export class CirclePost {
                     circleID: circlePost.circleID,
                     memberID: circlePost.memberID,
                     text: circlePost.text,
-                    name: circlePost.name,
-                    userTag: circlePost.userTag,
                     video: '',
                     image: '',
                     author: circlePost.author,
-                    authorAvatar: circlePost.authorAvatar,
                     campus: circlePost.campus,
                     parentPost: circlePost.parentPost,
                 };
