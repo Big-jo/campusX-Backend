@@ -23,7 +23,7 @@ export class CirclePost {
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, media: any, redisClient: IORedis.Redis, circleID: string) {
+    public static async CirclePost(circlePost: ICirclePost, media: any, circleID: string) {
         try {
             const isMember = await CircleMemberModel.findById(circlePost.memberID).lean().exec();
             if (isMember !== null) {
@@ -49,17 +49,6 @@ export class CirclePost {
                 }
 
                 await post.save();
-
-                const pipeline = redisClient.pipeline();
-
-                const expireTime = process.env.CIRCLEPOST_EXPIRE_TIME as unknown as number;
-
-                pipeline.hmset(`${post.id}`, CPost);
-                pipeline.expire(`${post.id}`, expireTime);
-                pipeline.sadd(`circlePostsIndexes:${circleID}`, `${circleID}:${post.id}`);
-
-                pipeline.exec();
-
                 return 0;
             } else {
                 return { error: 'Sorry cannot post if you are not a member' };
