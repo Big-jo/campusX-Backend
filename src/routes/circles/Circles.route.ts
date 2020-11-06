@@ -61,7 +61,7 @@ router.post(createCircle, auth, upload.single('image'), async (req: Request, res
         } as ICircle;
 
         const result = await Circle.Create(circleObject, req.token.userID);
-        if (result === 0) {
+        if (!result.exist) {
             res.status(CREATED).json('created');
         } else {
             res.status(BAD_REQUEST).json({ exist: true });
