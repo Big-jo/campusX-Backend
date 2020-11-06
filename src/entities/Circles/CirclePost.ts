@@ -49,17 +49,6 @@ export class CirclePost {
                 }
 
                 await post.save();
-
-                const pipeline = redisClient.pipeline();
-
-                const expireTime = process.env.CIRCLEPOST_EXPIRE_TIME as unknown as number;
-
-                pipeline.hmset(`${post.id}`, CPost);
-                pipeline.expire(`${post.id}`, expireTime);
-                pipeline.sadd(`circlePostsIndexes:${circleID}`, `${circleID}:${post.id}`);
-
-                pipeline.exec();
-
                 return 0;
             } else {
                 return { error: 'Sorry cannot post if you are not a member' };
