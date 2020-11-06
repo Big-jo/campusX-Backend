@@ -25,7 +25,10 @@
       "@lib": ["src/lib"],
       "@interfaces": ["src/interfaces"]
     },
-    "types": ["node"],
+    "types": [
+      "node",
+      "mocha"
+    ],
     "typeRoots": ["@types", "node_modules/@types"]
   },
   "include": ["src/**/*.ts", "src/lib/trends.ts"],
