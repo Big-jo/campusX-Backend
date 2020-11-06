@@ -1,4 +1,3 @@
-import chai from 'chai';
 import mongoose from 'mongoose';
 import { expect } from 'chai';
 import { describe } from 'mocha';
