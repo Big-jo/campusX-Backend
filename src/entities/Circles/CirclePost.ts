@@ -1,7 +1,7 @@
 import { Post } from '../Post';
 import CircleCirclePostModel from '../../models/CirclePost.model';
 import { ICirclePost, ICircleComment } from '../../interfaces/ICirclePost';
-import {logger} from '@shared';
+import { logger } from '@shared';
 import IORedis from 'ioredis';
 import CirclePostModel from '../../models/CirclePost.model';
 import { S3 } from '../../lib/s3';
@@ -18,7 +18,7 @@ import CircleCommentModel from '../../models/CircleComment.model';
 
 // }
 
-export class CirclePost {
+export class CirclePost extends Post {
 
     // constructor() {}
 
@@ -31,9 +31,12 @@ export class CirclePost {
                     circleID: circlePost.circleID,
                     memberID: circlePost.memberID,
                     text: circlePost.text,
+                    name: circlePost.name,
+                    userTag: circlePost.userTag,
                     video: '',
                     image: '',
                     author: circlePost.author,
+                    authorAvatar: circlePost.authorAvatar,
                     campus: circlePost.campus,
                     parentPost: circlePost.parentPost,
                 };
@@ -59,96 +62,21 @@ export class CirclePost {
         }
     }
 
-    // public static async LikeCirclePost(userID: string, postID: string, postCache: IORedis.Redis, collection: string, parentPostID?: string) {
-    //     try {
-    //         const likedBy = await LikedByModel.find({ postID, userID }).exec();
-    //         const isInCache = await postCache.exists(postID);
-    //         if ((likedBy.length === 0) && (isInCache === 1)) {
-    //             switch (collection) {
-    //                 case 'post':
-    //                     PostModel.findByIdAndUpdate(postID, { $inc: { likes: 1 }, likedBy: userID }).exec();
-    //                     UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
-
-    //                     // @ts-ignore
-    //                     new LikedByModel({
-    //                         postID,
-    //                         userID,
-    //                     }).save();
-
-    //                     const postPipeline = postCache.pipeline();
-
-    //                     postPipeline.hincrby(postID, 'likes', 1);
-    //                     postPipeline.sadd(`likes:${postID}`, userID);
-    //                     postPipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
-    //                     postPipeline.exec();
-    //                     return { ops: 'liked' };
-
-    //                 case 'comment':
-    //                     CommentModel.findByIdAndUpdate(postID, { $inc: { likes: 1 }, likedBy: userID }).exec();
-    //                     UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.25 } }).exec();
-
-    //                     // @ts-ignore
-    //                     new LikedByModel({
-    //                         postID,
-    //                         userID,
-    //                     }).save();
-
-    //                     const commentPipeline = postCache.pipeline();
-
-    //                     commentPipeline.hincrby(postID, 'likes', 1);
-    //                     commentPipeline.sadd(`likes:${postID}`, userID);
-    //                     commentPipeline.zincrby(`post_comments_index:${parentPostID}`, 1, postID);
-    //                     commentPipeline.expire(`likes:${postID}`, process.env.POST_EXPIRE_TIME as unknown as number);
-    //                     commentPipeline.exec();
-
-    //                     return { ops: 'liked' };
-    //                 default:
-    //                     return;
-    //             }
-    //         } else {
-
-    //             switch (collection) {
-    //                 case 'post':
-    //                     PostModel.findByIdAndUpdate(postID, { $inc: { likes: -1 }, likedBy: userID }).exec();
-    //                     UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': -0.25 } }).exec();
-    //                     LikedByModel.deleteOne({ postID, userID }).exec();
-
-    //                     if (isInCache === 1) {
-    //                         const postPipeline = postCache.pipeline();
-    //                         postPipeline.hincrby(postID, 'likes', -1);
-    //                         postPipeline.srem(`likes:${postID}`, userID);
-    //                         postPipeline.exec();
-    //                     }
-
-    //                     return { ops: 'unliked' };
-
-    //                 case 'comment':
-    //                     CommentModel.findByIdAndUpdate(postID, { $inc: { likes: -1 }, likedBy: userID }).exec();
-    //                     UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': -0.25 } }).exec();
-    //                     LikedByModel.deleteOne({ postID, userID }).exec();
-
-    //                     if (isInCache === 1) {
-    //                         const commentPipeline = postCache.pipeline();
-    //                         commentPipeline.hincrby(postID, 'likes', -1);
-    //                         commentPipeline.zincrby(`post_comments_index:${parentPostID}`, -1, postID);
-    //                         commentPipeline.srem(`likes:${postID}`, userID);
-    //                         commentPipeline.exec();
-    //                     }
-
-    //                     return { ops: 'unliked' };
-    //             }
-    //         }
-    //     } catch (error) {
-    //         logger.error(error);
-    //         throw new Error(error);
-    //     }
-    // }
+    public static async LikePost(userID: string, postID: string, collection: string) {
+        try {
+            super.LikePost(userID, postID, 'circlePost');
+        } catch (error) {
+            logger.error(error);
+            throw new Error(error);
+        }
+    }
 
     public static async Comment(commentObject: ICircleComment, postCache: IORedis.Redis, media: any) {
         try {
-            const comment = {
+            const comment: ICircleComment = {
                 campus: commentObject.campus,
                 parentPost: commentObject.parentPost,
+                userTag: commentObject.userTag,
                 createdAt: moment().valueOf(),
                 author: commentObject.author,
                 comments: 0,
@@ -162,26 +90,21 @@ export class CirclePost {
                 memberID: commentObject.memberID,
             };
 
-            const savedComment =  new CircleCommentModel(comment);
+            const createdComment = new CircleCommentModel(comment);
 
-            savedComment.postID = savedComment.id; 
-            
-            savedComment.save();
+            let s3;
 
-            if (media !== undefined) {
-                const s3 = new S3(savedComment.id, media.file, 'image');
-
-                media.tag === 'image' ? savedComment.image = await s3.UploadImage() as string : savedComment.video = await s3.UploadImage() as string;
+            if (media.type === 'image') {
+                s3 = new S3(createdComment.id, media.file, 'image');
+                createdComment.image = await s3.UploadImage();
+            } else {
+                s3 = new S3(createdComment.id, media.file, 'video');
+                createdComment.video = await s3.UploadVideo();
             }
 
-            const expireTime = process.env.CIRCLEPOST_EXPIRE_TIME as unknown as number;
-            const pipeline = postCache.pipeline();
+            createdComment.postID = createdComment.id;
 
-            pipeline.hmset(savedComment.id, commentObject);
-            pipeline.hincrby(commentObject.parentPost, 'comments', 1);
-            pipeline.expire(savedComment.id, expireTime);
-            pipeline.zadd(`circle_comments:${comment.circleID}:${comment.parentPost}`, '0', savedComment.id);
-            pipeline.expire(`circle_comments:${comment.circleID}:${comment.parentPost}`, expireTime);
+            createdComment.save();
 
             pipeline.exec();
         } catch (error) {

@@ -6,7 +6,6 @@ export interface IPostModel extends Document, IPost {
 
 export interface IPost {
     postID?: string;
-    name?: string;
     author?: string;
     text?: string;
     video?: any;
