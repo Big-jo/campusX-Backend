@@ -5,6 +5,8 @@ import { describe } from 'mocha';
 
 import { User } from '../../entities/User';
 import { IUser } from '../../interfaces/IUser';
+import UserModel from '../../models/User.model';
+import {logger} from '@shared';
 
 const Db = mongoose.connection;
 
@@ -20,10 +22,22 @@ before(() => {
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
     Db.dropCollection('users').then(() => {
-        console.log('dropped');
+        logger.log('info', 'dropped');
     }).catch(e => {
-        console.log(e.message);
+        logger.error(e.message);
     });
+
+    // Db.dropCollection('follows').then(() => {
+    //     console.log('dropped');
+    // }).catch(e => {
+    //     console.log(e.message);
+    // });
+
+    // Db.dropCollection('followings').then(() => {
+    //     console.log('dropped');
+    // }).catch(e => {
+    //     console.log(e.message);
+    // });
 });
 
 after(() => {
@@ -32,10 +46,17 @@ after(() => {
 
 describe('User Interactions', () => {
 
-    // Main User
-    let userID01: string;
+    async function GetUserIDs() {
 
-    let userID02: string;
+        // Main User
+
+        const userID01 = await UserModel.findOne({email: 'doe@gmail.com'}).exec();
+
+        const userID02 = await UserModel.findOne({email: 'janey@gmail.com'}).exec();
+
+        const x = [userID01._id, userID02._id];
+        return x;
+    }
 
     it('Should create a 2 users and return user details', done => {
         const user = [
@@ -77,15 +98,12 @@ describe('User Interactions', () => {
 
         // Create second user
         User.CreateUser(user[1]).then(result => {
-            userID02 = result.user.userID;
             done();
         }).catch(done);
     });
 
     it('should return a users token and some other information', done => {
         User.Login('doe@gmail.com', '111').then(result => {
-            userID01 = result.user.userID;
-
             expect(result).to.be.an('object');
             expect(result.token).to.be.a('string');
             expect(result.user).to.be.an('object');
@@ -97,72 +115,40 @@ describe('User Interactions', () => {
         }).catch(done);
     });
 
-    it('should follow a user', () => {
-        User.FollowUser(userID02, userID01).then(result => {
-            expect(result).to.equal(0);
-        });
+    it('should follow a user', async () => {
+        Db.dropCollection('follows').catch();
+        Db.dropCollection('followings').catch();
+        // console.log((await GetUserIDs())[1], (await GetUserIDs())[0]);
+        const r = await User.FollowUser((await GetUserIDs())[1], (await GetUserIDs())[0]);
+        expect(r).to.not.have.property('error');
     });
 
-    // it('should get a people the users follows with the follows search key ', done => {
-    //     // Here, user2 is the user to get his followers
-    //     User.GetUser('follows', userID01, undefined)
-    //         .then(result => {
-    //             console.log(result);
-    //             expect(result.follows).to.have.property('name');
-    //             expect(result.follows).to.have.property('userProfile');
-    //             expect(result.follows).to.have.property('userTag');
-    //             expect(result.follows).to.have.property('avatar');
-    //             done();
-    //         }).catch(done);
-    // });
+    it('should get a user info with self search key', async () => {
+        const result = await User.GetUser('self', (await GetUserIDs())[1], (await GetUserIDs())[0]);
+        expect(result.self).to.have.property('name');
+        expect(result.self).to.have.property('userProfile');
+        expect(result.self).to.have.property('userTag');
+        expect(result.self.userProfile).to.have.property('avatar');
+    });
 
-    // it('should get a users followings with the followings search key', done => {
-    //     User.GetUser('followings', userID02, userID01)
-    //         .then(result => {
-    //             expect(result.followings).to.have.property('name');
-    //             expect(result.followings).to.have.property('userProfile');
-    //             expect(result.followings).to.have.property('userTag');
-    //             expect(result.followings).to.have.property('avatar');
-    //             done();
-    //         }).catch(done);
-    // });
-
-    it('should get a user info with self search key', done => {
-        User.GetUser('self', userID02, userID01)
-            .then(result => {
-                expect(result.self).to.have.property('name');
-                expect(result.self).to.have.property('userProfile');
-                expect(result.self).to.have.property('userTag');
-                expect(result.self.userProfile).to.have.property('avatar');
-                done();
-            }).catch(done);
+    it('should get another users info with the user key', async () => {
+        const result = await User.GetUser('user', (await GetUserIDs())[1], (await GetUserIDs())[0]);
+        expect(result.user).to.have.property('name');
+        expect(result.user).to.have.property('userProfile');
+        expect(result.user).to.have.property('userTag');
+        expect(result.user.userProfile).to.have.property('avatar');
+        expect(result.user.userProfile).to.have.property('bio');
+        expect(result.user.userProfile).to.have.property('gender');
+        expect(result.user.userProfile).to.have.property('university');
+        expect(result).to.have.property('isFollowing');
+        expect(result.isFollowing).to.be.a('boolean');
 
     });
 
-    it('should get another users info with the user key', done => {
-        User.GetUser('user', userID02, userID01)
-            .then(result => {
-                expect(result.user).to.have.property('name');
-                expect(result.user).to.have.property('userProfile');
-                expect(result.user).to.have.property('userTag');
-                expect(result.user.userProfile).to.have.property('avatar');
-                expect(result.user.userProfile).to.have.property('bio');
-                expect(result.user.userProfile).to.have.property('gender');
-                expect(result.user.userProfile).to.have.property('university');
-                expect(result).to.have.property('isFollowing');
-                expect(result.isFollowing).to.be.a('boolean');
-                done();
-            }).catch(done);
-    });
-
-    it('should return users and show if they are in the same campus', (done) => {
-        User.ConnectUser(userID01, 0).then((result) => {
-            // console.log(result);
-
-            expect(result).to.have.property('connectUsers');
-            expect(result.connectUsers).to.be.an('array');
-            expect(result.connectUsers.length).to.be.greaterThan(0);
-            done();
-        }).catch(done);
+    it('should return users and show if they are in the same campus', async () => {
+        const result = await User.ConnectUser((await GetUserIDs())[1], 0);
+        expect(result).to.have.property('connectUsers');
+        expect(result.connectUsers).to.be.an('array');
+        expect(result.connectUsers.length).to.be.greaterThan(0);
     });
 });
