@@ -31,12 +31,9 @@ export class CirclePost extends Post {
                     circleID: circlePost.circleID,
                     memberID: circlePost.memberID,
                     text: circlePost.text,
-                    name: circlePost.name,
-                    userTag: circlePost.userTag,
                     video: '',
                     image: '',
                     author: circlePost.author,
-                    authorAvatar: circlePost.authorAvatar,
                     campus: circlePost.campus,
                     parentPost: circlePost.parentPost,
                 };
@@ -71,19 +68,17 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async Comment(commentObject: ICircleComment, postCache: IORedis.Redis, media: any) {
+    public static async Comment(commentObject: ICircleComment, media: any) {
         try {
             const comment: ICircleComment = {
                 campus: commentObject.campus,
                 parentPost: commentObject.parentPost,
-                userTag: commentObject.userTag,
                 createdAt: moment().valueOf(),
                 author: commentObject.author,
                 comments: 0,
                 dislikes: 0,
                 image: commentObject.image,
                 likes: 0,
-                name: commentObject.name,
                 text: commentObject.text,
                 video: commentObject.video,
                 circleID: commentObject.circleID,
@@ -105,8 +100,6 @@ export class CirclePost extends Post {
             createdComment.postID = createdComment.id;
 
             createdComment.save();
-
-            pipeline.exec();
         } catch (error) {
             logger.error(error);
             throw new Error(error);
