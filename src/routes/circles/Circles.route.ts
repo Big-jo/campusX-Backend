@@ -123,7 +123,6 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
         const post: ICirclePost = {
             author: req.token.userID,
             memberID: req.body.memberID,
-            name: req.token.name,
             circleID: req.body.circleID,
             text: req.body.text,
             campus: req.token.campus,

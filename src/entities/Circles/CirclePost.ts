@@ -31,7 +31,6 @@ export class CirclePost {
                     circleID: circlePost.circleID,
                     memberID: circlePost.memberID,
                     text: circlePost.text,
-                    name: circlePost.name,
                     video: '',
                     image: '',
                     author: circlePost.author,
