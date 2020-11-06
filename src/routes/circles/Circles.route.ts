@@ -131,7 +131,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 
         // tslint:disable-next-line: max-line-length
         const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
-        const result = await CirclePost.CirclePost(post, media, post.circleID);
+        const result = await CirclePost.CirclePost(post, media);
 
         if (result === 0) {
             res.status(CREATED).send();
@@ -211,27 +211,27 @@ router.post(comment, auth, upload.single('image'), async (req: Request, res: Res
 /******************************************************************************
 *                                 LIKE A POST
 /******************************************************************************/
-export const like = '/post/like';
-router.post(like, auth, async (req: Request, res: Response) => {
-    try {
-        const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'post');
-        res.status(OK).json({ result });
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+// export const like = '/post/like';
+// router.post(like, auth, async (req: Request, res: Response) => {
+//     try {
+//         const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'post');
+//         res.status(OK).json({ result });
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
 
 /******************************************************************************
 *                                 Like A Comment
 /******************************************************************************/
-export const likeComment = '/comment/like';
-router.post(likeComment, auth, async (req: Request, res: Response) => {
-    try {
-        const result = await CirclePost.LikePost(req.token.userID, req.body.postID, postCache, 'comment');
-        res.status(OK).json({ result });
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+// export const likeComment = '/comment/like';
+// router.post(likeComment, auth, async (req: Request, res: Response) => {
+//     try {
+//         const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'comment');
+//         res.status(OK).json({ result });
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
 
 export default { router, path };
