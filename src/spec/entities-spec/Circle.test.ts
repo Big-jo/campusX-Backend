@@ -62,6 +62,10 @@ before(async () => {
     user01 = await (await User.Login('doe@gmail.com', '111')).user.userID;
 });
 
+after(() => {
+    Db.close();
+});
+
 describe('Basic Circle Tests', () => {
 
     it('should create a circle', async () => {
