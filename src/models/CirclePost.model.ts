@@ -8,7 +8,7 @@ const aggregatePlugin = require('mongoose-aggregate-paginate-v2');
 
 const CirclePostSchema: Schema = new Schema({
     author: { type: Schema.Types.ObjectId, ref: 'User' },
-    circle: { type: Schema.Types.ObjectId, ref: 'Circle' },
+    circleID: {type: Schema.Types.ObjectId, ref: 'Circle'},
     text: { type: String },
     video: { type: String, default: null },
     image: { type: String, default: null },
