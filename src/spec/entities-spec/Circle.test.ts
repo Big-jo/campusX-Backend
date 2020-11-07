@@ -39,11 +39,16 @@ const Db = mongoose.connection;
 
 before(async () => {
     const URI = process.env.MONGO_URI as string;
+
+    mongoose.set('useUnifiedTopology', true);
+    mongoose.set('useCreateIndex', true);
+
     mongoose.connect(URI, {
         useNewUrlParser: true,
         useFindAndModify: false,
         // useUnifiedTopology: true,
     });
+
     // tslint:disable-next-line: no-console
     Db.on('error', console.error.bind(console, 'MongoDB connection error'));
     // tslint:disable-next-line: no-console
