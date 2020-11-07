@@ -10,6 +10,7 @@ const PostSchema: Schema = new Schema({
     image: { type: String, default: null },
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
+    comments: {type: Number, default: 0},
     trash: { type: Number, default: 0 },
     createdAt: {type: Number},
     campus: {type: String, required: true},

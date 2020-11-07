@@ -14,6 +14,7 @@ const CirclePostSchema: Schema = new Schema({
     image: { type: String, default: null },
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
+    comments: {type: Number, default: 0},
     trash: { type: Number, default: 0 },
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     createdAt: { type: String, default: Date },
