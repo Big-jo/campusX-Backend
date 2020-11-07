@@ -81,7 +81,7 @@ export class Circle {
         try {
             const query = [
                 {
-                    $match: { circle: Types.ObjectId(circleID) },
+                    $match: {circleID: Types.ObjectId(circleID)},
                 },
                 {
                     $addFields: {
@@ -118,9 +118,9 @@ export class Circle {
             const aggregate = CirclePostModel.aggregate(query);
 
             // @ts-ignore
-            const circleFeed = CirclePostModel.aggregatePaginate(aggregate, options);
+            const circleFeed = await CirclePostModel.aggregatePaginate(aggregate, options);
 
-            return { circleFeed };
+            return {circleFeed: circleFeed.docs};
             // Write Sort Algorithm for Posts 😢 
         } catch (error) {
             logger.error(error.message);
