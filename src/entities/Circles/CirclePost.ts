@@ -49,7 +49,6 @@ export class CirclePost extends Post {
                 }
 
                 await post.save();
-                return 0;
             } else {
                 return { error: 'Sorry cannot post if you are not a member' };
             }
