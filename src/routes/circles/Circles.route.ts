@@ -215,15 +215,15 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
 /******************************************************************************
 *                                 LIKE A POST
 /******************************************************************************/
-// export const like = '/post/like';
-// router.post(like, auth, async (req: Request, res: Response) => {
-//     try {
-//         const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'post');
-//         res.status(OK).json({ result });
-//     } catch (error) {
-//         Utility.ErrResponse(res, error);
-//     }
-// });
+export const like = '/post/like';
+router.post(like, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await CirclePost.LikePost(req.token.userID, req.body.postID, 'post');
+        res.status(OK).json({ result });
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
 
 /******************************************************************************
 *                                 Like A Comment
@@ -231,7 +231,7 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
 // export const likeComment = '/comment/like';
 // router.post(likeComment, auth, async (req: Request, res: Response) => {
 //     try {
-//         const result = await CirclePost.LikeCirclePost(req.token.userID, req.body.postID, postCache, 'comment');
+//         const result = await CirclePost.LikePost(req.token.userID, req.body.postID, 'comment');
 //         res.status(OK).json({ result });
 //     } catch (error) {
 //         Utility.ErrResponse(res, error);
