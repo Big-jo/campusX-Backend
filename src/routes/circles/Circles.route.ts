@@ -30,7 +30,7 @@ let postCache: IORedis.Redis;
 
 if (process.env.NODE_ENV === 'development') {
     primaryCache = new IORedis();
-    postCache = new IORedis({ port: 6380 });
+    postCache = new IORedis({ port: 6379 });
 } else {
     const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
     const redisPortPC = Number(process.env.REDIS_PORT_PC);
@@ -135,7 +135,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
         const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
         const result = await CirclePost.CirclePost(post, media);
 
-        if (result === 0) {
+        if (!result.error) {
             res.status(CREATED).send();
         }
     } catch (error) {
