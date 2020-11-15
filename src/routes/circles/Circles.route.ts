@@ -135,7 +135,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
         const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
         const result = await CirclePost.CirclePost(post, media);
 
-        if (result === 0) {
+        if (!result.error) {
             res.status(CREATED).send();
         }
     } catch (error) {
