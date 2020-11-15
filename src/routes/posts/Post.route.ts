@@ -28,7 +28,7 @@ let postCache: IORedis.Redis;
 
 if (process.env.NODE_ENV === 'development') {
     primaryCache = new IORedis();
-    postCache = new IORedis({ port: 6380 });
+    postCache = new IORedis({ port: 6379 });
 } else {
     const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
     const redisPortPC = Number(process.env.REDIS_PORT_PC);
