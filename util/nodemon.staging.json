@@ -2,6 +2,6 @@
     "watch": ["src"],
     "ext": "ts",
     "ignore": ["src/public"],
-    "exec": "ENV_FILE=staging ts-node -r ./env -r tsconfig-paths/register src/Start.ts"
+    "exec": "cross-env ENV_FILE=staging ts-node -r ./env -r tsconfig-paths/register src/Start.ts"
   }
   
