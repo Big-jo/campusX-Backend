@@ -93,9 +93,9 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             video: req.body.video,
             image: req.body.image,
             text: req.body.text,
-            author: req.body.author,
+            author: req.token.userID,
             parentPost: req.body.parentPost,
-            campus: req.body.university,
+            campus: req.token.campus
         };
 
         const result = await Post.Comment(commentObject);
