@@ -127,9 +127,8 @@ export class User {
 
                 following.save();
                 follow.save();
-
-                UserModel.updateOne({_id: userID}, {$inc: {followings: 1}}).exec();
-                UserModel.updateOne({_id: targetUserID}, {$inc: {followers: 1}}).exec();
+                UserModel.updateOne({_id: userID}, {$inc: {'userProfile.followings': 1}}).exec();
+                UserModel.updateOne({_id: targetUserID}, {$inc: {'userProfile.followers': 1}}).exec();
                 return 0;
             } else {
                 return {error: 'You follow this user already'};
@@ -159,8 +158,8 @@ export class User {
                     target: targetUserID,
                 }).exec();
 
-                UserModel.updateOne({_id: userID}, {$inc: {followings: -1}}).exec();
-                UserModel.updateOne({_id: targetUserID}, {$inc: {followers: -1}}).exec();
+                UserModel.updateOne({_id: userID}, {$inc: {'userProfile.followings': -1}}).exec();
+                UserModel.updateOne({_id: targetUserID}, {$inc: {'userProfile.followers': -1}}).exec();
 
                 return 0;
             } catch (error) {
