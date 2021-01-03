@@ -8,6 +8,7 @@ import PostModel from '../models/Post.model';
 import {Utility} from '@lib';
 import {S3} from '@lib';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
+import { Notification } from '../lib/notifications';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -129,6 +130,9 @@ export class User {
                 follow.save();
                 UserModel.updateOne({_id: userID}, {$inc: {'userProfile.followings': 1}}).exec();
                 UserModel.updateOne({_id: targetUserID}, {$inc: {'userProfile.followers': 1}}).exec();
+
+                new Notification('fosgzzs4QqGmYEpaCP0piF:APA91bF9V37y2Oy9ricTDKUQiNldaWs5bWicXC7Mxn7GmLGWltX8ds0U88eVuMECCff1FMYTrAAT4E2V3qQyyvkPZ1X9nw0VW0a6Lwv_420Bc0nEd5zCgXilWJzjYs9GiUbaeixgbnZZ', 'notification', 'you were followed').Send();
+
                 return 0;
             } else {
                 return {error: 'You follow this user already'};
