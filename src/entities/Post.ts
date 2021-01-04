@@ -54,6 +54,9 @@ export class Post {
 
             post = await post.save();
 
+            // Update the post_count in users document
+            UserModel.updateOne({_id: userID}, {$inc: {'userProfile.post_count': 1}}).exec();
+
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
 
             if (followers.length === 0) {
@@ -69,7 +72,6 @@ export class Post {
 
             // Create Pipeline here to drastically reduce time spent
             //  Offload this work to another thread
-
             const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
                 // primaryCache.lpush(follower.follower, post.id);
