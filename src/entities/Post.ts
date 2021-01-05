@@ -125,8 +125,19 @@ export class Post {
                         arr.push(x.target);
                     });
 
-                    const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(150).sort({ createdAt: -1 }).exec();
-                    // const newsfeed = await this.SortPost(Posts, {reverse: true});
+
+
+                    const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(800).sort({ createdAt: -1 }).exec();
+
+                    const pipeline =  primaryCache.pipeline();
+
+                    for (let index = 0; index < newsfeed.length; index++) {
+                        const post = newsfeed[index];
+                        pipeline.zadd(userID, post.createdAt.toString(), post.id);
+                    }
+
+                    pipeline.exec();
+                    
                     return { newsfeed };
                 }
             } catch (error) {
