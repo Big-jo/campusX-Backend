@@ -158,12 +158,15 @@ export class Post {
                 case 'post':
                     likedBy = await PostModel.findOne(findLikedByQuery).lean().exec();
                     break;
+
                 case 'comment':
                     likedBy = await CommentModel.findOne(findLikedByQuery).lean().exec();
                     break;
+
                 case 'circlePost':
                     likedBy = await CirclePostModel.findOne(findLikedByQuery).lean().exec();
                     break;
+
                 default:
                     break;
             }
@@ -173,16 +176,18 @@ export class Post {
                     case 'post':
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
-                        break;
+                        return {result: 'liked'};
 
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
-                        break;
+                        return {result: 'liked'};
+
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQuery).exec();
-                        break;
+                        return {result: 'liked'};
+
                     default:
                         break;
                 }
@@ -195,15 +200,15 @@ export class Post {
                         // TODO: Remove userID from list
                         const post = await PostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(post.author, updateUserQueryNegate).exec();
-                        break;
+                        return {result: 'unliked'};
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQueryNegate).exec();
-                        break;
+                        return {result: 'unliked'};
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQueryNegate).exec();
-                        break;
+                        return {result: 'unliked'};
                     default:
                         break;
                 }

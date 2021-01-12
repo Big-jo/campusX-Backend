@@ -60,7 +60,8 @@ export class CirclePost extends Post {
 
     public static async LikePost(userID: string, postID: string, collection: string) {
         try {
-            super.LikePost(userID, postID, 'circlePost');
+            return (await super.LikePost(userID, postID, 'circlePost'));
+            
         } catch (error) {
             logger.error(error);
             throw new Error(error);
