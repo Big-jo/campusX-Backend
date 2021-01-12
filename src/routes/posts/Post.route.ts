@@ -172,9 +172,8 @@ export const likePostPath = '/like/post';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
     try {
-
-        Post.LikePost(req.token.userID, req.body.postID, 'post');
-        res.status(OK).json();
+        const result = await Post.LikePost(req.token.userID, req.body.postID, 'post');
+        res.status(OK).json(result);
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
@@ -186,8 +185,8 @@ router.post(likePostPath, auth, async (req: Request, res: Response) => {
 const likeComment = '/like/comment';
 router.post(likeComment, auth, async (req, res) => {
     try {
-        Post.LikePost(req.token.userID, req.body.commentID, 'comment');
-        res.status(OK).send();
+        const result = await Post.LikePost(req.token.userID, req.body.commentID, 'comment');
+        res.status(OK).json(result);
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
