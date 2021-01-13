@@ -35,6 +35,7 @@ export interface IUser extends Document {
     password: string;
     userProfile: IUserProfile;
     phone_number: string;
+    fcm_token: string;
 }
 
 export interface IUserModel <T extends Document> extends PaginateModel<T> {}
