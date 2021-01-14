@@ -35,8 +35,8 @@ router.post(createUserPath, async (req: Request, res: Response) => {
         } as IUser;
 
         const result = await User.CreateUser(user);
-        if (result.exist) {
-            res.status(BAD_REQUEST).json({ exist: true });
+        if (result.exists) {
+            res.status(BAD_REQUEST).json(result );
         } else {
             res.status(CREATED).json({
                 message: 'User created',

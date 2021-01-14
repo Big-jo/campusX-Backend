@@ -19,42 +19,49 @@ import { AggregationQueries } from '../lib/aggregationQueries';
 export class User {
 
     public static async CreateUser(userObject: IUser) {
-        const foundUser = await UserModel.findOne({ email: userObject.email });
+        const foundUser = await UserModel.findOne({ email: userObject.email }).exec();
         if (foundUser) {
-            return { exist: true };
+            return { exists: true, err_message: 'This user exists' };
         } else {
             try {
-
-                const user = new UserModel({
-                    name: userObject.name,
-                    userProfile: userObject.userProfile != null ? {
-                        avatar: userObject.userProfile.avatar,
-                        bio: userObject.userProfile.bio,
-                        gender: userObject.userProfile.gender,
-                        university: userObject.userProfile.university,
-                    } : null,
-                    userID: '',
-                    userTag: `${userObject.userTag}`,
-                    email: userObject.email,
-                    password: userObject.password,
-                });
-                user.userID = user._id;
-                const rounds = await bcrypt.genSalt(10);
-
-                // Hash Password
-                user.password = await bcrypt.hash(user.password, rounds);
-                await user.save();
-
-                const payload: ITokenPayload = {
-                    userID: user.id,
-                    userTag: user.userTag,
-                    campus: user.userProfile.university,
-                    name: user.name,
-                    avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
-                    // userProfile: user.userProfile,
-                };
-
-                return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
+                // check if userTag is available
+                const foundUser = await UserModel.findOne({ userTag: userObject.userTag }).exec();
+                if(foundUser) {
+                    console.log(foundUser);
+                    return { exists: true, err_message: 'This userTag has been taken already'};
+                } else {
+                    const user = new UserModel({
+                        name: userObject.name,
+                        userProfile: userObject.userProfile != null ? {
+                            avatar: userObject.userProfile.avatar,
+                            bio: userObject.userProfile.bio,
+                            gender: userObject.userProfile.gender,
+                            university: userObject.userProfile.university,
+                        } : null,
+                        userID: '',
+                        userTag: `${userObject.userTag}`,
+                        email: userObject.email.toLowerCase(),
+                        password: userObject.password,
+                    });
+                    user.userID = user._id;
+                    const rounds = await bcrypt.genSalt(10);
+    
+                    // Hash Password
+                    user.password = await bcrypt.hash(user.password, rounds);
+                    await user.save();
+    
+                    const payload: ITokenPayload = {
+                        userID: user.id,
+                        userTag: user.userTag,
+                        campus: user.userProfile.university,
+                        name: user.name,
+                        avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
+                        // userProfile: user.userProfile,
+                    };
+    
+                    return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
+                }
+                
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
