@@ -9,7 +9,7 @@ import { S3 } from '@lib';
 import { Types } from 'mongoose';
 import moment = require('moment');
 import CirclePostModel from '../models/CirclePost.model';
-import { AggregationQueries } from 'src/lib/aggregationQueries';
+import { AggregationQueries } from '../lib/aggregationQueries';
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
