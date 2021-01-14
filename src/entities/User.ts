@@ -9,6 +9,7 @@ import {Utility} from '@lib';
 import {S3} from '@lib';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
 import { Notification } from '../lib/notifications';
+import { AggregationQueries } from '../lib/aggregationQueries';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -314,12 +315,8 @@ export class User {
 
     public static async GetUserPosts(userID: string, page: number, limit: number) {
         try {
-            const posts = await PostModel.paginate({author: userID}, {
-                    page,
-                    limit: Number(limit),
-                    // populate: {path: 'author', select: ['name', 'userProfile', 'userTag']},
-                })
-            ;
+            const posts = await AggregationQueries.GetUserPostsAggreg(userID, {page, limit});
+
             return {userPosts: posts.docs.reverse()};
         } catch (error) {
             logger.error(error);
