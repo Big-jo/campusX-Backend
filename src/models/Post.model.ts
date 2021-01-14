@@ -1,6 +1,7 @@
 import mongoose, {Schema} from 'mongoose';
 import { IPostModel } from 'src/interfaces/IPost';
 import mongoosePaginate from 'mongoose-paginate';
+const aggregatePlugin = require('mongoose-aggregate-paginate-v2');
 
 const PostSchema: Schema = new Schema({
     author: {type: Schema.Types.ObjectId, ref: 'User'},
@@ -19,7 +20,8 @@ const PostSchema: Schema = new Schema({
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
 });
 
-PostSchema.plugin(mongoosePaginate);
+// PostSchema.plugin(mongoosePaginate);
+PostSchema.plugin(aggregatePlugin);
 
 PostSchema.index({text: 'text'});
 
