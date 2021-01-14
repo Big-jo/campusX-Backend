@@ -267,6 +267,7 @@ export class User {
                 name: updated.userProfile.name,
                 userID,
                 userTag: updated.userTag,
+                fcm_token: updated.fcm_token,
             };
             return Utility.createToken(payload);
 

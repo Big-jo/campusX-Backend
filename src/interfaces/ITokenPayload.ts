@@ -4,4 +4,5 @@ export interface ITokenPayload {
     campus: string;
     name: string;
     avatar: string;
+    fcm_token: string;
 }
