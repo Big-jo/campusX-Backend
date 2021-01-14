@@ -139,7 +139,6 @@ export class User {
                 UserModel.updateOne({_id: userID}, {$inc: {'userProfile.followings': 1}}).exec();
                 const user = await UserModel.findByIdAndUpdate({_id: targetUserID}, {$inc: {'userProfile.followers': 1}}).exec();
                   
-                // const deviceToken = "fT_3zIclQJKuAe-KtGfEP3:APA91bHdIjABDYoDj_fNNvmgqKwpGjh97jv-QaYqh9M28C5-jahUsCHmC7SVPfVkWaazlOno5euSgo5rqRcRvt0deAeclkhNFfj39PZ1yDdjtlYY7YR_zmJ7H6dt6s9VV6cclLa3pMOo";
                 const deviceToken = user.fcm_token
                 new Notification(deviceToken, {
                     title: 'New Follower',
