@@ -9,7 +9,6 @@ import { S3 } from '@lib';
 import { Types } from 'mongoose';
 import moment = require('moment');
 import CirclePostModel from '../models/CirclePost.model';
-
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -340,7 +339,7 @@ export class Post {
                 },
                 {
                     $addFields: {
-                        isLiked: { $in: [userID, '$likedBy'] },
+                        isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
                     },
                 },
                 {
