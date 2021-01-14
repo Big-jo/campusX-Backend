@@ -9,6 +9,7 @@ import { S3 } from '@lib';
 import { Types } from 'mongoose';
 import moment = require('moment');
 import CirclePostModel from '../models/CirclePost.model';
+import { AggregationQueries } from 'src/lib/aggregationQueries';
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -307,7 +308,6 @@ export class Post {
             const agg = CommentModel.aggregate(aggregate);
             // @ts-ignore
             const comments = await CommentModel.aggregatePaginate(agg, options);
-
             return { comments: comments.docs };
 
         } catch (e) {
@@ -324,7 +324,6 @@ export class Post {
         }
 
     }
-
     /**
      * Retrives posts from cache`
      *
@@ -333,33 +332,7 @@ export class Post {
      */
     private static async Hydrate(keys: Types.ObjectId[], userID: string) {
         try {
-            const aggregate = [
-                {
-                    $match: { _id: { $in: keys } },
-                },
-                {
-                    $addFields: {
-                        isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
-                    },
-                },
-                {
-                    $project: {
-                        likedBy: 0,
-                    },
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        let: { authorID: '$author' },
-                        pipeline: [
-                            { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                            { $project: { password: 0, email: 0 } },
-                        ],
-                        as: 'author',
-                    },
-                },
-            ];
-            return await PostModel.aggregate(aggregate).exec();
+            return await AggregationQueries.NewsfeedPostAggreg(userID, keys);
         } catch (e) {
             logger.error(e);
         }
