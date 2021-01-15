@@ -106,6 +106,8 @@ export class Post {
                     // Get all the postIDs in the users newsfeed
                     const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
 
+                    console.log(postKeys)
+
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
 
@@ -141,7 +143,7 @@ export class Post {
 
                     const ttl_time = process.env.POST_EXPIRE;
                     const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
-                    const ttl = moment().utc().startOf('day').add(ttl_time, ttl_unit).valueOf();
+                    const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
                     
                     for (let index = 0; index < newsfeed.length; index++) {
                         const post = newsfeed[index];

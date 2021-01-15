@@ -33,7 +33,9 @@ export class AggregationQueries {
                     ],
                     as: 'author',
                 },
-            },
+            },{
+                $sort: {createdAt: -1}
+            }
         ];
 
         return (await PostModel.aggregate(aggregate).exec());
