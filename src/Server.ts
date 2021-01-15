@@ -82,8 +82,8 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
 });
 
 // Schedule task
-const task = new Tasks(URI);
-task.TrendTask();
+// const task = new Tasks(URI);
+// task.TrendTask();
 // task.GenerateFakePosts();
 
 // Export express instance
