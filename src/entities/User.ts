@@ -56,6 +56,7 @@ export class User {
                         campus: user.userProfile.university,
                         name: user.name,
                         avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
+                        fcm_token: user.fcm_token,
                         // userProfile: user.userProfile,
                     };
     
@@ -293,6 +294,7 @@ export class User {
                 name: user.name,
                 userID: user._id,
                 userTag: user.userTag,
+                fcm_token: user.fcm_token,
             };
 
             return { token: Utility.createToken(payload) };
@@ -314,6 +316,7 @@ export class User {
                 name: user.name,
                 userID: user.id,
                 userTag: user.userTag,
+                fcm_token: user.fcm_token,
             };
 
             return { token: Utility.createToken(payload), data };
