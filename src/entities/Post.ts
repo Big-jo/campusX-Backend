@@ -121,39 +121,42 @@ export class Post {
                     return { newsfeed };
 
                 } else {
-                    // TODO: Optimize this block
+                    return {error_msg: "Feed is empty, follow some folks "}
+                    //  Find a way to get posts for users that have not been online in a while 
+                } //else {
+                //     // TODO: Optimize this block
 
-                    // Get people user follows
-                    const followings = await FollowsModel.find({
-                        follower: userID,
-                    }, { target: 1 }).lean().exec();
+                //     // Get people user follows
+                //     const followings = await FollowsModel.find({
+                //         follower: userID,
+                //     }, { target: 1 }).lean().exec();
 
-                    //  TODO: A worker should be spawned to do tasks from here
-                    const arr: string[] = [];
+                //     //  TODO: A worker should be spawned to do tasks from here
+                //     const arr: string[] = [];
 
-                    followings.forEach((x: { target: string; }) => {
-                        arr.push(x.target);
-                    });
+                //     followings.forEach((x: { target: string; }) => {
+                //         arr.push(x.target);
+                //     });
 
 
 
-                    const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(800).sort({ createdAt: -1 }).exec();
+                //     const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(800).sort({ createdAt: -1 }).exec();
 
-                    const pipeline =  primaryCache.pipeline();
+                //     const pipeline =  primaryCache.pipeline();
 
-                    const ttl_time = process.env.POST_EXPIRE;
-                    const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
-                    const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
+                //     const ttl_time = process.env.POST_EXPIRE;
+                //     const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
+                //     const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
                     
-                    for (let index = 0; index < newsfeed.length; index++) {
-                        const post = newsfeed[index];
-                        pipeline.zadd(userID, ttl.toString(), post.id);
-                    }
+                //     for (let index = 0; index < newsfeed.length; index++) {
+                //         const post = newsfeed[index];
+                //         pipeline.zadd(userID, ttl.toString(), post.id);
+                //     }
 
-                    pipeline.exec();
+                //     pipeline.exec();
                     
-                    return { newsfeed };
-                }
+                //     return { newsfeed };
+                // }
             } catch (error) {
                 logger.error(error);
             }

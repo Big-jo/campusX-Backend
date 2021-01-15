@@ -139,7 +139,12 @@ router.get(getPostsPath, auth, async (req, res) => {
             limit,
         });
 
-        res.status(200).json({ result });
+        if (result.newsfeed != undefined) {
+            res.status(200).json({ result });
+        } else {
+            res.status(200).json({ result });
+        }
+
     } catch (error) {
         logger.error(error, error.message);
         Utility.ErrResponse(res, error);
