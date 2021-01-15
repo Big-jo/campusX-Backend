@@ -64,7 +64,7 @@ export class Post {
             }
 
             // Add post to campus Feed
-            primaryCache.sadd(post.campus, `${post.id}:${post.createdAt}`);
+            // primaryCache.sadd(post.campus, `${post.id}:${post.createdAt}`);
 
             if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
                 primaryCache.sadd('campuses', post.campus.toLowerCase());
@@ -75,7 +75,10 @@ export class Post {
             const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
                 // primaryCache.lpush(follower.follower, post.id);
-                pipeline.zadd(follower.follower.toString(), post.createdAt.toString(), post.id);
+                const ttl_time = process.env.POST_EXPIRE;
+                const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
+                const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
+                pipeline.zadd(follower.follower.toString(), ttl.toString(), post.id);
                 pipeline.sadd('dirty', follower.follower);
             }
             pipeline.exec();
@@ -96,12 +99,17 @@ export class Post {
 
                 if (exists) {
 
+                    const unixNow = moment().utc().valueOf();
+                    // Remove expired posts
+                    primaryCache.zremrangebyscore(userID, 0, unixNow);
+
                     // Get all the postIDs in the users newsfeed
                     const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
 
+                    // Convert all keys to objectIDs
                     const objectIDs = postKeys.map(key => Types.ObjectId(key));
 
                     // Hydrate the feed list (Get posts with the keys retrieved)
@@ -131,9 +139,13 @@ export class Post {
 
                     const pipeline =  primaryCache.pipeline();
 
+                    const ttl_time = process.env.POST_EXPIRE;
+                    const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
+                    const ttl = moment().utc().startOf('day').add(ttl_time, ttl_unit).valueOf();
+                    
                     for (let index = 0; index < newsfeed.length; index++) {
                         const post = newsfeed[index];
-                        pipeline.zadd(userID, post.createdAt.toString(), post.id);
+                        pipeline.zadd(userID, ttl.toString(), post.id);
                     }
 
                     pipeline.exec();
