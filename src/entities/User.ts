@@ -83,6 +83,7 @@ export class User {
                         campus: user.userProfile.university,
                         name: user.name,
                         avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
+                        fcm_token: user.fcm_token
                     };
 
                     const token = Utility.createToken(payload);
