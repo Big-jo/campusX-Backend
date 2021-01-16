@@ -55,22 +55,14 @@ export class Post {
             post = await post.save();
 
             // Update the post_count in users document
-            UserModel.updateOne({_id: userID}, {$inc: {'userProfile.post_count': 1}}).exec();
+            UserModel.updateOne({ _id: userID }, { $inc: { 'userProfile.post_count': 1 } }).exec();
 
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
+            /**
+             * Small art of deciption here to add post to the user's feed 
+             */
+            followers.push({ target: null, follower: userID } as IFollower);
 
-            if (followers.length === 0) {
-                return;
-            }
-
-            // Add post to campus Feed
-            // primaryCache.sadd(post.campus, `${post.id}:${post.createdAt}`);
-
-            if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
-                primaryCache.sadd('campuses', post.campus.toLowerCase());
-            }
-
-            // Create Pipeline here to drastically reduce time spent
             //  Offload this work to another thread
             const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
@@ -106,8 +98,6 @@ export class Post {
                     // Get all the postIDs in the users newsfeed
                     const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
 
-                    console.log(postKeys)
-
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
 
@@ -121,7 +111,7 @@ export class Post {
                     return { newsfeed };
 
                 } else {
-                    return {error_msg: "Feed is empty, follow some folks "}
+                    return { error_msg: "Feed is empty, follow some folks " }
                     //  Find a way to get posts for users that have not been online in a while 
                 } //else {
                 //     // TODO: Optimize this block
@@ -147,14 +137,14 @@ export class Post {
                 //     const ttl_time = process.env.POST_EXPIRE;
                 //     const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
                 //     const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
-                    
+
                 //     for (let index = 0; index < newsfeed.length; index++) {
                 //         const post = newsfeed[index];
                 //         pipeline.zadd(userID, ttl.toString(), post.id);
                 //     }
 
                 //     pipeline.exec();
-                    
+
                 //     return { newsfeed };
                 // }
             } catch (error) {
@@ -193,17 +183,17 @@ export class Post {
                     case 'post':
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
-                        return {result: 'liked'};
+                        return { result: 'liked' };
 
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
-                        return {result: 'liked'};
+                        return { result: 'liked' };
 
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQuery).exec();
-                        return {result: 'liked'};
+                        return { result: 'liked' };
 
                     default:
                         break;
@@ -217,15 +207,15 @@ export class Post {
                         // TODO: Remove userID from list
                         const post = await PostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(post.author, updateUserQueryNegate).exec();
-                        return {result: 'unliked'};
+                        return { result: 'unliked' };
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQueryNegate).exec();
-                        return {result: 'unliked'};
+                        return { result: 'unliked' };
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQueryNegate).exec();
-                        return {result: 'unliked'};
+                        return { result: 'unliked' };
                     default:
                         break;
                 }
