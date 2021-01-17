@@ -98,7 +98,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             campus: req.token.campus
         };
 
-        const result = await Post.Comment(commentObject);
+        const result = await Post.Comment(commentObject, req.token.fcm_token);
         res.status(CREATED).send();
     } catch (e) {
         logger.error(e);
