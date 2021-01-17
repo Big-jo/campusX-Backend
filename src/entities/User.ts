@@ -1,12 +1,12 @@
 import UserModel from '../models/User.model';
-import {IUser} from 'src/interfaces/IUser';
+import { IUser } from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
 import { logger } from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
 import PostModel from '../models/Post.model';
-import {Utility} from '@lib';
-import {S3} from '@lib';
+import { Utility } from '@lib';
+import { S3 } from '@lib';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
 import { Notification } from '../lib/notifications';
 import { AggregationQueries } from '../lib/aggregationQueries';
@@ -26,9 +26,9 @@ export class User {
             try {
                 // check if userTag is available
                 const foundUser = await UserModel.findOne({ userTag: userObject.userTag }).exec();
-                if(foundUser) {
+                if (foundUser) {
                     console.log(foundUser);
-                    return { exists: true, err_message: 'This userTag has been taken already'};
+                    return { exists: true, err_message: 'This userTag has been taken already' };
                 } else {
                     const user = new UserModel({
                         name: userObject.name,
@@ -45,11 +45,11 @@ export class User {
                     });
                     user.userID = user._id;
                     const rounds = await bcrypt.genSalt(10);
-    
+
                     // Hash Password
                     user.password = await bcrypt.hash(user.password, rounds);
                     await user.save();
-    
+
                     const payload: ITokenPayload = {
                         userID: user.id,
                         userTag: user.userTag,
@@ -59,10 +59,10 @@ export class User {
                         fcm_token: user.fcm_token,
                         // userProfile: user.userProfile,
                     };
-    
-                    return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
+
+                    return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar, } };
                 }
-                
+
             } catch (error) {
                 logger.error(error);
                 throw new Error(error);
@@ -138,20 +138,20 @@ export class User {
 
                 following.save();
                 follow.save();
-                UserModel.updateOne({_id: userID}, {$inc: {'userProfile.followings': 1}}).exec();
-                const user = await UserModel.findByIdAndUpdate({_id: targetUserID}, {$inc: {'userProfile.followers': 1}}).exec();
-                  
+                UserModel.updateOne({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec();
+                const user = await UserModel.findByIdAndUpdate({ _id: targetUserID }, { $inc: { 'userProfile.followers': 1 } }).exec();
+
                 const deviceToken = user.fcm_token
                 new Notification(deviceToken, {
                     title: 'New Follower',
                     body: `${user.userTag} followed you`,
                     sound: 'default',
                     tag: 'new follower',
-                } ).SendToDevice();
+                }).SendToDevice();
 
-                return 0;   
+                return 0;
             } else {
-                return {error: 'You follow this user already'};
+                return { error: 'You follow this user already' };
             }
             // TODO: Send a notification to the target, informing about the follow
         } catch (error) {
@@ -178,8 +178,8 @@ export class User {
                     target: targetUserID,
                 }).exec();
 
-                UserModel.updateOne({_id: userID}, {$inc: {'userProfile.followings': -1}}).exec();
-                UserModel.updateOne({_id: targetUserID}, {$inc: {'userProfile.followers': -1}}).exec();
+                UserModel.updateOne({ _id: userID }, { $inc: { 'userProfile.followings': -1 } }).exec();
+                UserModel.updateOne({ _id: targetUserID }, { $inc: { 'userProfile.followers': -1 } }).exec();
 
                 return 0;
             } catch (error) {
@@ -187,7 +187,7 @@ export class User {
                 throw new Error(error);
             }
         } else {
-            return {error: 'Not following this user'};
+            return { error: 'Not following this user' };
         }
     }
 
@@ -195,7 +195,7 @@ export class User {
         try {
             switch (searchKey) {
                 case 'follows':
-                    const follows = await FollowsModel.find({follower: userID})
+                    const follows = await FollowsModel.find({ follower: userID })
                         .lean()
                         .populate('target', { name: 1, userProfile: 1, userTag: 1, avatar: 1 })
                         .exec();
@@ -261,7 +261,7 @@ export class User {
                 }
             }
 
-            const updated = await UserModel.findOneAndUpdate({_id: userID}, {$set: update}).lean().exec();
+            const updated = await UserModel.findOneAndUpdate({ _id: userID }, { $set: update }).lean().exec();
             const payload: ITokenPayload = {
                 avatar: updated.userProfile.avatar,
                 campus: updated.userProfile.university,
@@ -326,9 +326,9 @@ export class User {
 
     public static async GetUserPosts(userID: string, page: number, limit: number) {
         try {
-            const posts = await AggregationQueries.GetUserPostsAggreg(userID, {page, limit});
+            const posts = await AggregationQueries.GetUserPostsAggreg(userID, { page, limit });
 
-            return {userPosts: posts.docs.reverse()};
+            return { userPosts: posts.docs.reverse() };
         } catch (error) {
             logger.error(error);
             throw new Error(error);
