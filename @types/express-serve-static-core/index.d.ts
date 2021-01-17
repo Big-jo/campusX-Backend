@@ -9,6 +9,7 @@ declare global {
                 campus: string;
                 name: string;
                 avatar: string;
+                fcm_token: string;
             };
         }
     }
