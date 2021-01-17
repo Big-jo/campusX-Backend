@@ -329,6 +329,7 @@ export class User {
             const posts = await AggregationQueries.GetUserPostsAggreg(userID, { page, limit });
 
             return { userPosts: posts.docs.reverse() };
+
         } catch (error) {
             logger.error(error);
             throw new Error(error);
