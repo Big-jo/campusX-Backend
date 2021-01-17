@@ -9,7 +9,8 @@ import { S3 } from '@lib';
 import { Types } from 'mongoose';
 import moment = require('moment');
 import CirclePostModel from '../models/CirclePost.model';
-import { AggregationQueries } from '../lib/aggregationQueries';
+import { AggregationQueries } from 'src/lib/aggregationQueries';
+import { Notification } from '../lib/notifications';
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -160,6 +161,8 @@ export class Post {
             const findLikedByQuery = { _id: postID, likedBy: { $in: [userID] } };
             const updateLikeQuery = { $inc: { likes: 1 }, $push: { likedBy: userID } };
             const updateUserQuery = { $inc: { 'userProfile.rep_points': 0.25 } };
+            let userFcmToken: string;
+
 
             switch (collection) {
                 case 'post':
@@ -168,6 +171,7 @@ export class Post {
 
                 case 'comment':
                     likedBy = await CommentModel.findOne(findLikedByQuery).lean().exec();
+
                     break;
 
                 case 'circlePost':
@@ -179,15 +183,32 @@ export class Post {
             }
 
             if (likedBy === null) {
+                // Actor is the user interacting with the post
+                const actor = await UserModel.findById(userID).lean().exec();
                 switch (collection) {
                     case 'post':
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
+                        userFcmToken = (await UserModel.findById(post.author, { fcm_token: 1, _id: 0 }).lean().exec()).fcm_token;
+                        console.log(userFcmToken)
                         UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
+                        new Notification(userFcmToken, {
+                            body: 'You get a 0.25 campus points ',
+                            title: `${actor.userTag} liked your post`,
+                            sound: "default",
+                        }).SendToDevice();
+
                         return { result: 'liked' };
 
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
+                        userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec()
+                        new Notification(userFcmToken, {
+                            body: 'You get a 0.15 campus points ',
+                            title: `${actor.userTag} liked your comment`,
+                            sound: "default",
+                        });
+
                         return { result: 'liked' };
 
                     case 'circlePost':
@@ -241,8 +262,9 @@ export class Post {
         }
     }
 
-    public static async Comment(commentObject: IComment) {
+    public static async Comment(commentObject: IComment, fcm_token: string) {
         try {
+            const user = await UserModel.findById(commentObject.author).exec();
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
@@ -257,6 +279,11 @@ export class Post {
             const comment = new CommentModel(newComment);
             comment.commentID = comment.id;
             comment.save();
+
+            new Notification(fcm_token, {
+                body: commentObject.text !== " " ? commentObject.text : "Media",
+                title: `${user.userTag} commented on your post`,
+            });
 
         } catch (e) {
             logger.error(e);

@@ -59,6 +59,7 @@ export class Notification {
             notification: {
                 title: this.notificationPayload.title,
                 body: this.notificationPayload.body,
+                sound: "default",
             }
         }
         this.fcm.sendToDevice(this.deviceToken, payload);
