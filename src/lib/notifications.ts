@@ -9,13 +9,14 @@ admin.initializeApp({
 export class Notification {
     private fcm = admin.messaging();
 
-    constructor(private deviceToken: string, private notificationPayload: admin.messaging.NotificationMessagePayload) {}
+    constructor(private deviceToken: string, private notificationPayload: admin.messaging.NotificationMessagePayload) { }
 
     public SendToDevice() {
         const payload: admin.messaging.MessagingPayload = {
             notification: {
                 title: this.notificationPayload.title,
                 body: this.notificationPayload.body,
+                sound: "default",
             }
         }
         this.fcm.sendToDevice(this.deviceToken, payload);

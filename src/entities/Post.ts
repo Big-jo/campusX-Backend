@@ -243,6 +243,7 @@ export class Post {
 
     public static async Comment(commentObject: IComment) {
         try {
+            const user = await UserModel.findById(commentObject.author).exec();
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
@@ -257,6 +258,10 @@ export class Post {
             const comment = new CommentModel(newComment);
             comment.commentID = comment.id;
             comment.save();
+
+            new Notification(`${user.userTag} commented on your post`, {
+                body: commentObject.text !== " " ? commentObject.text : "Media",
+            });
 
         } catch (e) {
             logger.error(e);
