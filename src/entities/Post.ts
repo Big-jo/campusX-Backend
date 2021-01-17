@@ -162,7 +162,7 @@ export class Post {
             const updateLikeQuery = { $inc: { likes: 1 }, $push: { likedBy: userID } };
             const updateUserQuery = { $inc: { 'userProfile.rep_points': 0.25 } };
             let userFcmToken: string;
-
+            let author;
 
             switch (collection) {
                 case 'post':
@@ -190,24 +190,25 @@ export class Post {
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         userFcmToken = (await UserModel.findById(post.author, { fcm_token: 1, _id: 0 }).lean().exec()).fcm_token;
                         console.log(userFcmToken)
-                        UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
+                        author = await UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
+                        console.log(post)
                         new Notification(userFcmToken, {
                             body: 'You get a 0.25 campus points ',
                             title: `${actor.userTag} liked your post`,
                             sound: "default",
-                        }).SendToDevice();
+                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification();
 
                         return { result: 'liked' };
 
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
-                        UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
+                        author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
                         userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec()
                         new Notification(userFcmToken, {
                             body: 'You get a 0.15 campus points ',
                             title: `${actor.userTag} liked your comment`,
                             sound: "default",
-                        });
+                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification()
 
                         return { result: 'liked' };
 
@@ -265,6 +266,7 @@ export class Post {
     public static async Comment(commentObject: IComment, fcm_token: string) {
         try {
             const user = await UserModel.findById(commentObject.author).exec();
+            const authorOfPost = await PostModel.findById(commentObject.parentPost).exec();
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
@@ -283,7 +285,7 @@ export class Post {
             new Notification(fcm_token, {
                 body: commentObject.text !== " " ? commentObject.text : "Media",
                 title: `${user.userTag} commented on your post`,
-            });
+            }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification()
 
         } catch (e) {
             logger.error(e);

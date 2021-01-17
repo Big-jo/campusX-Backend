@@ -6,6 +6,8 @@ import CirclesRouter from './circles/Circles.route';
 import campusRouter from './campus/campus.route';
 import merchantRouter from './merchant/Merchant.route';
 import searchRouter from './search/search.route';
+import NotificationRouter from './notifcations/notifications.route';
+import { noConflict } from 'lodash';
 
 // Init router and path
 const router = Router();
@@ -19,6 +21,7 @@ router.use(StoreRouter.path, StoreRouter.router);
 router.use(CirclesRouter.path, CirclesRouter.router);
 router.use(campusRouter.path, campusRouter.router);
 router.use(merchantRouter.path, merchantRouter.router);
+router.use(NotificationRouter.path, NotificationRouter.router);
 
 // Export the base-router
 export default { router, path };

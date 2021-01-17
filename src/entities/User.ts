@@ -138,7 +138,7 @@ export class User {
 
                 following.save();
                 follow.save();
-                UserModel.updateOne({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec();
+                const follower = await UserModel.findByIdAndUpdate({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec();
                 const user = await UserModel.findByIdAndUpdate({ _id: targetUserID }, { $inc: { 'userProfile.followers': 1 } }).exec();
 
                 const deviceToken = user.fcm_token
@@ -146,8 +146,7 @@ export class User {
                     title: 'New Follower',
                     body: `${user.userTag} followed you`,
                     sound: 'default',
-                    tag: 'new follower',
-                }).SendToDevice();
+                }, targetUserID, follower.userProfile.avatar, 'follower').SendPushNotification();
 
                 return 0;
             } else {
