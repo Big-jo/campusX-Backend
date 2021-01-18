@@ -44,14 +44,20 @@ export class Notification {
         private avatar: string,
         private category: string) { // Allowed categories: like, comment, mention
 
-        const notif = {
-            notificationPayload,
-            avatar: this.avatar,
-            createdAt: moment().utc().valueOf(),
-            category: this.category,
+        try {// Allowed categories: like, comment, mention
+            const notif = {
+                notificationPayload,
+                avatar: this.avatar,
+                createdAt: moment().utc().valueOf(),
+                category: this.category,
+            }
+            const payload = JSON.stringify(notif)
+            primaryCache.zadd(`notifications:${this.userID}`, notif.createdAt.toString(), payload);
+            const ttl = process.env.NOTIF_EXPIRE as unknown as number;
+            primaryCache.expire(`notifications:${this.userID}`, ttl);
+        } catch (e) {
+            logger.error(e);
         }
-        const payload = JSON.stringify(notif)
-        primaryCache.zadd(`notifications:${this.userID}`, notif.createdAt.toString(), payload);
     }
 
     public SendPushNotification() {
