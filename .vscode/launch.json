@@ -90,15 +90,13 @@
 //         },
 //     ]
 // }
-
 // NORMAL DEBUG
-
 // {
 //   "version": "0.2.0",
 //   "configurations": [
 //     {
 //       "name": "DEBUG-01",
-//       "type": "node",
+//       "type": "pwa-node",
 //       "request": "launch",
 //       "env": {
 //         "MONGO_URI": "mongodb://localhost:27017/campusX",
@@ -121,13 +119,17 @@
 //       ],
 //       "runtimeExecutable": "nodemon",
 //       "restart": true,
-//       "args": ["${workspaceFolder}/src/Start.ts"]
+//       "args": [
+//         "${workspaceFolder}/src/Start.ts"
+//       ],
+//       "resolveSourceMapLocations": [
+//         "${workspaceFolder}/**",
+//         "!**/node_modules/**"
+//       ]
 //     }
 //   ]
 // }
-
 // NODEMON_
-
 {
   "version": "0.2.0",
   "configurations": [
