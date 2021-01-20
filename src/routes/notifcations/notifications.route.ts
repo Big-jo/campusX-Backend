@@ -46,12 +46,17 @@ export const getNotif = '/retrieve';
 router.get(getNotif, auth, async (req: Request, res: Response) => {
     try {
         const result = await Notification.GetNotifications(req.token.userID);
-        const r = [];
-        for (let index = 0; index < result.notifications.length; index++) {
-            const element = result.notifications[index];
-            r.push(JSON.parse(element));
+        if (result.new_notifications === false) {
+            res.status(OK).json(result.new_notifications);
+        } else {
+            const r = [];
+            for (let index = 0; index < result.notifications.length; index++) {
+                const element = result.notifications[index];
+                r.push(JSON.parse(element));
+            }
+            res.status(OK).json({ result: r });
         }
-        res.status(OK).json(r);
+
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
