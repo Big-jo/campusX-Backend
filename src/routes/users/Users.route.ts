@@ -191,13 +191,25 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
 const getUserPosts = '/posts';
 router.get(getUserPosts, auth, async (req, res) => {
     try {
-        const userID = req.query.userID === undefined ? req.token.userID : req.query.userID
-        const result = await User.GetUserPosts(userID, req.query.page, req.query.limit);
+        const result = await User.GetUserPosts(req.query.userID, req.query.page, req.query.limit);
         res.status(OK).json({ result });
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
 });
+
+/******************************************************************************
+*                                 GET CLIENTS POSTS
+/******************************************************************************/
+export const getClientPosts = '/posts/me';
+router.get(getClientPosts, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await User.GetUserPosts(req.token.userID, req.query.page, req.query.limit);
+        res.status(OK).json({ result })
+    } catch (error) {
+        Utility.ErrResponse(error, res);
+    }
+})
 /******************************************************************************
  *                          Get Follower Notification
  /******************************************************************************/
