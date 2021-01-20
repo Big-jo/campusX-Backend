@@ -9,7 +9,8 @@ import { S3 } from '@lib';
 import { Types } from 'mongoose';
 import moment = require('moment');
 import CirclePostModel from '../models/CirclePost.model';
-import { AggregationQueries } from '../lib/aggregationQueries';
+import { AggregationQueries } from '@lib';
+import { Notification } from '../lib/notifications';
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -55,22 +56,14 @@ export class Post {
             post = await post.save();
 
             // Update the post_count in users document
-            UserModel.updateOne({_id: userID}, {$inc: {'userProfile.post_count': 1}}).exec();
+            UserModel.updateOne({ _id: userID }, { $inc: { 'userProfile.post_count': 1 } }).exec();
 
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
+            /**
+             * Small art of deciption here to add post to the user's feed 
+             */
+            followers.push({ target: null, follower: userID } as IFollower);
 
-            if (followers.length === 0) {
-                return;
-            }
-
-            // Add post to campus Feed
-            // primaryCache.sadd(post.campus, `${post.id}:${post.createdAt}`);
-
-            if ((await primaryCache.sismember('campuses', post.campus)) === 0) {
-                primaryCache.sadd('campuses', post.campus.toLowerCase());
-            }
-
-            // Create Pipeline here to drastically reduce time spent
             //  Offload this work to another thread
             const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
@@ -106,8 +99,6 @@ export class Post {
                     // Get all the postIDs in the users newsfeed
                     const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
 
-                    console.log(postKeys)
-
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
 
@@ -121,7 +112,7 @@ export class Post {
                     return { newsfeed };
 
                 } else {
-                    return {error_msg: "Feed is empty, follow some folks "}
+                    return { error_msg: "Feed is empty, follow some folks " }
                     //  Find a way to get posts for users that have not been online in a while 
                 } //else {
                 //     // TODO: Optimize this block
@@ -147,14 +138,14 @@ export class Post {
                 //     const ttl_time = process.env.POST_EXPIRE;
                 //     const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
                 //     const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
-                    
+
                 //     for (let index = 0; index < newsfeed.length; index++) {
                 //         const post = newsfeed[index];
                 //         pipeline.zadd(userID, ttl.toString(), post.id);
                 //     }
 
                 //     pipeline.exec();
-                    
+
                 //     return { newsfeed };
                 // }
             } catch (error) {
@@ -170,6 +161,8 @@ export class Post {
             const findLikedByQuery = { _id: postID, likedBy: { $in: [userID] } };
             const updateLikeQuery = { $inc: { likes: 1 }, $push: { likedBy: userID } };
             const updateUserQuery = { $inc: { 'userProfile.rep_points': 0.25 } };
+            let userFcmToken: string;
+            let author;
 
             switch (collection) {
                 case 'post':
@@ -178,6 +171,7 @@ export class Post {
 
                 case 'comment':
                     likedBy = await CommentModel.findOne(findLikedByQuery).lean().exec();
+
                     break;
 
                 case 'circlePost':
@@ -189,21 +183,37 @@ export class Post {
             }
 
             if (likedBy === null) {
+                // Actor is the user interacting with the post
+                const actor = await UserModel.findById(userID).lean().exec();
                 switch (collection) {
                     case 'post':
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
-                        UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
-                        return {result: 'liked'};
+                        userFcmToken = (await UserModel.findById(post.author, { fcm_token: 1, _id: 0 }).lean().exec()).fcm_token;
+                        author = await UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
+                        new Notification(userFcmToken, {
+                            body: 'You get a 0.25 campus points ',
+                            title: `${actor.userTag} liked your post`,
+                            sound: "default",
+                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification();
+
+                        return { result: 'liked' };
 
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
-                        UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
-                        return {result: 'liked'};
+                        author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
+                        userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec()
+                        new Notification(userFcmToken, {
+                            body: 'You get a 0.15 campus points ',
+                            title: `${actor.userTag} liked your comment`,
+                            sound: "default",
+                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification()
+
+                        return { result: 'liked' };
 
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQuery).exec();
-                        return {result: 'liked'};
+                        return { result: 'liked' };
 
                     default:
                         break;
@@ -217,15 +227,15 @@ export class Post {
                         // TODO: Remove userID from list
                         const post = await PostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(post.author, updateUserQueryNegate).exec();
-                        return {result: 'unliked'};
+                        return { result: 'unliked' };
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQueryNegate).exec();
-                        return {result: 'unliked'};
+                        return { result: 'unliked' };
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQueryNegate).exec();
-                        return {result: 'unliked'};
+                        return { result: 'unliked' };
                     default:
                         break;
                 }
@@ -251,8 +261,10 @@ export class Post {
         }
     }
 
-    public static async Comment(commentObject: IComment) {
+    public static async Comment(commentObject: IComment, fcm_token: string) {
         try {
+            const user = await UserModel.findById(commentObject.author).exec();
+            const authorOfPost = await PostModel.findById(commentObject.parentPost).exec();
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
@@ -267,6 +279,11 @@ export class Post {
             const comment = new CommentModel(newComment);
             comment.commentID = comment.id;
             comment.save();
+
+            new Notification(fcm_token, {
+                body: commentObject.text !== " " ? commentObject.text : "Media",
+                title: `${user.userTag} commented on your post`,
+            }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification()
 
         } catch (e) {
             logger.error(e);

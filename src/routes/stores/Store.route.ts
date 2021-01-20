@@ -19,19 +19,19 @@ export const createStorePath = '/create';
  req.body.storeName, 
  req.body.storeObject
 */
-router.post(createStorePath, async (req: Request, res: Response) => {
-    try {
-        const result = await Store.Create(req.body.storeName, req.body.storeObject);
-        if (result.token) {
-            res.status(CREATED).json({token: result.token});
-        } else {
-            res.status(BAD_REQUEST).json({ exist: result.exist });
-        }
+// router.post(createStorePath, async (req: Request, res: Response) => {
+//     try {
+//         const result = await Store.Create(req.body.storeName, req.body.storeObject);
+//         if (result.token) {
+//             res.status(CREATED).json({token: result.token});
+//         } else {
+//             res.status(BAD_REQUEST).json({ exist: result.exist });
+//         }
 
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
 
 /******************************************************************************
 *                                 LOGIN TO STORE
@@ -41,18 +41,18 @@ export const storeLogin = '/login';
 /**
  * req.body.email, req.body.password
  */
-router.post(storeLogin, async (req: Request, res: Response) => {
-    try {
-        const result = await Store.Login(req.body.name, req.body.password);
-        if (result!.token !== undefined) {
-            res.status(OK).json({token: result!.token});
-        } else {
-            res.status(BAD_REQUEST).json({ exist: result!.badRequest });
-        }
-    } catch (error) {
-        Utility.ErrResponse(res, error);
-    }
-});
+// router.post(storeLogin, async (req: Request, res: Response) => {
+//     try {
+//         const result = await Store.Login(req.body.name, req.body.password);
+//         if (result!.token !== undefined) {
+//             res.status(OK).json({token: result!.token});
+//         } else {
+//             res.status(BAD_REQUEST).json({ exist: result!.badRequest });
+//         }
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
 
 /******************************************************************************
 *                                 GET STORE CATALOGUE
@@ -78,7 +78,8 @@ router.post(updateStore, async (req: Request, res: Response) => {
         const result = await Store.Update(req.body.storeID, req.body.updateField, req.body.updateValue);
         if (result === 0) { res.status(CREATED).send(); }
     } catch (error) {
-        Utility.ErrResponse(res, error);    }
+        Utility.ErrResponse(res, error);
+    }
 });
 
 /******************************************************************************
@@ -90,12 +91,12 @@ router.post(addItems, async (req: Request, res: Response) => {
         console.log(req.body)
         switch (req.body.options.multiDoc) {
             case true:
-                const result = await Item.AddItems({multiDoc: true}, req.body.itemObject, req.body.items);
+                const result = await Item.AddItems({ multiDoc: true }, req.body.itemObject, req.body.items);
                 result === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
                 break;
-            
+
             case false:
-                const result2 = await Item.AddItems({multiDoc: false}, req.body.itemsObject);
+                const result2 = await Item.AddItems({ multiDoc: false }, req.body.itemsObject);
                 result2 === 0 ? res.status(CREATED).send() : res.status(BAD_REQUEST).send();
                 break;
             default:
@@ -127,7 +128,7 @@ export const getItem = '/item/:itemID';
 router.get(getItem, async (req: Request, res: Response) => {
     try {
         const result = await Item.GetItem(req.params.itemID);
-        res.status(OK).json({result});
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
@@ -141,7 +142,7 @@ export const getStores = '/all';
 router.get(getStores, async (req: Request, res: Response) => {
     try {
         const result = await Store.GetStores();
-        res.status(OK).json({result});
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }

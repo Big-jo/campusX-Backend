@@ -1,10 +1,10 @@
 import { Response, Router, Request } from 'express';
-import {CREATED, OK, BAD_REQUEST} from 'http-status-codes';
+import { CREATED, OK, BAD_REQUEST } from 'http-status-codes';
 import validation from '../../middleware/auth';
 import { User } from '../../entities/User';
 import { IUser } from '../../interfaces/IUser';
 import multer from 'multer';
-import {Utility} from '@lib';
+import { Utility } from '@lib';
 
 // Init router and path
 const router = Router();
@@ -36,7 +36,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
 
         const result = await User.CreateUser(user);
         if (result.exists) {
-            res.status(BAD_REQUEST).json(result );
+            res.status(BAD_REQUEST).json(result);
         } else {
             res.status(CREATED).json({
                 message: 'User created',
@@ -83,7 +83,7 @@ export const followErrorMessage = 'Oops, something went wrong';
 router.post(followUser, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.FollowUser(req.body.targetUserID, req.token.userID);
-        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).json({error: result.error});
+        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).json({ error: result.error });
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
@@ -127,7 +127,7 @@ const errMessage = 'Oops could not update';
 router.post(updateUserPath, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.UpdateUser(req.token.userID, req.body.update);
-        res.status(OK).json({msg: 'Updated', token: result});
+        res.status(OK).json({ msg: 'Updated', token: result });
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
@@ -191,13 +191,25 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
 const getUserPosts = '/posts';
 router.get(getUserPosts, auth, async (req, res) => {
     try {
-        const userID = req.query.userID === undefined ? req.token.userID : req.query.userID
-        const result = await User.GetUserPosts(userID, req.query.page, req.query.limit);
-        res.status(OK).json({result});
+        const result = await User.GetUserPosts(req.query.userID, req.query.page, req.query.limit);
+        res.status(OK).json({ result });
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
 });
+
+/******************************************************************************
+*                                 GET CLIENTS POSTS
+/******************************************************************************/
+export const getClientPosts = '/posts/me';
+router.get(getClientPosts, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await User.GetUserPosts(req.token.userID, req.query.page, req.query.limit);
+        res.status(OK).json({ result })
+    } catch (error) {
+        Utility.ErrResponse(error, res);
+    }
+})
 /******************************************************************************
  *                          Get Follower Notification
  /******************************************************************************/
