@@ -189,9 +189,7 @@ export class Post {
                     case 'post':
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         userFcmToken = (await UserModel.findById(post.author, { fcm_token: 1, _id: 0 }).lean().exec()).fcm_token;
-                        console.log(userFcmToken)
                         author = await UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
-                        console.log(post)
                         new Notification(userFcmToken, {
                             body: 'You get a 0.25 campus points ',
                             title: `${actor.userTag} liked your post`,
