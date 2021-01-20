@@ -61,14 +61,18 @@ export class Notification {
     }
 
     public SendPushNotification() {
-        const payload: admin.messaging.MessagingPayload = {
-            notification: {
-                title: this.notificationPayload.title,
-                body: this.notificationPayload.body,
-                sound: "default",
+        try {
+            const payload: admin.messaging.MessagingPayload = {
+                notification: {
+                    title: this.notificationPayload.title,
+                    body: this.notificationPayload.body,
+                    sound: "default",
+                }
             }
+            this.fcm.sendToDevice(this.deviceToken, payload);
+        } catch (error) {
+            logger.error(error);
         }
-        this.fcm.sendToDevice(this.deviceToken, payload);
     }
 
     public static async GetNotifications(userID: string) {
