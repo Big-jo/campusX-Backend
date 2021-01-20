@@ -144,7 +144,7 @@ export class User {
                 const deviceToken = user.fcm_token
                 new Notification(deviceToken, {
                     title: 'New Follower',
-                    body: `${user.userTag} followed you`,
+                    body: `${follower.userTag} followed you`,
                     sound: 'default',
                 }, targetUserID, follower.userProfile.avatar, 'follower').SendPushNotification();
 
