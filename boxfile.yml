@@ -1,2 +1,17 @@
 run.config:
   engine: nodejs
+  engine.config: 
+    version: 14.15.1
+  cache_dirs:
+    - node_modules
+  extra_steps:
+  - npm install
+  - npm run build
+
+web.site:
+  nginx: nginx -c /app/config/nginx.conf
+  start: npm run start
+
+extra_packages:
+    - nginx
+
