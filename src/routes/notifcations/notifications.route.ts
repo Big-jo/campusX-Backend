@@ -47,7 +47,7 @@ router.get(getNotif, auth, async (req: Request, res: Response) => {
     try {
         const result = await Notification.GetNotifications(req.token.userID);
         if (result.new_notifications === false) {
-            res.status(OK).json(result.new_notifications);
+            res.status(OK).json({ result: [] });
         } else {
             const r = [];
             for (let index = 0; index < result.notifications.length; index++) {
