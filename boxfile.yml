@@ -5,12 +5,13 @@ run.config:
   cache_dirs:
     - node_modules
   extra_steps:
-  - npm install
+  - npm install 
+  - npm install -g pm2
   - npm run build
 
 web.site:
   nginx: nginx -c /app/config/nginx.conf
-  start: npm run start
+  start: pm2 start npm -- start
 
 extra_packages:
     - nginx
