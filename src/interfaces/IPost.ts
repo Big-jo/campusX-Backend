@@ -21,9 +21,12 @@ export interface IPost {
 export interface ICommentModel extends IPostModel {
     parentPost: string;
     commentID: string;
+    type: string;
 }
 
 export interface IComment extends IPost {
+    type?: string;
+    // type: string;
     parentPost: string;
     // parentPostID: string;
 }

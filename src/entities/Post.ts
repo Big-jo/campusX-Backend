@@ -263,8 +263,25 @@ export class Post {
 
     public static async Comment(commentObject: IComment, fcm_token: string) {
         try {
+            let authorOfPost;
+
+            if(commentObject.type === "reply") {
+                authorOfPost = await CommentModel.findByIdAndUpdate(commentObject.parentPost, {
+                    $inc: {
+                        comments: 1
+                    }
+                }).lean().exec();
+            } else {
+                authorOfPost = await PostModel.findByIdAndUpdate(commentObject.parentPost, {
+                $inc: {
+                    comments: 1
+                }
+            }).lean().exec();
+
+            }   
+            console.log(authorOfPost)
             const user = await UserModel.findById(commentObject.author).exec();
-            const authorOfPost = await PostModel.findById(commentObject.parentPost).exec();
+            
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
@@ -274,6 +291,7 @@ export class Post {
                 parentPost: commentObject.parentPost,
                 author: commentObject.author,
                 createdAt: moment().valueOf(),
+                type: commentObject.type,
             } as IComment;
 
             const comment = new CommentModel(newComment);

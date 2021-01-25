@@ -17,6 +17,8 @@ const commentSchema: Schema = new Schema({
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
+    comments: { type: Number, default: 0 },
+    type: { type: String, }
 });
 
 commentSchema.plugin(aggregatePlugin);
