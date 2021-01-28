@@ -49,6 +49,7 @@
     "jsonwebtoken": "^8.5.1",
     "keyword-extractor": "0.0.19",
     "lodash": "^4.17.20",
+    "mention-hashtag": "^1.1.1",
     "module-alias": "^2.2.0",
     "moment": "^2.24.0",
     "mongoose": "^5.7.5",
