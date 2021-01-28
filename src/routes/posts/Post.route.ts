@@ -96,7 +96,8 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             author: req.token.userID,
             parentPost: req.body.parentPost,
             campus: req.token.campus,
-            type: req.body.type
+            type: req.body.type,
+            hashTags: null
         };
 
         const result = await Post.Comment(commentObject, req.token.fcm_token);

@@ -11,6 +11,8 @@ import moment = require('moment');
 import CirclePostModel from '../models/CirclePost.model';
 import { AggregationQueries } from '@lib';
 import { Notification } from '../lib/notifications';
+const extract = require('mention-hashtag');
+import {IUser} from '../interfaces/IUser';
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -34,6 +36,13 @@ export class Post {
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, type: IPostType, primaryCache: IORedis.Redis) {
         try {
+
+            const mentions = extract(postObject.text, 'all')
+            console.log(mentions);
+
+            const mentionedUsers: string[] = mentions.mentions;
+            const hashTags: any = mentions.hashTags;
+
             // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
                 author: postObject.author,
@@ -41,6 +50,7 @@ export class Post {
                 campus: postObject.campus,
                 parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),
+                hashTags
             });
 
             if (postObject.image !== '') {
@@ -56,13 +66,15 @@ export class Post {
             post = await post.save();
 
             // Update the post_count in users document
-            UserModel.updateOne({ _id: userID }, { $inc: { 'userProfile.post_count': 1 } }).exec();
+            const author = await UserModel.findOneAndUpdate({ _id: userID }, { $inc: { 'userProfile.post_count': 1 } }).lean().exec();
 
             const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
             /**
              * Small art of deciption here to add post to the user's feed 
              */
             followers.push({ target: null, follower: userID } as IFollower);
+
+            const users = await UserModel.find({userTag: {$in: mentionedUsers}}, {password: 0}).lean().exec();
 
             //  Offload this work to another thread
             const pipeline = primaryCache.pipeline();
@@ -75,6 +87,13 @@ export class Post {
                 pipeline.sadd('dirty', follower.follower);
             }
             pipeline.exec();
+            
+            users.forEach((user: IUser) => {
+                new Notification(user.fcm_token, {
+                    body: `${post.text}`,
+                    title: `${author.userTag} mentioned you`,
+                }, user._id, user.userProfile.avatar , 'mention').SendPushNotification()
+            })
 
             // Also return ID of the newsfeed updated
         } catch (error) {
