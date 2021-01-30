@@ -7,7 +7,7 @@ import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
 import { S3 } from '@lib';
 import { Types } from 'mongoose';
-import moment = require('moment');
+import moment from 'moment';
 import CirclePostModel from '../models/CirclePost.model';
 import { AggregationQueries } from '@lib';
 import { Notification } from '../lib/notifications';
