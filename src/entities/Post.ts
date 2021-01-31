@@ -12,7 +12,9 @@ import CirclePostModel from '../models/CirclePost.model';
 import { AggregationQueries } from '@lib';
 import { Notification } from '../lib/notifications';
 const extract = require('mention-hashtag');
-import {IUser} from '../interfaces/IUser';
+import { IUser } from '../interfaces/IUser';
+import EventEmitter from 'events';
+import { Newsfeed } from 'src/lib/newsfeeds';
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -28,15 +30,17 @@ interface IPostType {
     name: string;
 }
 
+export const feedEmitter1 = new EventEmitter();
+
 // enum PostTypes {
 //     name = 'REPOST',
 // }
 export class Post {
 
     // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, type: IPostType, primaryCache: IORedis.Redis) {
+    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
         try {
-
+            // TODO: Add check for mentions and hashTags
             const mentions = extract(postObject.text, 'all')
             console.log(mentions);
 
@@ -74,7 +78,7 @@ export class Post {
              */
             followers.push({ target: null, follower: userID } as IFollower);
 
-            const users = await UserModel.find({userTag: {$in: mentionedUsers}}, {password: 0}).lean().exec();
+            const users = await UserModel.find({ userTag: { $in: mentionedUsers } }, { password: 0 }).lean().exec();
 
             //  Offload this work to another thread
             const pipeline = primaryCache.pipeline();
@@ -87,13 +91,30 @@ export class Post {
                 pipeline.sadd('dirty', follower.follower);
             }
             pipeline.exec();
-            
-            users.forEach((user: IUser) => {
-                new Notification(user.fcm_token, {
-                    body: `${post.text}`,
-                    title: `${author.userTag} mentioned you`,
-                }, user._id, user.userProfile.avatar , 'mention').SendPushNotification()
-            })
+
+            // users.forEach((user: IUser) => {
+            //     new Notification(user.fcm_token, {
+            //         body: `${post.text}`,
+            //         title: `${author.userTag} mentioned you`,
+            //     }, user._id, user.userProfile.avatar , 'mention').SendPushNotification()
+            // })
+
+            // Get post from DB
+            const newPost = await AggregationQueries.GetPost(post._id);
+            /** 
+             * Setup redis pipline to get all user's followers that are connected 
+             **/
+            const p = primaryCache.pipeline();
+
+            for (const follower of followers) {
+                p.get(`socketID:${follower.follower}`);
+            }
+
+            const result = await p.exec();
+
+            // filter errors
+            const filteredIDs = result.map((r) => r[1])
+            feedEmitter1.emit('pull-socketIDs', { filteredIDs, post: newPost });
 
             // Also return ID of the newsfeed updated
         } catch (error) {
@@ -284,7 +305,7 @@ export class Post {
         try {
             let authorOfPost;
 
-            if(commentObject.type === "reply") {
+            if (commentObject.type === "reply") {
                 authorOfPost = await CommentModel.findByIdAndUpdate(commentObject.parentPost, {
                     $inc: {
                         comments: 1
@@ -292,15 +313,14 @@ export class Post {
                 }).lean().exec();
             } else {
                 authorOfPost = await PostModel.findByIdAndUpdate(commentObject.parentPost, {
-                $inc: {
-                    comments: 1
-                }
-            }).lean().exec();
+                    $inc: {
+                        comments: 1
+                    }
+                }).lean().exec();
 
-            }   
-            console.log(authorOfPost)
+            }
             const user = await UserModel.findById(commentObject.author).exec();
-            
+
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
