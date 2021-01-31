@@ -10,7 +10,7 @@ import BaseRouter from './routes/Base';
 import cors from 'cors';
 import * as socketIO from 'socket.io';
 import * as http from 'http';
-import {Newsfeed} from './lib/newsfeeds';
+import { Newsfeed } from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import { Tasks } from './lib/tasks';

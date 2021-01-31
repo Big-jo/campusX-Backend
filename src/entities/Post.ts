@@ -11,10 +11,11 @@ import moment from 'moment';
 import CirclePostModel from '../models/CirclePost.model';
 import { AggregationQueries } from '@lib';
 import { Notification } from '../lib/notifications';
-const extract = require('mention-hashtag');
 import { IUser } from '../interfaces/IUser';
 import EventEmitter from 'events';
-import { Newsfeed } from 'src/lib/newsfeeds';
+import { Newsfeed } from '../lib/newsfeeds';
+import { PostParser } from '../lib/postParser';
+
 interface IOptions {
     mostRecent?: boolean;
     first100?: boolean;
@@ -40,12 +41,11 @@ export class Post {
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
         try {
-            // TODO: Add check for mentions and hashTags
-            const mentions = extract(postObject.text, 'all')
-            console.log(mentions);
+            // TODO: Add check for mentions and hashTags      
+            const parsedPost = await new PostParser(postObject).Parse()
 
-            const mentionedUsers: string[] = mentions.mentions;
-            const hashTags: any = mentions.hashTags;
+            const mentioned = parsedPost.mentionedUsers.mentionedUsers;
+            const hashTags = parsedPost.hashTags.hashTags;
 
             // tslint:disable-next-line: no-shadowed-variable
             let post = new PostModel({
@@ -78,8 +78,6 @@ export class Post {
              */
             followers.push({ target: null, follower: userID } as IFollower);
 
-            const users = await UserModel.find({ userTag: { $in: mentionedUsers } }, { password: 0 }).lean().exec();
-
             //  Offload this work to another thread
             const pipeline = primaryCache.pipeline();
             for (const follower of followers) {
@@ -92,12 +90,17 @@ export class Post {
             }
             pipeline.exec();
 
-            // users.forEach((user: IUser) => {
-            //     new Notification(user.fcm_token, {
-            //         body: `${post.text}`,
-            //         title: `${author.userTag} mentioned you`,
-            //     }, user._id, user.userProfile.avatar , 'mention').SendPushNotification()
-            // })
+            if (mentioned.length !== 0) {
+                const users = await UserModel.find({ userTag: { $in: mentioned } }, { password: 0 }).lean().exec();
+
+                users.forEach((user: IUser) => {
+                    new Notification(user.fcm_token, {
+                        body: `${post.text}`,
+                        title: `${author.userTag} mentioned you`,
+                    }, user._id, user.userProfile.avatar, 'mention').SendPushNotification()
+                })
+            }
+
 
             // Get post from DB
             const newPost = await AggregationQueries.GetPost(post._id);
@@ -116,7 +119,6 @@ export class Post {
             const filteredIDs = result.map((r) => r[1])
             feedEmitter1.emit('pull-socketIDs', { filteredIDs, post: newPost });
 
-            // Also return ID of the newsfeed updated
         } catch (error) {
             logger.error(error);
         }
