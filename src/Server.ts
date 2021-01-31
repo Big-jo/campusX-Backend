@@ -10,7 +10,7 @@ import BaseRouter from './routes/Base';
 import cors from 'cors';
 import * as socketIO from 'socket.io';
 import * as http from 'http';
-// import {Newsfeed} from './lib/newsfeeds';
+import {Newsfeed} from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import { Tasks } from './lib/tasks';
@@ -39,7 +39,7 @@ const server = http.createServer(app);
 
 const io = socketIO.listen(server);
 
-// const newsfeed = new Newsfeed(io);
+const newsfeed = new Newsfeed(io);
 // Handle Websockets
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
@@ -58,11 +58,11 @@ app.use(express.json());
 app.use(express.urlencoded({
     extended: true,
 }));
-app.use((req, res, next) => {
-    res.locals.socketio = io;
-    // res.locals.newsfeed = newsfeed;
-    next();
-});
+// app.use((req, res, next) => {
+//     // res.locals.socketio = io;
+//     // res.locals.newsfeed = newsfeed;
+//     next();
+// });
 app.use(cookieParser());
 app.get('/', (req: Request, res: Response) => {
     res.status(NOT_FOUND).send('Oops the resource does not exist');
