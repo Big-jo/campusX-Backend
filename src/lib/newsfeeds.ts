@@ -21,7 +21,7 @@ export class Newsfeed {
         }
 
         this.primaryCache.on('connect', args => {
-            logger.info('Redis Connected');
+            logger.info('Newsfeed Redis Connected');
         });
 
         this.primaryCache.on('error', err => {
@@ -42,7 +42,6 @@ export class Newsfeed {
          * Emitter that disperses a post to each user when a following posts
          */
         feedEmitter1.on('pull-socketIDs', (eventData) => {
-            console.log(eventData.filteredIDs)
             const filteredIDs = eventData.filteredIDs;
             for (const id of filteredIDs) {
                 if (id !== null) {
@@ -66,13 +65,11 @@ export class Newsfeed {
      * @memberof Newsfeed
      */
     private async MatchSocketID(socketID: string, userID: string) {
-        await this.primaryCache.set(`socketID:${userID}`, socketID);
-        console.log('matched');
+        this.primaryCache.set(`socketID:${userID}`, socketID);
     }
 
     private async UnMatchSocketID(socketID: string, userID: string) {
         await this.primaryCache.del(`socketID:${userID}`, socketID);
-        console.log('disconnected');
     }
 
 }
