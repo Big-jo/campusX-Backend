@@ -9,6 +9,7 @@ export class AggregationQueries {
      * @param postIDs
      */
     public static async NewsfeedPostAggreg(userID: string, postIDs: Types.ObjectId[]) {
+
         const aggregate = [
             {
                 $match: { _id: { $in: postIDs } },
@@ -72,5 +73,32 @@ export class AggregationQueries {
         const agg = PostModel.aggregate(aggregate);
         //@ts-ignore
         return (await PostModel.aggregatePaginate(agg, options));
+    }
+
+    public static async GetPost(postID: string) {
+        
+        const aggregate = [
+            {
+                $match: { _id: postID},
+            },
+            {
+                $project: {
+                    likedBy: 0,
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    let: { authorID: '$author' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                        { $project: { password: 0, email: 0 } },
+                    ],
+                    as: 'author',
+                },
+            }
+        ];
+
+        return (await PostModel.aggregate(aggregate).exec());
     }
 }
