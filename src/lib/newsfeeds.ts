@@ -5,6 +5,7 @@ import { IPost } from '../interfaces/IPost';
 import EventEmitter from 'events';
 import { logger } from '@shared';
 import { feedEmitter1 } from './../entities/Post';
+
 export class Newsfeed {
     private primaryCache: IORedis.Redis;
     // private feedEmitter1 = new EventEmitter(); // Emitter for synchronization with creating post
@@ -16,8 +17,7 @@ export class Newsfeed {
             if (process.env.NODE_ENV === 'development') {
                 this.primaryCache = new IORedis();
             } else {
-                const redisPortPrimary = Number(process.env.REDIS_PORT);
-                const redisPortPC = Number(process.env.REDIS_PORT_PC);
+                const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
                 this.primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
             }
 
@@ -72,17 +72,17 @@ export class Newsfeed {
      * @param {string} userID
      * @memberof Newsfeed
      */
-    private async MatchSocketID(socketID: string, userID: string) {
+    private MatchSocketID(socketID: string, userID: string) {
         try {
-            await this.primaryCache.set(`socketID:${userID}`, socketID);
+            this.primaryCache.set(`socketID:${userID}`, socketID);
         } catch (e) {
             logger.error(e);
         }
     }
 
-    private async UnMatchSocketID(socketID: string, userID: string) {
+    private UnMatchSocketID(socketID: string, userID: string) {
         try {
-            await this.primaryCache.del(`socketID:${userID}`, socketID);
+            this.primaryCache.del(`socketID:${userID}`, socketID);
         } catch (error) {
             logger.error(error);
         }
