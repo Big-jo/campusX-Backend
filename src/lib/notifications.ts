@@ -78,6 +78,7 @@ export class Notification {
     public static async GetNotifications(userID: string) {
         if ((await primaryCache.exists(`notifications:${userID}`) === 1)) {
             const notif = await primaryCache.zrevrange(`notifications:${userID}`, 0, -1)
+            primaryCache.del(`notifications:${userID}`);
             return { notifications: notif }
         } else {
             return { new_notifications: false }
