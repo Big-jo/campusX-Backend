@@ -54,7 +54,8 @@ export class Post {
                 campus: postObject.campus,
                 parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),
-                hashTags
+                hashTags,
+                mentions: mentioned
             });
 
             if (postObject.image !== '') {

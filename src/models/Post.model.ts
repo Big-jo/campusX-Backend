@@ -18,7 +18,8 @@ const PostSchema: Schema = new Schema({
     // If this is a comment, this would be populated
     parentPost: {type: String},
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
-    hashTags: [{type: String}]
+    hashTags: [{type: String}],
+    mentions:[{type: String}],
 });
 
 // PostSchema.plugin(mongoosePaginate);
