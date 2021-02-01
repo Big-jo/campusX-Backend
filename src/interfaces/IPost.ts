@@ -17,6 +17,7 @@ export interface IPost {
     createdAt?: number;
     parentPost: string;
     hashTags?: string[];
+    mentions: string[];
 }
 
 export interface ICommentModel extends IPostModel {
@@ -30,7 +31,7 @@ export interface IComment extends IPost {
     // type: string;
     parentPost: string;
     // parentPostID: string;
-    hashTags?: string[] 
+    hashTags?: string[]
 
 }
 
