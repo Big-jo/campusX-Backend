@@ -90,6 +90,7 @@ export class Post {
             }
             pipeline.exec();
 
+            // TODO: Extract to a method in notification class 
             if (mentioned.length !== 0) {
                 const users = await UserModel.find({ userTag: { $in: mentioned } }, { password: 0 }).lean().exec();
 
@@ -323,6 +324,10 @@ export class Post {
             }
             const user = await UserModel.findById(commentObject.author).exec();
 
+            const mentions = await (new PostParser(commentObject).Parse());
+            const mentionedUsers = mentions.mentionedUsers.mentionedUsers;
+            const hashTags = mentions.hashTags.hashTags;
+
             const newComment = {
                 commentID: '',
                 campus: commentObject.campus,
@@ -333,6 +338,8 @@ export class Post {
                 author: commentObject.author,
                 createdAt: moment().valueOf(),
                 type: commentObject.type,
+                hashTags,
+                mentions: mentionedUsers,
             } as IComment;
 
             const comment = new CommentModel(newComment);
@@ -343,6 +350,18 @@ export class Post {
                 body: commentObject.text !== " " ? commentObject.text : "Media",
                 title: `${user.userTag} commented on your post`,
             }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification()
+
+            // Notify mentionsed users
+            if (mentionedUsers.length !== 0) {
+                const users = await UserModel.find({ userTag: { $in: mentionedUsers } }, { password: 0 }).lean().exec();
+
+                users.forEach((user0: IUser) => {
+                    new Notification(user0.fcm_token, {
+                        body: `${comment.text}`,
+                        title: `${user.userTag} mentioned you`,
+                    }, user0._id, user.userProfile.avatar, 'mention').SendPushNotification()
+                })
+            }
 
         } catch (e) {
             logger.error(e);
