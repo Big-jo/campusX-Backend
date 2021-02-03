@@ -106,8 +106,7 @@ export class Post {
 
             // Get post from DB
             let newPost = await AggregationQueries.GetPost(post._id);
-
-            newPost = JSON.stringify(newPost);
+                
             /** 
              * Setup redis pipline to get all user's followers that are connected 
              **/
