@@ -65,7 +65,7 @@ export class Newsfeed {
      */
 
     /**
-     * Matche socketID to its newsfeed
+     * Match socketID to its newsfeed
      *
      * @private
      * @param {string} socketID 
