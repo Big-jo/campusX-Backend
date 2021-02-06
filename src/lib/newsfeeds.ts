@@ -51,7 +51,7 @@ export class Newsfeed {
                 const filteredIDs = eventData.filteredIDs;
                 for (const id of filteredIDs) {
                     if (id !== null) {
-                        io.to(id).emit('pull', JSON.stringify(eventData.post[0]));
+                        io.to(id).emit('pull', eventData.post[0]);
                     }
                 }
             });
