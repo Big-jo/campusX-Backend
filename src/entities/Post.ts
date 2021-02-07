@@ -106,7 +106,7 @@ export class Post {
 
             // Get post from DB
             let newPost = await AggregationQueries.GetPost(post._id);
-                
+
             /** 
              * Setup redis pipline to get all user's followers that are connected 
              **/
@@ -350,7 +350,7 @@ export class Post {
 
             new Notification(fcm_token, {
                 body: commentObject.text !== " " ? commentObject.text : "Media",
-                title: `${user.userTag} commented on your post`,
+                title: `${user.userTag} replied to your comment`,
             }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification()
 
             // Notify mentionsed users
