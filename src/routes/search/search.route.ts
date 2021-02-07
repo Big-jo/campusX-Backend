@@ -57,6 +57,7 @@ const searchUser = '/user?term&criteria';
 router.get(searchUser, async (req, res) => {
     try {
         const search = new Search(req.query.term);
+        // Criteria is what is the property used to search for the user
         const result = await search.UserSearch(req.query.criteria);
 
         res.status(OK).json({result});
