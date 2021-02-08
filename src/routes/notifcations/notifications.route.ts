@@ -12,40 +12,10 @@ const path = '/notify';
 
 const auth = validation.validateToken;
 
-let primaryCache: IORedis.Redis;
-let postCache: IORedis.Redis;
-
-/******************************************************************************
- *                                 SETUP REDIS
- /******************************************************************************/
-
-if (process.env.NODE_ENV === 'development') {
-    primaryCache = new IORedis();
-    postCache = new IORedis({ port: 6379 });
-} else {
-    const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
-    const redisPortPC = Number(process.env.REDIS_PORT_PC);
-
-    primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
-    postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
-
-}
-
-primaryCache.on('connect', args => {
-    logger.info('Redis Connected');
-});
-
-primaryCache.on('error', err => {
-    logger.error(err);
-});
-
-/*******************************************************
- *              Get Notifcations
- *********************************************************/
 export const getNotif = '/retrieve';
 router.get(getNotif, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Notification.GetNotifications(req.token.userID);
+        const result = await Notification.GetNotifications(req.token.userID, res.locals.primaryCache);
         if (result.new_notifications === false) {
             res.status(OK).json({ result: [] });
         } else {

@@ -19,32 +19,32 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const auth = validation.validateToken;
 
-let primaryCache: IORedis.Redis;
-let postCache: IORedis.Redis;
+// let res.locals.primaryCache: IORedis.Redis;
+// let postCache: IORedis.Redis;
 
 /******************************************************************************
  *                                 SETUP REDIS
  /******************************************************************************/
 
-if (process.env.NODE_ENV === 'development') {
-    primaryCache = new IORedis();
-    postCache = new IORedis({ port: 6379 });
-} else {
-    const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
-    const redisPortPC = Number(process.env.REDIS_PORT_PC);
+// if (process.env.NODE_ENV === 'development') {
+//     res.locals.primaryCache = new IORedis();
+//     postCache = new IORedis({ port: 6379 });
+// } else {
+//     const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
+//     const redisPortPC = Number(process.env.REDIS_PORT_PC);
 
-    primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
-    postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
+//     res.locals.primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
+//     postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
 
-}
+// }
 
-primaryCache.on('connect', args => {
-    logger.info('Redis Connected');
-});
+// res.locals.primaryCache.on('connect', args => {
+//     logger.info('Redis Connected');
+// });
 
-primaryCache.on('error', err => {
-    logger.error(err);
-});
+// res.locals.primaryCache.on('error', err => {
+//     logger.error(err);
+// });
 
 /*******************************************************
  *              Create New Post
@@ -74,7 +74,7 @@ router.post(createPostPath, auth, upload.fields([{ name: 'image', maxCount: 1 },
                 anonymous: req.body.anon,
             };
 
-            Post.CreatePost(post, req.token.userID, primaryCache);
+            Post.CreatePost(post, req.token.userID, res.locals.primaryCache);
 
             res.status(OK).send();
         } catch (error) {
@@ -100,7 +100,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             hashTags: null
         };
 
-        const result = await Post.Comment(commentObject, req.token.fcm_token);
+        const result = await Post.Comment(commentObject, req.token.fcm_token, res.locals.primaryCache);
         res.status(CREATED).send();
     } catch (e) {
         logger.error(e);
@@ -135,7 +135,7 @@ router.get(getPostsPath, auth, async (req, res) => {
         // await Post.GetPosts(client, req.params.userID, {mostRecent: true});
         const offset = req.query.offset;
         const limit = req.query.limit;
-        const result = await Post.GetPosts(primaryCache, postCache, req.token.userID, {
+        const result = await Post.GetPosts(res.locals.primaryCache, req.token.userID, {
             mostRecent: true,
             offset,
             limit,
@@ -179,7 +179,7 @@ export const likePostPath = '/like/post';
 
 router.post(likePostPath, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Post.LikePost(req.token.userID, req.body.postID, 'post');
+        const result = await Post.LikePost(req.token.userID, req.body.postID, 'post', res.locals.primayCache);
         res.status(OK).json(result);
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -192,7 +192,7 @@ router.post(likePostPath, auth, async (req: Request, res: Response) => {
 const likeComment = '/like/comment';
 router.post(likeComment, auth, async (req, res) => {
     try {
-        const result = await Post.LikePost(req.token.userID, req.body.commentID, 'comment');
+        const result = await Post.LikePost(req.token.userID, req.body.commentID, 'comment', res.locals.primaryCache);
         res.status(OK).json(result);
     } catch (e) {
         Utility.ErrResponse(res, e);
@@ -218,7 +218,7 @@ router.post(likeComment, auth, async (req, res) => {
 export const checkFeedStatus = '/newsfeed/check';
 router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Post.CheckFeedStatus(req.token.userID, primaryCache);
+        const result = await Post.CheckFeedStatus(req.token.userID, res.locals.primaryCache);
 
         res.json({ result }).status(OK);
     } catch (error) {
