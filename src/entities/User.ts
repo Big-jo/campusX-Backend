@@ -10,6 +10,8 @@ import { S3 } from '@lib';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
 import { Notification } from '../lib/notifications';
 import { AggregationQueries } from '../lib/aggregationQueries';
+import { Post } from './Post';
+import IORedis from 'ioredis';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -104,7 +106,7 @@ export class User {
         }
     }
 
-    public static async FollowUser(targetUserID: string, userID: string) {
+    public static async FollowUser(targetUserID: string, userID: string, primaryCache: IORedis.Redis) {
         try {
             // Check is user is following target already
             const isFollowing = await FollowsModel.findOne({
@@ -146,8 +148,10 @@ export class User {
                     title: 'New Follower',
                     body: `${follower.userTag} followed you`,
                     sound: 'default',
-                }, targetUserID, follower.userProfile.avatar, 'follower').SendPushNotification();
+                }, targetUserID, follower.userProfile.avatar, 'follower', primaryCache).SendPushNotification();
 
+                // Add target user's recent post to user's feed 
+                Post.AddToFeed(userID, targetUserID, primaryCache);
                 return 0;
             } else {
                 return { error: 'You follow this user already' };
