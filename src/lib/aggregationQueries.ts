@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import PostModel from "../models/Post.model";
 
 export class AggregationQueries {
-    
+
     /**
      * 
      * @param userID 
@@ -34,15 +34,15 @@ export class AggregationQueries {
                     ],
                     as: 'author',
                 },
-            },{
-                $sort: {createdAt: -1}
+            }, {
+                $sort: { createdAt: -1 }
             }
         ];
 
         return (await PostModel.aggregate(aggregate).exec());
     }
 
-    public static async GetUserPostsAggreg(userID: string, options: {page: number, limit: number}) {
+    public static async GetUserPostsAggreg(userID: string, options: { page: number, limit: number }) {
         const aggregate = [
             {
                 $match: { author: Types.ObjectId(userID) },
@@ -62,7 +62,7 @@ export class AggregationQueries {
                     from: 'users',
                     let: { authorID: '$author' },
                     pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$authorID']}}},
+                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
                         { $project: { password: 0, email: 0 } },
                     ],
                     as: 'author',
@@ -76,10 +76,10 @@ export class AggregationQueries {
     }
 
     public static async GetPost(postID: string) {
-        
+
         const aggregate = [
             {
-                $match: { _id: postID},
+                $match: { _id: postID },
             },
             {
                 $project: {
@@ -100,5 +100,23 @@ export class AggregationQueries {
         ];
 
         return (await PostModel.aggregate(aggregate).exec());
+    }
+
+    public static async GetRecentPosts(userID: string) {
+
+        const aggregate = [
+            {
+                $match: { author: userID },
+
+            },
+            {
+                $project: {
+                    likedBy: 0,
+                },
+            },
+            {
+                $gt: new Date().getTime() - (60 * 60 * 1000)
+            }
+        ]
     }
 }

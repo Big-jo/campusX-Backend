@@ -453,4 +453,10 @@ export class Post {
         }
 
     }
+
+    public static AddFeed(userID: string, targetID: string, primaryCache: IORedis.Redis) {
+
+        const RecentPosts = PostModel.find({ author: targetID, createdAt: { $gte: new Date().getTime() - (72 * 60 * 60 * 1000) } });
+        console.log(RecentPosts)
+    }
 }
