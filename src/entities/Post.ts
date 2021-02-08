@@ -236,7 +236,7 @@ export class Post {
                         userFcmToken = (await UserModel.findById(post.author, { fcm_token: 1, _id: 0 }).lean().exec()).fcm_token;
                         author = await UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
                         new Notification(userFcmToken, {
-                            body: post.text !== undefined ? post.text : 'Media',
+                            body: 'You get a 0.25 campus points ',
                             title: `${actor.userTag} liked your post`,
                             sound: "default",
                         }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
@@ -248,7 +248,7 @@ export class Post {
                         author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
                         userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec()
                         new Notification(userFcmToken, {
-                            body: comment.text !== undefined ? post.text : 'Media',
+                            body: 'You get a 0.15 campus points ',
                             title: `${actor.userTag} liked your comment`,
                             sound: "default",
                         }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification()
@@ -349,7 +349,7 @@ export class Post {
             comment.save();
 
             new Notification(fcm_token, {
-                body: commentObject.text !== undefined ? commentObject.text : "Media",
+                body: commentObject.text !== " " ? commentObject.text : "Media",
                 title: `${user.userTag} replied to your comment`,
             }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification()
 
