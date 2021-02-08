@@ -99,7 +99,7 @@ export class Post {
                     new Notification(user.fcm_token, {
                         body: `${post.text}`,
                         title: `${author.userTag} mentioned you`,
-                    }, user._id, user.userProfile.avatar, 'mention').SendPushNotification()
+                    }, user._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification()
                 })
             }
 
@@ -127,7 +127,7 @@ export class Post {
         }
     }
 
-    public static async GetPosts(primaryCache: IORedis.Redis, postCache: IORedis.Redis, userID: string, options: IOptions) {
+    public static async GetPosts(primaryCache: IORedis.Redis, userID: string, options: IOptions) {
         if (options!.mostRecent) {
             try {
                 /**
@@ -200,7 +200,7 @@ export class Post {
 
     }
 
-    public static async LikePost(userID: string, postID: string, collection: string) {
+    public static async LikePost(userID: string, postID: string, collection: string, primaryCache: IORedis.Redis) {
         try {
             let likedBy: any;
             const findLikedByQuery = { _id: postID, likedBy: { $in: [userID] } };
@@ -239,7 +239,7 @@ export class Post {
                             body: 'You get a 0.25 campus points ',
                             title: `${actor.userTag} liked your post`,
                             sound: "default",
-                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification();
+                        }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
 
                         return { result: 'liked' };
 
@@ -251,7 +251,7 @@ export class Post {
                             body: 'You get a 0.15 campus points ',
                             title: `${actor.userTag} liked your comment`,
                             sound: "default",
-                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification()
+                        }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification()
 
                         return { result: 'liked' };
 
@@ -306,7 +306,7 @@ export class Post {
         }
     }
 
-    public static async Comment(commentObject: IComment, fcm_token: string) {
+    public static async Comment(commentObject: IComment, fcm_token: string, primaryCache: IORedis.Redis) {
         try {
             let authorOfPost;
 
@@ -351,7 +351,7 @@ export class Post {
             new Notification(fcm_token, {
                 body: commentObject.text !== " " ? commentObject.text : "Media",
                 title: `${user.userTag} replied to your comment`,
-            }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification()
+            }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification()
 
             // Notify mentionsed users
             if (mentionedUsers.length !== 0) {
@@ -361,7 +361,7 @@ export class Post {
                     new Notification(user0.fcm_token, {
                         body: `${comment.text}`,
                         title: `${user.userTag} mentioned you`,
-                    }, user0._id, user.userProfile.avatar, 'mention').SendPushNotification()
+                    }, user0._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification()
                 })
             }
 
@@ -454,9 +454,21 @@ export class Post {
 
     }
 
-    public static AddFeed(userID: string, targetID: string, primaryCache: IORedis.Redis) {
+    public static async AddToFeed(userID: string, targetID: string, primaryCache: IORedis.Redis) {
+        try {
+            const RecentPosts = await PostModel.find({ author: targetID, createdAt: { $gte: new Date().getTime() - (48 * 60 * 60 * 1000) } }, { _id: 1 }).lean().exec();
+            const pipeline = primaryCache.pipeline();
 
-        const RecentPosts = PostModel.find({ author: targetID, createdAt: { $gte: new Date().getTime() - (72 * 60 * 60 * 1000) } });
-        console.log(RecentPosts)
+            const ttl_time = process.env.POST_EXPIRE;
+            const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
+            const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
+
+            RecentPosts.forEach((post: any) => {
+                pipeline.zadd(userID, ttl.toString(), post._id);
+            });
+            pipeline.exec();
+        } catch (error) {
+            logger.error(error);
+        }
     }
 }
