@@ -14,6 +14,7 @@ import { Newsfeed } from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import { Tasks } from './lib/tasks';
+import IORedis from 'ioredis';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -30,6 +31,30 @@ const Db = mongoose.connection;
 Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', console.log.bind(console, 'MongoDB connected'));
+
+
+/******************************************************************************
+ *                                 SETUP REDIS
+ /******************************************************************************/
+
+let primaryCache: IORedis.Redis;
+
+if (process.env.NODE_ENV === 'development') {
+    primaryCache = new IORedis();
+} else {
+    const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
+    const redisPortPC = Number(process.env.REDIS_PORT_PC);
+    primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
+}
+
+primaryCache.on('connect', args => {
+    console.log.bind(console, 'Redis Instance Connected');
+});
+
+primaryCache.on('error', err => {
+    console.log.bind(console, err);
+});
+
 
 // Init express
 
@@ -68,6 +93,14 @@ app.get('/', (req: Request, res: Response) => {
     res.status(NOT_FOUND).send('Oops the resource does not exist');
 });
 
+// Add to redis connection to req object
+app.use((req, res, next) => {
+    // res.locals.socketio = io;
+    // res.locals.newsfeed = newsfeed;
+    res.locals.primaryCache = primaryCache;
+    next();
+});
+
 app.use(BaseRouter.path, BaseRouter.router);
 
 app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
@@ -80,6 +113,8 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
     res.statusCode = 500;
     res.end(res.sentry + '\n');
 });
+
+
 
 // Schedule task
 // const task = new Tasks(URI);
