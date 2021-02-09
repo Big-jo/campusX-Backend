@@ -1,13 +1,15 @@
 import mongoose from 'mongoose';
-import { expect } from 'chai';
-import { describe } from 'mocha';
-
-import { User } from '../../entities/User';
-import { IUser } from '../../interfaces/IUser';
+import {expect} from 'chai';
+import {describe} from 'mocha';
+import {User} from '../../entities/User';
+import {IUser} from '../../interfaces';
 import UserModel from '../../models/User.model';
-import {logger} from '@shared';
+import {logger} from '../../shared';
+import faker from 'faker';
+import IORedis from 'ioredis';
 
 const Db = mongoose.connection;
+let primaryCache: IORedis.Redis;
 
 before(() => {
     const URI = process.env.MONGO_URI as string;
@@ -20,72 +22,62 @@ before(() => {
     // tslint:disable-next-line: no-console
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
-    Db.dropCollection('users').then(() => {
-        logger.log('info', 'dropped');
-    }).catch(e => {
-        logger.error(e.message);
+    if (process.env.NODE_ENV === 'development') {
+        primaryCache = new IORedis();
+    }
+
+    // Db.dropCollection('posts');
+    // Db.dropCollection('comments');
+
+    primaryCache.on('connect', () => {
+        logger.info('Redis Connected');
     });
 
-    // Db.dropCollection('follows').then(() => {
-    //     console.log('dropped');
-    // }).catch(e => {
-    //     console.log(e.message);
-    // });
-
-    // Db.dropCollection('followings').then(() => {
-    //     console.log('dropped');
-    // }).catch(e => {
-    //     console.log(e.message);
-    // });
+    primaryCache.on('error', err => {
+        logger.error(err);
+        throw new Error(err.message);
+    });
 });
 
 after(() => {
     Db.close();
 });
 
-describe('User Interactions', () => {
+describe('User Methods', () => {
 
     async function GetUserIDs() {
-
         // Main User
-
-        const userID01 = await UserModel.findOne({email: 'doe@gmail.com'}).exec();
-
-        const userID02 = await UserModel.findOne({email: 'janey@gmail.com'}).exec();
-
-        const x = [userID01._id, userID02._id];
-        return x;
+        const users = await UserModel.find().sort({ _id: 1 }).exec();
+        return [users[0]._id, users[1]._id];
     }
 
-    it('Should create a 2 users and return user details', done => {
+    it('Should create  2 users and return user details', done => {
         const user = [
             {
-                name: 'John Doe',
-                userTag: 'Doee',
-                email: 'doe@gmail.com',
+                name: `${faker.name.firstName(1)} ${faker.name.lastName(1)}`,
+                userTag: faker.internet.userName(),
+                email: faker.internet.email(),
                 password: '111',
                 userProfile: {
-                    bio: 'Lolz',
-                    gender: 'Male',
+                    bio: faker.lorem.sentence(10),
+                    gender: 'male',
                     university: 'Bells University Of Technology',
                     avatar: 'https://picsum.photos/200/300',
                 },
             },
             {
-                name: 'jane Thommy',
-                userTag: 'jane07',
-                email: 'janey@gmail.com',
+                name: `${faker.name.firstName(0)} ${faker.name.lastName(0)}`,
+                userTag: faker.internet.userName(),
+                email: faker.internet.email(),
                 password: '111',
                 userProfile: {
-                    bio: 'We Move',
-                    gender: 'female',
+                    bio: faker.lorem.sentence(10),
+                    gender: 'male',
                     university: 'Bells University Of Technology',
                     avatar: 'https://picsum.photos/200/300',
                 },
             },
-
-        ] as IUser[];
-
+        ] as unknown as IUser[];
         User.CreateUser(user[0]).then(result => {
             expect(result).to.be.an('object');
             expect(result.token).to.be.a('string');
@@ -97,28 +89,32 @@ describe('User Interactions', () => {
 
         // Create second user
         User.CreateUser(user[1]).then(result => {
-            done();
-        }).catch(done);
-    });
-
-    it('should return a users token and some other information', done => {
-        User.Login('doe@gmail.com', '111').then(result => {
             expect(result).to.be.an('object');
             expect(result.token).to.be.a('string');
             expect(result.user).to.be.an('object');
             expect(result.user).to.have.property('avatar');
             expect(result.user).to.have.property('userID');
             expect(result.user).to.have.property('userTag');
-            expect(result.user).to.have.property('university');
             done();
         }).catch(done);
+    });
+
+    it('should return a users token and some other information', async () => {
+        const doc = await UserModel.find().sort({ _id: 1 }).exec();
+        const result = await User.Login(doc[0].email, '111');
+        expect(result).to.be.an('object');
+        expect(result.token).to.be.a('string');
+        expect(result.user).to.be.an('object');
+        expect(result.user).to.have.property('avatar');
+        expect(result.user).to.have.property('userID');
+        expect(result.user).to.have.property('userTag');
+        expect(result.user).to.have.property('university');
     });
 
     it('should follow a user', async () => {
         Db.dropCollection('follows').catch();
         Db.dropCollection('followings').catch();
-        // console.log((await GetUserIDs())[1], (await GetUserIDs())[0]);
-        const r = await User.FollowUser((await GetUserIDs())[1], (await GetUserIDs())[0]);
+        const r = await User.FollowUser((await GetUserIDs())[1], (await GetUserIDs())[0], primaryCache);
         expect(r).to.not.have.property('error');
     });
 
