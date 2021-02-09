@@ -1,195 +1,210 @@
-// import chai from 'chai';
-// import mongoose from 'mongoose';
-// import { expect } from 'chai';
-// import { describe } from 'mocha';
+import chai from 'chai';
+import mongoose from 'mongoose';
+import { expect } from 'chai';
+import { describe } from 'mocha';
+
+import { User } from '../../entities/User';
+import { Post } from '../../entities/Post';
+import IORedis from 'ioredis';
+import { logger } from '../../shared';
+import { IPost, IComment } from '../../interfaces';
+import PostModel from '../../models/Post.model';
+import CommentModel from '../../models/Comment.model';
+import faker from 'faker';
+import UserModel from '../../models/User.model';
+
+const Db = mongoose.connection;
+
+let user01: string;
+let user02: string;
+
+let mockedPosts: IPost[];
+
+let primaryCache: IORedis.Redis;
+
+async function GenerateUsers(numberOfUsers: number) {
+    let x = 0;
+    const generated = [];
+    while (x < numberOfUsers) {
+        generated.push(await UserModel.find().limit(1).exec());
+        x++;
+    }
+    return generated;
+}
+
+before(done => {
+
+    //  MongoDB Connection
+    const URI = process.env.MONGO_URI as string;
+    mongoose.connect(URI, {
+        useNewUrlParser: true,
+        useFindAndModify: false,
+    });
+
+    // tslint:disable-next-line: no-console
+    Db.on('error', console.error.bind(console, 'MongoDB connection error'));
+    // tslint:disable-next-line: no-console
+    Db.on('connected', console.log.bind(console, 'MongoDB connected'));
+
+    // Redis Connection
+    if (process.env.NODE_ENV === 'development') {
+        primaryCache = new IORedis();
+    }
+
+    primaryCache.on('connect', args => {
+        logger.info('Redis Connected');
+    });
+
+    primaryCache.on('error', err => {
+        logger.error(err);
+        throw new Error(err.message);
+    });
+
+    const x = UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
+        user01 = x[0]._id;
+        user02 = x[1]._id;
+        mockedPosts = [{
+            campus: faker.company.companyName(),
+            author: user01,
+            text: faker.lorem.sentences(10),
+        }, {
+            campus: faker.company.companyName(),
+            author: user02,
+            text: faker.lorem.sentences(10),
+        }] as IPost[];
+        done();
+    });
+});
+
+describe('Post Interaction', () => {
+
+    it('Create two posts for each user', async () => {
+        await Post.CreatePost(mockedPosts[0], mockedPosts[0].author, primaryCache);
+    });
+
+    // TODO: Create function to check if a user has liked a post
+    it('Like a post', async () => {
+        try {
+            const post = await PostModel.find().sort({ _id: 1 }).lean().exec();
+            const result = await Post.LikePost(user01, post._id, 'post', primaryCache);
+            expect(result).to.be('string');
+            expect(result).to.have.property('result');
+            expect(result.result).to.equal('liked');
+        } catch (error) {
+            logger.error(error);
+        }
+    });
+
+    it('should mention user in a post', async () => {
+        const user = await GenerateUsers(2);
+        const user01ID = user[0][0].id;
+        const user02Tag = user[0][0].userTag;
+
+        const postObject = {
+                campus: faker.company.companyName(),
+                author: user01ID,
+                text: ` ${user02Tag} ${faker.lorem.sentences(10)}`,
+            } as IPost;
+
+        await Post.CreatePost(postObject, mockedPosts[0].author, primaryCache);
+    });
+
+    describe('Comment Operations', () => {
+        it('Comment on a post', async () => {
+            const post = await PostModel.find().sort({_id: 1}).lean().exec();
+            const user = await GenerateUsers(1);
+            const userID = user[0][0].id;
+            const tag = user[0][0].userTag;
+            const profileImage = user[0][0].userProfile.avatar;
+            const commentObject = {
+                campus: 'Bells University Of Technology',
+                parentPost: post[0]._id,
+                userTag: tag,
+                author: userID,
+                text: faker.lorem.lines(2),
+                authorAvatar: profileImage,
+                type: 'comment'
+            } as IComment;
+            // tslint:disable-next-line:max-line-length
+            await Post.Comment(commentObject, 'dTNOlFafRyKLFf-VfMq_uj:APA91bGOShgvb-OudwFy3QeLoUsQprm1OjMNGe29825YTqS-0qIELtba37pbZuXjT3c6VoAWDZrUI-gKR084K2-s_jOUNvZxpx9zlIsJ6CR6jBEVPaFdr264PjkG-0qAik0yNWU1wlzM', primaryCache);
+        });
+
+        it('Get Comments', async () => {
+            const post = await PostModel.find().sort({ _id: 1 }).lean().exec();
+
+            const result = await Post.GetComments(post[0]._id, user01, 10, 1);
+            expect(result).to.have.property('comments');
+            expect(result.comments[0]).to.have.property('createdAt');
+            expect(result.comments[0]).to.have.property('author');
+            expect(result.comments[0]).to.have.property('video');
+            expect(result.comments[0]).to.have.property('image');
+            expect(result.comments[0]).to.have.property('text');
+            expect(result.comments[0]).to.have.property('parentPost');
+            expect(result.comments[0]).to.have.property('isLiked');
+        });
+        
+        it('should like a comment', async () => {
+            const comment = await  CommentModel.find().sort({_id: 1}).exec();
+            await Post.LikePost(user01, comment[0]._id, 'comment', primaryCache);
+        });
+
+        it('should reply a comment', async () => {
+            const comment = await CommentModel.find().sort({ _id: 1 }).lean().exec();
+            const user = await GenerateUsers(1);
+            const userID = user[0][0].id;
+            const tag = user[0][0].userTag;
+            const profileImage = user[0][0].userProfile.avatar;
+            const commentObject = {
+                campus: 'Bells University Of Technology',
+                parentPost: comment[0]._id,
+                userTag: tag,
+                author: userID,
+                text: faker.lorem.lines(2),
+                authorAvatar: profileImage,
+                type: 'reply',
+            } as IComment;
+            // tslint:disable-next-line:max-line-length
+            await Post.Comment(commentObject, 'dTNOlFafRyKLFf-VfMq_uj:APA91bGOShgvb-OudwFy3QeLoUsQprm1OjMNGe29825YTqS-0qIELtba37pbZuXjT3c6VoAWDZrUI-gKR084K2-s_jOUNvZxpx9zlIsJ6CR6jBEVPaFdr264PjkG-0qAik0yNWU1wlzM', primaryCache);
+        });
+
+        it('should mention user in a comment', async () => {
+            const post = await PostModel.find().sort({ _id: 1 }).lean().exec();
+            const user = await GenerateUsers(2);
+            const user01ID = user[0][0].id;
+            const user02Tag = user[0][0].userTag;
+
+            const commentObject = {
+                campus: 'Bells University Of Technology',
+                parentPost: post[0]._id,
+                userTag: user[0][0].userTag,
+                author: user01ID,
+                text: `${user02Tag} ${faker.lorem.sentences(10)}`,
+                authorAvatar: 'profileImage',
+                type: 'comment',
+            } as IComment;
+
+            // tslint:disable-next-line:max-line-length
+            await Post.Comment(commentObject,'dTNOlFafRyKLFf-VfMq_uj:APA91bGOShgvb-OudwFy3QeLoUsQprm1OjMNGe29825YTqS-0qIELtba37pbZuXjT3c6VoAWDZrUI-gKR084K2-s_jOUNvZxpx9zlIsJ6CR6jBEVPaFdr264PjkG-0qAik0yNWU1wlzM' , primaryCache);
+        });
+    });
+});
+
+// describe('User Feed ', () => {
+//     it('Get User Feed', async () => {
+//         const user = await GenerateUsers(1);
+//         const userID = user[0][0].id;
 //
-// import { User } from '../../entities/User';
-// import { Post } from '../../entities/Post';
-// import IORedis from 'ioredis';
-// import { logger } from '../../shared';
-// import { IPost, IComment } from '../../interfaces/IPost';
-// import PostModel from '../../models/Post.model';
-// import CommentModel from '../../models/Comment.model';
-// import faker from 'faker';
-//
-// const Db = mongoose.connection;
-//
-// let user01: string;
-// let user02: string;
-// let comment01: any;
-//
-// let mockedPosts: IPost[];
-//
-// let primaryCache: IORedis.Redis;
-// let postCache: IORedis.Redis;
-//
-// let mockedPostsLength;
-//
-// describe('Posts', () => {
-//     let post01: any;
-//
-//     before(async () => {
-//
-//         //  MongoDB Connection
-//         const URI = process.env.MONGO_URI as string;
-//         await mongoose.connect(URI, {
-//             useNewUrlParser: true,
-//             useFindAndModify: false,
-//         });
-//
-//         // tslint:disable-next-line: no-console
-//         Db.on('error', console.error.bind(console, 'MongoDB connection error'));
-//         // tslint:disable-next-line: no-console
-//         Db.on('connected', console.log.bind(console, 'MongoDB connected'));
-//
-//         // Redis Connection
-//         if (process.env.NODE_ENV === 'development') {
-//             primaryCache = new IORedis();
-//             postCache = new IORedis({ port: 6380 });
-//
-//         }
-//
-//         // Db.dropCollection('posts');
-//         // Db.dropCollection('comments');
-//
-//         primaryCache.on('connect', args => {
-//             console.log('Redis Connected');
-//         });
-//
-//         primaryCache.on('error', err => {
-//             logger.error(err);
-//             throw new Error(err.message);
-//         });
-//
-//         user01 = await (await User.Login('doe@gmail.com', '111')).user.userID;
-//         user02 = await (await User.Login('janey@gmail.com', '111')).user.userID;
-//
-//         PostModel.find({}).exec().then( async result => {
-//             post01 = await PostModel.find({}).limit(1).sort({ $natural: -1 }).lean().exec();
-//             post01 = post01[0]._id;
-//         }).catch(reason => {
-//
-//         });
-//
-//         CommentModel.find({}).exec().then( async result => {
-//              comment01 = await CommentModel.find({}).limit(1).sort({ $natural: -1 }).lean().exec();
-//              comment01 = comment01[0]._id;
-//         }).catch();
-//
-//         mockedPosts = [{
-//             campus: faker.company.companyName(),
-//             author: user01,
-//             text: faker.lorem.sentences(10),
-//         }, {
-//             campus: faker.company.companyName(),
-//             author: user02,
-//             text: faker.lorem.sentences(10),
-//         }] as IPost[];
+//         const result = await Post.GetPosts(primaryCache, userID, { mostRecent: true, limit: 50, offset: 1 });
+//         expect(result).to.have.property('newsfeed');
+//         expect(result.newsfeed).to.be.an('array');
+//         expect(result.newsfeed[0]).to.have.property('createdAt');
+//         expect(result.newsfeed[0]).to.have.property('author');
+//         expect(result.newsfeed[0]).to.have.property('video');
+//         expect(result.newsfeed[0]).to.have.property('image');
+//         expect(result.newsfeed[0]).to.have.property('text');
+//         expect(result.newsfeed[0]).to.have.property('likes');
+//         expect(result.newsfeed[0]).to.have.property('dislikes');
+//         expect(result.newsfeed[0]).to.have.property('campus');
+//         expect(result.newsfeed[0]).to.have.property('isLiked');
 //     });
-//
-//     after(() => {
-//         Db.close();
-//     });
-//
-//     describe('Post Functions', () => {
-//
-//         it('Create a two posts for each user', done => {
-//
-//             mockedPostsLength = mockedPosts.length;
-//
-//             Post.CreatePost(mockedPosts[0], mockedPosts[0].author, {name: 'POST'}, primaryCache)
-//                 .then(result => {
-//                     expect(result).to.equal(undefined);
-//                 }).catch(done);
-//
-//             Post.CreatePost(mockedPosts[1], mockedPosts[1].author, {name: ''},primaryCache)
-//                 .then(result => {
-//                     expect(result).to.equal(undefined);
-//                 }).catch(done);
-//
-//             done();
-//
-//             // done();
-//         });
-//
-//         it('Check If Posts Are In DB', done => {
-//             PostModel.find({}).exec().then(result => {
-//                 expect(result.length).to.be.greaterThan(0);
-//                 done();
-//             }).catch(done);
-//         });
-//     });
-//
-//     describe('Post Interaction',  () => {
-//         // @ts-ignore
-//
-//         // TODO: Create function to check if a user has liked a post
-//         it('Like a post', done => {
-//             Post.LikePost(user01, post01, 'post').then(result => {
-//                 done();
-//             }).catch(done);
-//         });
-//
-//         describe('Comment Operations', () => {
-//             it('Comment on a post', done => {
-//                 const commentObject = {
-//                     campus: 'Bells University Of Technology',
-//                     parentPost: post01,
-//                     userTag: '@janey',
-//                     author: user01,
-//                     text: 'First Comment',
-//                     parentPostID: post01,
-//                     authorAvatar: '',
-//                 } as IComment;
-//                 Post.Comment(commentObject, postCache).then(result => {
-//                         done();
-//                 }).catch(done);
-//             });
-//
-//             it('Get Comments', done => {
-//                 Post.GetComments(post01, user01, 1, 2).then(result => {
-//                     console.log(result.comments);
-//                     expect(result).to.have.property('comments');
-//                     expect(result.comments[0]).to.have.property('createdAt');
-//                     expect(result.comments[0]).to.have.property('author');
-//                     expect(result.comments[0]).to.have.property('video');
-//                     expect(result.comments[0]).to.have.property('image');
-//                     expect(result.comments[0]).to.have.property('text');
-//                     expect(result.comments[0]).to.have.property('parentPost');
-//                     expect(result.comments[0]).to.have.property('isLiked');
-//
-//                     // console.log(result);
-//                     done();
-//                 }).catch(done);
-//             });
-//
-//             it('should like a comment', done => {
-//                 Post.LikePost(user01, comment01, 'comment').then(value => {
-//                     done();
-//                 }).catch(done);
-//             });
-//         });
-//     });
-//
-//     describe('User Feed ', () => {
-//         it('Get User Feed', done => {
-//             Post.GetPosts(primaryCache, postCache, user01, {mostRecent: true, limit: 50, offset: 0}).then(result => {
-//                 console.log(result.newsfeed);
-//                 // console.log(result);
-//                 expect(result).to.have.property('newsfeed');
-//                 expect(result.newsfeed).to.be.an('array');
-//                 expect(result.newsfeed[0]).to.have.property('createdAt');
-//                 expect(result.newsfeed[0]).to.have.property('author');
-//                 expect(result.newsfeed[0]).to.have.property('video');
-//                 expect(result.newsfeed[0]).to.have.property('image');
-//                 expect(result.newsfeed[0]).to.have.property('text');
-//                 expect(result.newsfeed[0]).to.have.property('likes');
-//                 expect(result.newsfeed[0]).to.have.property('dislikes');
-//                 expect(result.newsfeed[0]).to.have.property('campus');
-//                 expect(result.newsfeed[0]).to.have.property('isLiked');
-//                 done();
-//             }).catch(done);
-//         });
-//     });
-//
 // });
