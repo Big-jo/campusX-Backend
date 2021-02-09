@@ -9,7 +9,7 @@
     "start-debug": "nodemon --config \"./util/nodemon.debug.json\" --inspect src/Start.ts",
     "start-staging": "nodemon --config \"./util/nodemon.staging.json\"",
     "nodemon-test": "nodemon --config \"./util/nodemon.test.json\"",
-    "tests": "ENV_FILE=testing mocha -r ts-node/register -r ./env  -r tsconfig-paths/register   src/spec/entities-spec/*.test.ts",
+    "tests": "ENV_FILE=testing env TS_NODE_TRANSPILE_ONLY=1 mocha -r ts-node/register -r ./env  -r tsconfig-paths/register src/spec/entities-spec/User.test.ts",
     "webstorm": "ENV_FILE=development ts-node -r ./env -r tsconfig-paths/register src/Start.ts"
   },
   "_moduleAliases": {
@@ -70,6 +70,7 @@
     "@types/agenda": "^2.0.9",
     "@types/array-sort": "^1.0.0",
     "@types/bcrypt": "^3.0.0",
+    "@types/chai": "^4.2.14",
     "@types/connect-mongo": "0.0.43",
     "@types/cookie-parser": "^1.4.1",
     "@types/cors": "^2.8.6",
@@ -91,7 +92,7 @@
     "@types/socket.io": "^2.1.8",
     "@types/supertest": "^2.0.8",
     "@types/uuid": "^3.4.5",
-    "chai": "^4.2.0",
+    "chai": "^4.3.0",
     "chai-http": "^4.3.0",
     "cross-env": "^7.0.3",
     "faker": "^5.1.0",
