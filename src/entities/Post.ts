@@ -42,7 +42,7 @@ export class Post {
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
         try {
             // TODO: Add check for mentions and hashTags      
-            const parsedPost = await new PostParser(postObject).Parse()
+            const parsedPost = await new PostParser(postObject).Parse();
 
             const mentioned = parsedPost.mentionedUsers.mentionedUsers;
             const hashTags = parsedPost.hashTags.hashTags;
@@ -55,15 +55,15 @@ export class Post {
                 parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),
                 hashTags,
-                mentions: mentioned
+                mentions: mentioned,
             });
 
-            if (postObject.image !== '') {
+            if (postObject.image !== undefined) {
                 const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
             }
 
-            if (postObject.video !== '') {
+            if (postObject.video !== undefined) {
                 const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
@@ -99,13 +99,12 @@ export class Post {
                     new Notification(user.fcm_token, {
                         body: `${post.text}`,
                         title: `${author.userTag} mentioned you`,
-                    }, user._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification()
-                })
+                    }, user._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification();
+                });
             }
 
-
             // Get post from DB
-            let newPost = await AggregationQueries.GetPost(post._id);
+            const newPost = await AggregationQueries.GetPost(post._id);
 
             /** 
              * Setup redis pipline to get all user's followers that are connected 
@@ -119,7 +118,7 @@ export class Post {
             const result = await p.exec();
 
             // filter errors
-            const filteredIDs = result.map((r) => r[1])
+            const filteredIDs = result.map(r => r[1]);
             feedEmitter1.emit('pull-socketIDs', { filteredIDs, post: newPost });
 
         } catch (error) {
@@ -157,9 +156,9 @@ export class Post {
                     return { newsfeed };
 
                 } else {
-                    return { error_msg: "Feed is empty, follow some folks " }
+                    return { error_msg: 'Feed is empty, follow some folks ' };
                     //  Find a way to get posts for users that have not been online in a while 
-                } //else {
+                } // else {
                 //     // TODO: Optimize this block
 
                 //     // Get people user follows
@@ -173,8 +172,6 @@ export class Post {
                 //     followings.forEach((x: { target: string; }) => {
                 //         arr.push(x.target);
                 //     });
-
-
 
                 //     const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(800).sort({ createdAt: -1 }).exec();
 
@@ -238,7 +235,7 @@ export class Post {
                         new Notification(userFcmToken, {
                             body: post.text !== undefined ? post.text : 'Media',
                             title: `${actor.userTag} liked your post`,
-                            sound: "default",
+                            sound: 'default',
                         }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
 
                         return { result: 'liked' };
@@ -246,12 +243,12 @@ export class Post {
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
-                        userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec()
+                        userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec();
                         new Notification(userFcmToken, {
                             body: comment.text !== undefined ? post.text : 'Media',
                             title: `${actor.userTag} liked your comment`,
-                            sound: "default",
-                        }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification()
+                            sound: 'default',
+                        }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
 
                         return { result: 'liked' };
 
@@ -310,17 +307,17 @@ export class Post {
         try {
             let authorOfPost;
 
-            if (commentObject.type === "reply") {
+            if (commentObject.type === 'reply') {
                 authorOfPost = await CommentModel.findByIdAndUpdate(commentObject.parentPost, {
                     $inc: {
-                        comments: 1
-                    }
+                        comments: 1,
+                    },
                 }).lean().exec();
             } else {
                 authorOfPost = await PostModel.findByIdAndUpdate(commentObject.parentPost, {
                     $inc: {
-                        comments: 1
-                    }
+                        comments: 1,
+                    },
                 }).lean().exec();
 
             }
@@ -349,11 +346,11 @@ export class Post {
             comment.save();
 
             new Notification(fcm_token, {
-                body: commentObject.text !== undefined ? commentObject.text : "Media",
-                title: `${user.userTag} replied to your comment`,
-            }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification()
+                body: commentObject.text !== undefined ? commentObject.text : 'Media',
+                title: commentObject.type === 'reply' ? `${user.userTag} replied to your comment` : `${user.userTag} commented on your post`,
+            }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification();
 
-            // Notify mentionsed users
+            // Notify mentioned users
             if (mentionedUsers.length !== 0) {
                 const users = await UserModel.find({ userTag: { $in: mentionedUsers } }, { password: 0 }).lean().exec();
 
@@ -361,8 +358,8 @@ export class Post {
                     new Notification(user0.fcm_token, {
                         body: `${comment.text}`,
                         title: `${user.userTag} mentioned you`,
-                    }, user0._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification()
-                })
+                    }, user0._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification();
+                });
             }
 
         } catch (e) {
@@ -410,7 +407,7 @@ export class Post {
                 {
                     $sort: {
                         likes: -1,
-                        createdAt: -1
+                        createdAt: -1,
                     },
                 },
             ];
