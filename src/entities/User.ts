@@ -359,19 +359,12 @@ export class User {
 
         const connectUsers = [];
 
-        const sameCampus = [];
-        const otherCampuses = [];
-
         for (const userObject of users.docs as any) {
             if (userObject.id !== userID) {
-                userObject.userProfile.university === user.userProfile.university ? sameCampus.push(userObject) : otherCampuses.push(userObject) ;
+                userObject.userProfile.university === user.userProfile.university ? userObject.sameCampus = true : userObject.sameCampus = false;
+                connectUsers.push(userObject);
             }
         }
-
-        connectUsers.push({
-            sameCampus,
-            otherCampuses,
-        })
 
         return {
             connectUsers,
