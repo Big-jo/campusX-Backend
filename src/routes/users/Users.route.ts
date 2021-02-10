@@ -2,7 +2,7 @@ import { Response, Router, Request } from 'express';
 import { CREATED, OK, BAD_REQUEST } from 'http-status-codes';
 import validation from '../../middleware/auth';
 import { User } from '../../entities/User';
-import { IUser } from '../../interfaces/IUser';
+import { IUser } from '@interfaces';
 import multer from 'multer';
 import { Utility } from '@lib';
 
@@ -123,7 +123,6 @@ router.get(getUserInfo, auth, async (req: Request, res: Response) => {
  *                              Update User Info
  ******************************************************************************/
 const updateUserPath = '/update';
-const errMessage = 'Oops could not update';
 router.post(updateUserPath, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.UpdateUser(req.token.userID, req.body.update);
@@ -152,7 +151,7 @@ router.post(updateUserProfile, auth, async (req: Request, res: Response) => {
 export const connectPath = '/connect';
 router.get(connectPath, auth, async (req: Request, res: Response) => {
     try {
-        const result = await User.ConnectUser(req.token.userID, parseInt(req.query.offset, 10));
+        const result = await User.ConnectUser(req.token.userID, req.query.filter, req.token.campus , parseInt(req.query.offset, 10));
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -205,11 +204,11 @@ export const getClientPosts = '/posts/me';
 router.get(getClientPosts, auth, async (req: Request, res: Response) => {
     try {
         const result = await User.GetUserPosts(req.token.userID, req.query.page, req.query.limit);
-        res.status(OK).json({ result })
+        res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(error, res);
     }
-})
+});
 /******************************************************************************
  *                          Get Follower Notification
  /******************************************************************************/
