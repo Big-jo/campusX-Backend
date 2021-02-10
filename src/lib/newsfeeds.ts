@@ -29,13 +29,21 @@ export class Newsfeed {
                 logger.error(err);
             });
 
-            io.on('connect', (socket) => {
+            io.on('connect', socket => {
 
                 try {
                     this.MatchSocketID(socket.id, socket.handshake.query.userID);
 
                     socket.on('disconnect', async () => {
                         this.UnMatchSocketID(socket.id, socket.handshake.query.userID);
+                    });
+
+                    socket.on('get-feed', async () => {
+                        const posts = await Post.GetPosts(this.primaryCache, socket.handshake.query.userID, {
+                            limit: 0,
+                            offset: 0,
+                            mostRecent: true});
+                        socket.emit('pull-feed', {result: posts});
                     });
 
                 } catch (e) {
@@ -51,7 +59,7 @@ export class Newsfeed {
                 const filteredIDs = eventData.filteredIDs;
                 for (const id of filteredIDs) {
                     if (id !== null) {
-                        io.to(id).emit('pull', eventData.post[0]);
+                        io.to(id).emit('updated-feed', eventData.post[0]);
                     }
                 }
             });
