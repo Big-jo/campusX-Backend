@@ -141,7 +141,7 @@ export class Post {
                     primaryCache.zremrangebyscore(userID, 0, unixNow);
 
                     // Get all the postIDs in the users newsfeed
-                    const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
+                    const postKeys = await primaryCache.zrevrange(userID, 0, -1);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
