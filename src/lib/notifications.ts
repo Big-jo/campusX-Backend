@@ -57,7 +57,7 @@ export class Notification {
     public static async GetNotifications(userID: string) {
         // logger.info(Types.ObjectId(userID));
         const notifications = await NotificationModel.find({userID}).lean().exec();
-        return {notifications};
+        return {payload: notifications};
 
         // if ((await primaryCache.exists(`notifications:${userID}`) === 1)) {
         //     const notif = await primaryCache.zrevrange(`notifications:${userID}`, 0, -1);
