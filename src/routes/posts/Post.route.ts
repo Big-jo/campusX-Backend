@@ -62,9 +62,9 @@ router.post(createPostPath, auth, upload.fields([{ name: 'image', maxCount: 1 },
             const post: IPost = {
                 author: req.token.userID,
                 // @ts-ignore
-                image: req.files.image !== undefined ? req.files.image[0] : '',
+                image: req.files.image !== undefined ? req.files.image[0] : undefined,
                 // @ts-ignore
-                video: req.files.video !== undefined ? req.files.video[0] : '',
+                video: req.files.video !== undefined ? req.files.video[0] : undefined,
                 text: req.body.text,
                 campus: req.token.campus,
                 parentPost: req.body.parentPost,
