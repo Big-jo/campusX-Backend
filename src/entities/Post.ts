@@ -41,7 +41,6 @@ export class Post {
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
         try {
-            // TODO: Add check for mentions and hashTags      
             const parsedPost = await new PostParser(postObject).Parse();
 
             const mentioned = parsedPost.mentionedUsers.mentionedUsers;
@@ -91,7 +90,6 @@ export class Post {
             }
             pipeline.exec();
 
-            // TODO: Extract to a method in notification class 
             if (mentioned.length !== 0) {
                 const users = await UserModel.find({ userTag: { $in: mentioned } }, { password: 0 }).lean().exec();
 
@@ -245,7 +243,7 @@ export class Post {
                         author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
                         userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec();
                         new Notification(userFcmToken, {
-                            body: comment.text !== undefined ? post.text : 'Media',
+                            body: comment.text !== undefined ? comment.text : 'Media',
                             title: `${actor.userTag} liked your comment`,
                             sound: 'default',
                         }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
