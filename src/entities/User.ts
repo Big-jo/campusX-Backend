@@ -131,11 +131,6 @@ export class User {
                     target: targetUserID,
                 });
 
-                // TODO: Add typings support for FCM-NODE
-                // TODO: Make notifications function async
-                // const notif = new Notifications('Campus', `${target!.userTag} followed you`, target!.fcm_token);
-                // notif.send();
-
                 following.save();
                 follow.save();
                 const follower = await UserModel.findByIdAndUpdate({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec();
@@ -154,7 +149,6 @@ export class User {
             } else {
                 return { error: 'You follow this user already' };
             }
-            // TODO: Send a notification to the target, informing about the follow
         } catch (error) {
             logger.error(error, error.message);
             throw new Error(error);
@@ -295,7 +289,7 @@ export class User {
                 fcm_token: user.fcm_token,
             };
 
-            return { token: Utility.createToken(payload) };
+            return { token: Utility.createToken(payload), user: {userID} };
 
         } catch (error) {
             logger.error(error.error);
