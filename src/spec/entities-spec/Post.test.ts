@@ -2,7 +2,6 @@ import chai from 'chai';
 import mongoose from 'mongoose';
 import { expect } from 'chai';
 import { describe } from 'mocha';
-
 import { User } from '../../entities/User';
 import { Post } from '../../entities/Post';
 import IORedis from 'ioredis';
@@ -32,6 +31,11 @@ async function GenerateUsers(numberOfUsers: number) {
     return generated;
 }
 
+
+Db.on('disconnected', () => {
+    logger.info('disconnected mongo ')
+})
+
 before(done => {
 
     //  MongoDB Connection
@@ -39,7 +43,7 @@ before(done => {
     mongoose.connect(URI, {
         useNewUrlParser: true,
         useFindAndModify: false,
-    });
+    })
 
     // tslint:disable-next-line: no-console
     Db.on('error', console.error.bind(console, 'MongoDB connection error'));
@@ -60,7 +64,7 @@ before(done => {
         throw new Error(err.message);
     });
 
-    const x = UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
+    UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
         user01 = x[0]._id;
         user02 = x[1]._id;
         mockedPosts = [{
@@ -74,6 +78,11 @@ before(done => {
         }] as IPost[];
         done();
     });
+});
+
+after(done => {
+    primaryCache.quit();
+    return mongoose.disconnect(done);
 });
 
 describe('Post Interaction', () => {

@@ -39,8 +39,9 @@ before(() => {
     });
 });
 
-after(() => {
-    Db.close();
+after(done => {
+    primaryCache.quit();
+    return mongoose.disconnect(done);
 });
 
 describe('User Methods', () => {
@@ -141,7 +142,7 @@ describe('User Methods', () => {
     });
 
     it('should return users and show if they are in the same campus', async () => {
-        const result = await User.ConnectUser((await GetUserIDs())[1], 0);
+        const result = await User.ConnectUser((await GetUserIDs())[1], 'sameCampus', 'Bells University Of Technology', null );
         expect(result).to.have.property('connectUsers');
         expect(result.connectUsers).to.be.an('array');
         expect(result.connectUsers.length).to.be.greaterThan(0);
