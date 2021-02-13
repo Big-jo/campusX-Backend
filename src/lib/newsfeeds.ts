@@ -55,11 +55,11 @@ export class Newsfeed {
             /**
              * Emitter that disperses a post to each user when a following posts
              */
-            feedEmitter1.on('pull-socketIDs', (eventData) => {
+            feedEmitter1.on('pull-socketIDs', eventData => {
                 const filteredIDs = eventData.filteredIDs;
                 for (const id of filteredIDs) {
                     if (id !== null) {
-                        io.to(id).emit('updated-feed', eventData.post[0]);
+                        io.to(id).emit('updated-feed', [{newPost: eventData.post[0]}]);
                     }
                 }
             });
