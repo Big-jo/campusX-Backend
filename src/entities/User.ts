@@ -4,7 +4,6 @@ import bcrypt from 'bcrypt';
 import { logger } from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
-import PostModel from '../models/Post.model';
 import { Utility } from '@lib';
 import { S3 } from '@lib';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
@@ -29,7 +28,6 @@ export class User {
                 // check if userTag is available
                 const foundUser = await UserModel.findOne({ userTag: userObject.userTag }).exec();
                 if (foundUser) {
-                    console.log(foundUser);
                     return { exists: true, err_message: 'This userTag has been taken already' };
                 } else {
                     const user = new UserModel({
@@ -86,7 +84,7 @@ export class User {
                         campus: user.userProfile.university,
                         name: user.name,
                         avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
-                        fcm_token: user.fcm_token
+                        fcm_token: user.fcm_token,
                     };
 
                     const token = Utility.createToken(payload);
@@ -133,17 +131,12 @@ export class User {
                     target: targetUserID,
                 });
 
-                // TODO: Add typings support for FCM-NODE
-                // TODO: Make notifications function async
-                // const notif = new Notifications('Campus', `${target!.userTag} followed you`, target!.fcm_token);
-                // notif.send();
-
                 following.save();
                 follow.save();
                 const follower = await UserModel.findByIdAndUpdate({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec();
                 const user = await UserModel.findByIdAndUpdate({ _id: targetUserID }, { $inc: { 'userProfile.followers': 1 } }).exec();
 
-                const deviceToken = user.fcm_token
+                const deviceToken = user.fcm_token;
                 new Notification(deviceToken, {
                     title: 'New Follower',
                     body: `${follower.userTag} followed you`,
@@ -156,7 +149,6 @@ export class User {
             } else {
                 return { error: 'You follow this user already' };
             }
-            // TODO: Send a notification to the target, informing about the follow
         } catch (error) {
             logger.error(error, error.message);
             throw new Error(error);
@@ -297,7 +289,7 @@ export class User {
                 fcm_token: user.fcm_token,
             };
 
-            return { token: Utility.createToken(payload) };
+            return { token: Utility.createToken(payload), user: {userID} };
 
         } catch (error) {
             logger.error(error.error);
@@ -348,26 +340,17 @@ export class User {
         }
     }
 
-    public static async ConnectUser(userID: string, offset: number) {
-        const [user, users] = await Promise.all([UserModel.findById(userID).lean().exec(), UserModel.paginate({}, {
-            offset,
-            limit: 10,
-            select: 'name userProfile userTag _id',
-            lean: true,
-        },
-        )]);
+    public static async ConnectUser(userID: string, filter: string , campus: string,offset: number) {
+        // variable declarations
+        // let users;
+        let connectUsers;
 
-        const connectUsers = [];
-
-        for (const userObject of users.docs as any) {
-            if (userObject.id !== userID) {
-                userObject.userProfile.university === user.userProfile.university ? userObject.sameCampus = true : userObject.sameCampus = false;
-                connectUsers.push(userObject);
-            }
+        if (filter === 'sameCampus') {
+            connectUsers = await UserModel.find({ 'userProfile.university': campus }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
+        } else {
+            connectUsers = await UserModel.find({ 'userProfile.university': {$ne: campus} }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
         }
 
-        return {
-            connectUsers,
-        };
+        return {connectUsers};
     }
 }

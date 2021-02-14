@@ -13,7 +13,6 @@ import * as http from 'http';
 import { Newsfeed } from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
-import { Tasks } from './lib/tasks';
 import IORedis from 'ioredis';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;

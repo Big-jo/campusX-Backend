@@ -1,20 +1,20 @@
 import PostModel from '../models/Post.model';
 import UserModel from '../models/User.model';
-import { IComment, IPost } from '../interfaces/IPost';
-import { logger } from '@shared';
-import FollowsModel, { IFollower } from '../models/Follower.model';
+import {IComment, IPost} from '../interfaces/IPost';
+import {logger} from '@shared';
+import FollowsModel, {IFollower} from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
-import { S3 } from '@lib';
-import { Types } from 'mongoose';
+import {S3} from '@lib';
+import {Types} from 'mongoose';
 import moment from 'moment';
 import CirclePostModel from '../models/CirclePost.model';
-import { AggregationQueries } from '@lib';
-import { Notification } from '../lib/notifications';
-import { IUser } from '../interfaces/IUser';
+import {AggregationQueries} from '@lib';
+import {Notification} from '../lib/notifications';
+import {IUser} from '../interfaces/IUser';
 import EventEmitter from 'events';
-import { Newsfeed } from '../lib/newsfeeds';
-import { PostParser } from '../lib/postParser';
+import {Newsfeed} from '../lib/newsfeeds';
+import {PostParser} from '../lib/postParser';
 
 interface IOptions {
     mostRecent?: boolean;
@@ -41,8 +41,7 @@ export class Post {
     // tslint:disable-next-line: max-line-length
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
         try {
-            // TODO: Add check for mentions and hashTags      
-            const parsedPost = await new PostParser(postObject).Parse()
+            const parsedPost = await new PostParser(postObject).Parse();
 
             const mentioned = parsedPost.mentionedUsers.mentionedUsers;
             const hashTags = parsedPost.hashTags.hashTags;
@@ -55,15 +54,15 @@ export class Post {
                 parentPost: postObject.parentPost,
                 createdAt: moment().valueOf(),
                 hashTags,
-                mentions: mentioned
+                mentions: mentioned,
             });
 
-            if (postObject.image !== '') {
+            if (postObject.image !== undefined) {
                 const s3 = new S3(post.id + 'image', postObject.image, 'image');
                 post.image = await s3.UploadImage() as string;
             }
 
-            if (postObject.video !== '') {
+            if (postObject.video !== undefined) {
                 const s3 = new S3(post.id + 'video', postObject.video, 'video');
                 post.video = await s3.UploadVideo() as string;
             }
@@ -71,13 +70,13 @@ export class Post {
             post = await post.save();
 
             // Update the post_count in users document
-            const author = await UserModel.findOneAndUpdate({ _id: userID }, { $inc: { 'userProfile.post_count': 1 } }).lean().exec();
+            const author = await UserModel.findOneAndUpdate({_id: userID}, {$inc: {'userProfile.post_count': 1}}).lean().exec();
 
-            const followers: IFollower[] = await FollowsModel.find({ target: userID }).lean().exec();
+            const followers: IFollower[] = await FollowsModel.find({target: userID}).lean().exec();
             /**
-             * Small art of deciption here to add post to the user's feed 
+             * Small art of deciption here to add post to the user's feed
              */
-            followers.push({ target: null, follower: userID } as IFollower);
+            followers.push({target: null, follower: userID} as IFollower);
 
             //  Offload this work to another thread
             const pipeline = primaryCache.pipeline();
@@ -91,24 +90,22 @@ export class Post {
             }
             pipeline.exec();
 
-            // TODO: Extract to a method in notification class 
             if (mentioned.length !== 0) {
-                const users = await UserModel.find({ userTag: { $in: mentioned } }, { password: 0 }).lean().exec();
+                const users = await UserModel.find({userTag: {$in: mentioned}}, {password: 0}).lean().exec();
 
                 users.forEach((user: IUser) => {
                     new Notification(user.fcm_token, {
                         body: `${post.text}`,
                         title: `${author.userTag} mentioned you`,
-                    }, user._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification()
-                })
+                    }, user._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification();
+                });
             }
 
-
             // Get post from DB
-            let newPost = await AggregationQueries.GetPost(post._id);
+            const newPost = await AggregationQueries.GetPost(post._id);
 
-            /** 
-             * Setup redis pipline to get all user's followers that are connected 
+            /**
+             * Setup redis pipline to get all user's followers that are connected
              **/
             const p = primaryCache.pipeline();
 
@@ -119,8 +116,8 @@ export class Post {
             const result = await p.exec();
 
             // filter errors
-            const filteredIDs = result.map((r) => r[1])
-            feedEmitter1.emit('pull-socketIDs', { filteredIDs, post: newPost });
+            const filteredIDs = result.map(r => r[1]);
+            feedEmitter1.emit('pull-socketIDs', {filteredIDs, post: newPost});
 
         } catch (error) {
             logger.error(error);
@@ -142,7 +139,7 @@ export class Post {
                     primaryCache.zremrangebyscore(userID, 0, unixNow);
 
                     // Get all the postIDs in the users newsfeed
-                    const postKeys = await primaryCache.zrevrange(userID, options.offset, options.limit);
+                    const postKeys = await primaryCache.zrevrange(userID, 0, -1);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
                     primaryCache.srem('dirty', userID);
@@ -154,12 +151,12 @@ export class Post {
                     const newsfeed = await this.Hydrate(objectIDs, userID);
 
                     // const posts = await primaryCache.
-                    return { newsfeed };
+                    return {newsfeed};
 
                 } else {
-                    return { error_msg: "Feed is empty, follow some folks " }
+                    return {error_msg: 'Feed is empty, follow some folks '};
                     //  Find a way to get posts for users that have not been online in a while 
-                } //else {
+                } // else {
                 //     // TODO: Optimize this block
 
                 //     // Get people user follows
@@ -173,8 +170,6 @@ export class Post {
                 //     followings.forEach((x: { target: string; }) => {
                 //         arr.push(x.target);
                 //     });
-
-
 
                 //     const newsfeed = await PostModel.find({ author: { $in: arr } }).limit(800).sort({ createdAt: -1 }).exec();
 
@@ -203,9 +198,9 @@ export class Post {
     public static async LikePost(userID: string, postID: string, collection: string, primaryCache: IORedis.Redis) {
         try {
             let likedBy: any;
-            const findLikedByQuery = { _id: postID, likedBy: { $in: [userID] } };
-            const updateLikeQuery = { $inc: { likes: 1 }, $push: { likedBy: userID } };
-            const updateUserQuery = { $inc: { 'userProfile.rep_points': 0.25 } };
+            const findLikedByQuery = {_id: postID, likedBy: {$in: [userID]}};
+            const updateLikeQuery = {$inc: {likes: 1}, $push: {likedBy: userID}};
+            const updateUserQuery = {$inc: {'userProfile.rep_points': 0.25}};
             let userFcmToken: string;
             let author;
 
@@ -233,54 +228,60 @@ export class Post {
                 switch (collection) {
                     case 'post':
                         const post = await PostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
-                        userFcmToken = (await UserModel.findById(post.author, { fcm_token: 1, _id: 0 }).lean().exec()).fcm_token;
+                        userFcmToken = (await UserModel.findById(post.author, {
+                            fcm_token: 1,
+                            _id: 0
+                        }).lean().exec()).fcm_token;
                         author = await UserModel.findByIdAndUpdate(post.author, updateUserQuery).exec();
                         new Notification(userFcmToken, {
                             body: post.text !== undefined ? post.text : 'Media',
                             title: `${actor.userTag} liked your post`,
-                            sound: "default",
+                            sound: 'default',
                         }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
 
-                        return { result: 'liked' };
+                        return {result: 'liked'};
 
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
-                        author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
-                        userFcmToken = await UserModel.findById(comment.author, { fcm_token: 1 }).lean().exec()
-                        new Notification(userFcmToken, {
-                            body: comment.text !== undefined ? post.text : 'Media',
-                            title: `${actor.userTag} liked your comment`,
-                            sound: "default",
-                        }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification()
-
-                        return { result: 'liked' };
+                        if (comment === null) {
+                            throw new Error('Author missing');
+                        } else {
+                            author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
+                            userFcmToken = await UserModel.findById(comment.author, {fcm_token: 1}).lean().exec();
+                            new Notification(userFcmToken, {
+                                body: comment.text !== undefined ? comment.text : 'Media',
+                                title: `${actor.userTag} liked your comment`,
+                                sound: 'default',
+                            }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
+                            return {result: 'liked'};
+                        }
 
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQuery).exec();
-                        return { result: 'liked' };
+                        return {result: 'liked'};
 
                     default:
                         break;
                 }
             } else {
-                const updateUnLikeQuery = { $inc: { likes: -1 }, $pull: { likedBy: { $in: [userID] } } };
-                const updateUserQueryNegate = { $inc: { 'userProfile.rep_points': -0.25 } };
+                const updateUnLikeQuery = {$inc: {likes: -1}, $pull: {likedBy: {$in: [userID]}}};
+                const updateUserQueryNegate = {$inc: {'userProfile.rep_points': -0.25}};
 
                 switch (collection) {
                     case 'post':
                         // TODO: Remove userID from list
                         const post = await PostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(post.author, updateUserQueryNegate).exec();
-                        return { result: 'unliked' };
+                        return {result: 'unliked'};
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(comment.author, updateUserQueryNegate).exec();
-                        return { result: 'unliked' };
+                        return {result: 'unliked'};
                     case 'circlePost':
                         const circlePost = await CirclePostModel.findByIdAndUpdate(postID, updateUnLikeQuery).lean().exec();
                         UserModel.findByIdAndUpdate(circlePost.author, updateUserQueryNegate).exec();
-                        return { result: 'unliked' };
+                        return {result: 'unliked'};
                     default:
                         break;
                 }
@@ -296,8 +297,8 @@ export class Post {
         // TODO: Check if post has been disliked already, if it has, undislike it, check if it has been liked too
         try {
 
-            PostModel.findByIdAndUpdate(postID, { $inc: { dislikes: 1 } }).exec();
-            UserModel.findByIdAndUpdate(userID, { $inc: { 'userProfile.rep_points': 0.20 } }).exec();
+            PostModel.findByIdAndUpdate(postID, {$inc: {dislikes: 1}}).exec();
+            UserModel.findByIdAndUpdate(userID, {$inc: {'userProfile.rep_points': 0.20}}).exec();
             postCache.hincrby(postID, 'likes', 1);
 
             return 0;
@@ -310,20 +311,21 @@ export class Post {
         try {
             let authorOfPost;
 
-            if (commentObject.type === "reply") {
+            if (commentObject.type === 'reply') {
                 authorOfPost = await CommentModel.findByIdAndUpdate(commentObject.parentPost, {
                     $inc: {
-                        comments: 1
-                    }
+                        comments: 1,
+                    },
                 }).lean().exec();
             } else {
                 authorOfPost = await PostModel.findByIdAndUpdate(commentObject.parentPost, {
                     $inc: {
-                        comments: 1
-                    }
+                        comments: 1,
+                    },
                 }).lean().exec();
 
             }
+
             const user = await UserModel.findById(commentObject.author).exec();
 
             const mentions = await (new PostParser(commentObject).Parse());
@@ -349,20 +351,20 @@ export class Post {
             comment.save();
 
             new Notification(fcm_token, {
-                body: commentObject.text !== undefined ? commentObject.text : "Media",
-                title: `${user.userTag} replied to your comment`,
-            }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification()
+                body: commentObject.text !== undefined ? commentObject.text : 'Media',
+                title: commentObject.type === 'reply' ? `${user.userTag} replied to your comment` : `${user.userTag} commented on your post`,
+            }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification();
 
-            // Notify mentionsed users
+            // Notify mentioned users
             if (mentionedUsers.length !== 0) {
-                const users = await UserModel.find({ userTag: { $in: mentionedUsers } }, { password: 0 }).lean().exec();
+                const users = await UserModel.find({userTag: {$in: mentionedUsers}}, {password: 0}).lean().exec();
 
                 users.forEach((user0: IUser) => {
                     new Notification(user0.fcm_token, {
                         body: `${comment.text}`,
                         title: `${user.userTag} mentioned you`,
-                    }, user0._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification()
-                })
+                    }, user0._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification();
+                });
             }
 
         } catch (e) {
@@ -384,11 +386,11 @@ export class Post {
         try {
             const aggregate = [
                 {
-                    $match: { parentPost: Types.ObjectId(parentPostID) },
+                    $match: {parentPost: Types.ObjectId(parentPostID)},
                 },
                 {
                     $addFields: {
-                        isLiked: { $in: [userID, '$likedBy'] },
+                        isLiked: {$in: [userID, '$likedBy']},
                     },
                 },
                 {
@@ -399,10 +401,10 @@ export class Post {
                 {
                     $lookup: {
                         from: 'users',
-                        let: { authorID: '$author' },
+                        let: {authorID: '$author'},
                         pipeline: [
-                            { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                            { $project: { password: 0, email: 0 } },
+                            {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
+                            {$project: {password: 0, email: 0}},
                         ],
                         as: 'author',
                     },
@@ -410,7 +412,7 @@ export class Post {
                 {
                     $sort: {
                         likes: -1,
-                        createdAt: -1
+                        createdAt: -1,
                     },
                 },
             ];
@@ -423,7 +425,7 @@ export class Post {
             const agg = CommentModel.aggregate(aggregate);
             // @ts-ignore
             const comments = await CommentModel.aggregatePaginate(agg, options);
-            return { comments: comments.docs };
+            return {comments: comments.docs};
 
         } catch (e) {
             logger.error(e);
@@ -433,12 +435,13 @@ export class Post {
 
     public static async CheckFeedStatus(userID: string, primaryCache: IORedis.Redis) {
         if (await primaryCache.sismember('dirty', userID) === 1) {
-            return { newsfeedStatus: 'dirty' };
+            return {newsfeedStatus: 'dirty'};
         } else {
-            return { newsfeedStatus: 'sanitized' };
+            return {newsfeedStatus: 'sanitized'};
         }
 
     }
+
     /**
      * Retrives posts from cache`
      *
@@ -456,7 +459,10 @@ export class Post {
 
     public static async AddToFeed(userID: string, targetID: string, primaryCache: IORedis.Redis) {
         try {
-            const RecentPosts = await PostModel.find({ author: targetID, createdAt: { $gte: new Date().getTime() - (48 * 60 * 60 * 1000) } }, { _id: 1 }).lean().exec();
+            const RecentPosts = await PostModel.find({
+                author: targetID,
+                createdAt: {$gte: new Date().getTime() - (48 * 60 * 60 * 1000)}
+            }, {_id: 1}).lean().exec();
             const pipeline = primaryCache.pipeline();
 
             const ttl_time = process.env.POST_EXPIRE;
