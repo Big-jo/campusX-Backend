@@ -82,6 +82,11 @@ export class AggregationQueries {
                 $match: { _id: postID },
             },
             {
+                $addFields: {
+                    isLiked: { $in: [postID, '$likedBy'] },
+                },
+            },
+            {
                 $project: {
                     likedBy: 0,
                 },
