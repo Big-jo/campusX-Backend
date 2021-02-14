@@ -61,7 +61,7 @@ const app = express();
 //  Setup socketIO
 const server = http.createServer(app);
 
-const io = socketIO.listen(server);
+const io = socketIO.listen(server, {path: '/timeline'});
 
 const newsfeed = new Newsfeed(io);
 // Handle Websockets
