@@ -18,7 +18,7 @@ export class Notification {
                 private userID: string,
                 private avatar: string,
                 private category: string,
-                private primaryCache: IORedis.Redis) { // Allowed categories: like, comment, mention
+                ) { // Allowed categories: like, comment, mention
 
         try {// Allowed categories: like, comment, mention
             const notif = {

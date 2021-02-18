@@ -97,7 +97,7 @@ export class Post {
                     new Notification(user.fcm_token, {
                         body: `${post.text}`,
                         title: `${author.userTag} mentioned you`,
-                    }, user._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification();
+                    }, user._id, user.userProfile.avatar, 'mention').SendPushNotification();
                 });
             }
 
@@ -195,7 +195,7 @@ export class Post {
 
     }
 
-    public static async LikePost(userID: string, postID: string, collection: string, primaryCache: IORedis.Redis) {
+    public static async LikePost(userID: string, postID: string, collection: string, primaryCache: IORedis.Redis, fcm_token: string) {
         try {
             let likedBy: any;
             const findLikedByQuery = {_id: postID, likedBy: {$in: [userID]}};
@@ -237,7 +237,7 @@ export class Post {
                             body: post.text !== undefined ? post.text : 'Media',
                             title: `${actor.userTag} liked your post`,
                             sound: 'default',
-                        }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
+                        }, author.id, actor.userProfile.avatar, 'like').SendPushNotification();
 
                         return {result: 'liked'};
 
@@ -246,13 +246,12 @@ export class Post {
                         if (comment === null) {
                             throw new Error('Author missing');
                         } else {
-                            author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).exec();
-                            userFcmToken = await UserModel.findById(comment.author, {fcm_token: 1}).lean().exec();
-                            new Notification(userFcmToken, {
+                            author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).lean().exec();
+                                new Notification(fcm_token, {
                                 body: comment.text !== undefined ? comment.text : 'Media',
                                 title: `${actor.userTag} liked your comment`,
                                 sound: 'default',
-                            }, author.id, actor.userProfile.avatar, 'like', primaryCache).SendPushNotification();
+                            }, author.id, actor.userProfile.avatar, 'like').SendPushNotification();
                             return {result: 'liked'};
                         }
 
@@ -353,7 +352,7 @@ export class Post {
             new Notification(fcm_token, {
                 body: commentObject.text !== undefined ? commentObject.text : 'Media',
                 title: commentObject.type === 'reply' ? `${user.userTag} replied to your comment` : `${user.userTag} commented on your post`,
-            }, authorOfPost.author, user.userProfile.avatar, 'comment', primaryCache).SendPushNotification();
+            }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification();
 
             // Notify mentioned users
             if (mentionedUsers.length !== 0) {
@@ -363,7 +362,7 @@ export class Post {
                     new Notification(user0.fcm_token, {
                         body: `${comment.text}`,
                         title: `${user.userTag} mentioned you`,
-                    }, user0._id, user.userProfile.avatar, 'mention', primaryCache).SendPushNotification();
+                    }, user0._id, user.userProfile.avatar, 'mention').SendPushNotification();
                 });
             }
 
