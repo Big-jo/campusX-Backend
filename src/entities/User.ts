@@ -254,6 +254,13 @@ export class User {
                     update[key] = updates[key];
                 }
             }
+            
+            if (update.password !== undefined) {
+                const rounds = await bcrypt.genSalt(10);
+                // Hash Password
+                update.password = await bcrypt.hash(updates.password, rounds);
+            }
+
             const updated = await UserModel.findOneAndUpdate({ _id: userID }, { $set: update }).lean().exec();
             const payload: ITokenPayload = {
                 avatar: updated.userProfile.avatar,
