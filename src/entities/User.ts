@@ -498,4 +498,14 @@ export class User {
       return { changed: false };
     }
   }
+
+  public static async deleteOTP(email: string) {
+    await UserModel.findOneAndUpdate(
+      { email: email },
+      {
+        $set: { otp: undefined },
+      },
+      { strict: false }
+    );
+  }
 }

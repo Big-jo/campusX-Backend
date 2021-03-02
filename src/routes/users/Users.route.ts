@@ -326,19 +326,24 @@ router.post(resetUserPassword, auth, async (req: Request, res: Response) => {
       // Get user with email
       const { emailUser } = await User.GetUserWithEmail(req.token.toString());
       if (emailUser) {
-        if (emailUser.otp.toString() === otp.toString()) {
-          // Change password
-          const { changed } = await User.changePassword(
-            emailUser.email,
-            newpassword
-          );
-          if (changed) {
-            res.status(OK).json({ message: "User password has been reset" });
+        if (emailUser.otp) {
+          if (emailUser.otp.toString() === otp.toString()) {
+            // Change password
+            const { changed } = await User.changePassword(
+              emailUser.email,
+              newpassword
+            );
+            if (changed) {
+              await User.deleteOTP(emailUser.email);
+              res.status(OK).json({ message: "User password has been reset" });
+            } else {
+              res.status(401).json({ message: "Error reseting password" });
+            }
           } else {
-            res.status(401).json({ message: "Error reseting password" });
+            res.status(401).json({ message: "Invalid otp" });
           }
         } else {
-          res.status(401).json({ message: "Invalid otp" });
+          res.status(401).json({ message: "Expired otp" });
         }
       } else {
         res.status(401).json({ message: "Invalid token" });
