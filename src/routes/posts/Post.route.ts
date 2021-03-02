@@ -100,7 +100,7 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             hashTags: null
         };
 
-        const result = await Post.Comment(commentObject, req.token.fcm_token, res.locals.primaryCache);
+        const result = await Post.Comment(commentObject, req.body.fcm_token, res.locals.primaryCache);
         res.status(CREATED).send();
     } catch (e) {
         logger.error(e);
