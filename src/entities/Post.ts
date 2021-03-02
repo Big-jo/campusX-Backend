@@ -244,10 +244,10 @@ export class Post {
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         if (comment === null) {
-                            throw new Error('Author missing');
+                            throw new Error('Cannot find comment');
                         } else {
                             author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).lean().exec();
-                                new Notification(fcm_token, {
+                            new Notification(fcm_token, {
                                 body: comment.text !== undefined ? comment.text : 'Media',
                                 title: `${actor.userTag} liked your comment`,
                                 sound: 'default',
@@ -349,9 +349,10 @@ export class Post {
             comment.commentID = comment.id;
             comment.save();
 
+            // Get fcm_token of the recipient
             new Notification(fcm_token, {
                 body: commentObject.text !== undefined ? commentObject.text : 'Media',
-                title: commentObject.type === 'reply' ? `${user.userTag} replied to your comment` : `${user.userTag} commented on your post`,
+                title: commentObject.type === 'reply' ? `${user.userTag} replied your comment` : `${user.userTag} commented on your post`,
             }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification();
 
             // Notify mentioned users
