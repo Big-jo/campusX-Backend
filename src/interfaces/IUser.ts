@@ -1,14 +1,14 @@
-import {Document, PaginateModel} from 'mongoose';
+import { Document, PaginateModel } from "mongoose";
 
 export interface IUserProfile {
-    avatar?: string; // If Male, set avatar to a male placeholder image
-    university: string;
-    department: string;
-    gender: string;
-    rep_points?: string;
-    bio: string;
-    // TODO: Test lastseen feature 
-    lastSeen: Date;
+  avatar?: string; // If Male, set avatar to a male placeholder image
+  university: string;
+  department: string;
+  gender: string;
+  rep_points?: string;
+  bio: string;
+  // TODO: Test lastseen feature
+  lastSeen: Date;
 }
 
 // export interface IUserModel extends Document{
@@ -28,14 +28,15 @@ export interface IUserProfile {
 // }
 
 export interface IUser extends Document {
-    name: string;
-    userID?: string;
-    userTag: string;
-    email: string;
-    password: string;
-    userProfile: IUserProfile;
-    phone_number: string;
-    fcm_token: string;
+  name: string;
+  userID?: string;
+  userTag: string;
+  email: string;
+  password: string;
+  userProfile: IUserProfile;
+  phone_number: string;
+  fcm_token: string;
+  otp?: string;
 }
 
-export interface IUserModel <T extends Document> extends PaginateModel<T> {}
+export interface IUserModel<T extends Document> extends PaginateModel<T> {}
