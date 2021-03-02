@@ -319,11 +319,12 @@ router.post(resetUserPassword, auth, async (req: Request, res: Response) => {
   const authToken = req.header("AuthToken");
   // body
   const { newpassword, otp } = req.body;
+  console.log(req.token);
   // Check Auth Token
   if (authToken !== null && authToken === process.env.AUTH_TOKEN) {
     if (newpassword && otp) {
       // Get user with email
-      const { emailUser } = await User.GetUserWithEmail(req.token.userID);
+      const { emailUser } = await User.GetUserWithEmail(req.token.toString());
       if (emailUser) {
         if (emailUser.otp.toString() === otp.toString()) {
           // Change password
