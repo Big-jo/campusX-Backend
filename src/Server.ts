@@ -14,6 +14,7 @@ import { Newsfeed } from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import IORedis from 'ioredis';
+import { Chat } from './entities/Chat/Chat';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -62,7 +63,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = socketIO.listen(server, {path: '/timeline'});
-const newsfeed = new Newsfeed(io);
+const chatIO = socketIO.listen(server, {path: '/chat'});
+new Newsfeed(io);
+new Chat(chatIO, primaryCache);
+
 // Handle Websockets
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
