@@ -77,7 +77,6 @@ before(done => {
                author: user02,
                text: faker.lorem.sentences(10),
            }] as IPost[];
-           done();
        } catch (e) {
            logger.error(e);
        }
