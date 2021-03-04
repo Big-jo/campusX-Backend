@@ -65,18 +65,22 @@ before(done => {
     });
 
     UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
-        user01 = x[0]._id;
-        user02 = x[1]._id;
-        mockedPosts = [{
-            campus: faker.company.companyName(),
-            author: user01,
-            text: faker.lorem.sentences(10),
-        }, {
-            campus: faker.company.companyName(),
-            author: user02,
-            text: faker.lorem.sentences(10),
-        }] as IPost[];
-        done();
+       try{
+           user01 = x[0]._id;
+           user02 = x[1]._id;
+           mockedPosts = [{
+               campus: faker.company.companyName(),
+               author: user01,
+               text: faker.lorem.sentences(10),
+           }, {
+               campus: faker.company.companyName(),
+               author: user02,
+               text: faker.lorem.sentences(10),
+           }] as IPost[];
+           done();
+       } catch (e) {
+           logger.error(e);
+       }
     });
 });
 
