@@ -6,7 +6,7 @@ import { User } from '../../entities/User';
 import { Post } from '../../entities/Post';
 import IORedis from 'ioredis';
 import { logger } from '../../shared';
-import { IPost, IComment } from '../../interfaces';
+import {IPost, IComment, IUser} from '../../interfaces';
 import PostModel from '../../models/Post.model';
 import CommentModel from '../../models/Comment.model';
 import faker from 'faker';
@@ -64,23 +64,35 @@ before(done => {
         throw new Error(err.message);
     });
 
-    UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
-       try{
-           user01 = x[0]._id;
-           user02 = x[1]._id;
-           mockedPosts = [{
-               campus: faker.company.companyName(),
-               author: user01,
-               text: faker.lorem.sentences(10),
-           }, {
-               campus: faker.company.companyName(),
-               author: user02,
-               text: faker.lorem.sentences(10),
-           }] as IPost[];
-       } catch (e) {
-           logger.error(e);
-       }
-    });
+    const user = [
+        {
+            name: `${faker.name.firstName(1)} ${faker.name.lastName(1)}`,
+            userTag: faker.internet.userName(),
+            email: faker.internet.email(),
+            password: '111',
+            userProfile: {
+                bio: faker.lorem.sentence(10),
+                gender: 'male',
+                university: 'Bells University Of Technology',
+                avatar: 'https://picsum.photos/200/300',
+            },
+        },
+        {
+            name: `${faker.name.firstName(0)} ${faker.name.lastName(0)}`,
+            userTag: faker.internet.userName(),
+            email: faker.internet.email(),
+            password: '111',
+            userProfile: {
+                bio: faker.lorem.sentence(10),
+                gender: 'male',
+                university: 'Bells University Of Technology',
+                avatar: 'https://picsum.photos/200/300',
+            },
+        },
+    ] as unknown as IUser[];
+    User.CreateUser(user[0]).then(value => {
+        done();
+    }).catch(done);
 });
 
 after(done => {
@@ -89,6 +101,24 @@ after(done => {
 });
 
 describe('Post Interaction', () => {
+
+    UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
+        try{
+            user01 = x[0]._id;
+            user02 = x[1]._id;
+            mockedPosts = [{
+                campus: faker.company.companyName(),
+                author: user01,
+                text: faker.lorem.sentences(10),
+            }, {
+                campus: faker.company.companyName(),
+                author: user02,
+                text: faker.lorem.sentences(10),
+            }] as IPost[];
+        } catch (e) {
+            logger.error(e);
+        }
+    });
 
     it('Create two posts for each user', async () => {
         await Post.CreatePost(mockedPosts[0], mockedPosts[0].author, primaryCache);
