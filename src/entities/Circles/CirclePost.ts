@@ -36,6 +36,7 @@ export class CirclePost extends Post {
                     author: circlePost.author,
                     campus: circlePost.campus,
                     parentPost: circlePost.parentPost,
+                    createdAt: moment().valueOf(),
                 };
 
                 const post = new CirclePostModel(CPost);
