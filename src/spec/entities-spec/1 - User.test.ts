@@ -113,8 +113,6 @@ describe('User Methods', () => {
     });
 
     it('should follow a user', async () => {
-        Db.dropCollection('follows').catch();
-        Db.dropCollection('followings').catch();
         const r = await User.FollowUser((await GetUserIDs())[1], (await GetUserIDs())[0], primaryCache);
         expect(r).to.not.have.property('error');
     });

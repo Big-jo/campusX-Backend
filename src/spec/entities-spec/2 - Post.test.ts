@@ -33,10 +33,10 @@ async function GenerateUsers(numberOfUsers: number) {
 
 
 Db.on('disconnected', () => {
-    logger.info('disconnected mongo ')
+    logger.info('disconnected mongo ');
 })
 
-before(done => {
+before(async () => {
 
     //  MongoDB Connection
     const URI = process.env.MONGO_URI as string;
@@ -64,7 +64,7 @@ before(done => {
         throw new Error(err.message);
     });
 
-    const user = [
+    const users = [
         {
             name: `${faker.name.firstName(1)} ${faker.name.lastName(1)}`,
             userTag: faker.internet.userName(),
@@ -89,10 +89,40 @@ before(done => {
                 avatar: 'https://picsum.photos/200/300',
             },
         },
-    ] as unknown as IUser[];
-    User.CreateUser(user[0]).then(value => {
-        done();
-    }).catch(done);
+    ] as IUser[];
+
+    await User.CreateUser(users[0]);
+    await User.CreateUser(users[1]);
+
+    const [x, y] = await GenerateUsers(2);
+    // console.log(x, y);
+
+    user01 = x[0]._id;
+    user02 = y[0]._id;
+
+
+    // const user = [
+    //     {
+    //         name: `${faker.name.firstName(1)} ${faker.name.lastName(1)}`,
+    //         userTag: faker.internet.userName(),
+    //         email: faker.internet.email(),
+    //         password: '111',
+    //         userProfile: {
+    //             bio: faker.lorem.sentence(10),
+    //             gender: 'male',
+    //             university: 'Bells University Of Technology',
+    //             avatar: 'https://picsum.photos/200/300',
+    //         },
+    //     },
+    //     {
+    //         name: `${faker.name.firstName(0)} ${faker.name.lastName(0)}`,
+    //         userTag: faker.internet.userName(),
+    //         email: faker.internet.email(),
+    //         password: '111',
+    //         userProfile: {
+    //             bio: faker.lorem.sentence(10),
+    //             gender: 'male',
+    //             university: 'Bells
 });
 
 after(done => {
@@ -100,25 +130,35 @@ after(done => {
     return mongoose.disconnect(done);
 });
 
-describe('Post Interaction', () => {
+describe('Post Interaction',  () => {
+    // tslint:disable-next-line:no-shadowed-variable
 
-    UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
-        try{
-            user01 = x[0]._id;
-            user02 = x[1]._id;
-            mockedPosts = [{
-                campus: faker.company.companyName(),
-                author: user01,
-                text: faker.lorem.sentences(10),
-            }, {
-                campus: faker.company.companyName(),
-                author: user02,
-                text: faker.lorem.sentences(10),
-            }] as IPost[];
-        } catch (e) {
-            logger.error(e);
-        }
-    });
+    mockedPosts = [{
+        campus: faker.company.companyName(),
+        author: user01,
+        text: faker.lorem.sentences(10),
+    }, {
+        campus: faker.company.companyName(),
+        author: user02,
+        text: faker.lorem.sentences(10),
+    }] as IPost[];
+    // UserModel.find().sort({ _id: 1 }).lean().exec().then(x => {
+    //     try{
+    //         user01 = x[0]._id;
+    //         user02 = x[1]._id;
+    //         mockedPosts = [{
+    //             campus: faker.company.companyName(),
+    //             author: user01,
+    //             text: faker.lorem.sentences(10),
+    //         }, {
+    //             campus: faker.company.companyName(),
+    //             author: user02,
+    //             text: faker.lorem.sentences(10),
+    //         }] as IPost[];
+    //     } catch (e) {
+    //         logger.error(e);
+    //     }
+    // });
 
     it('Create two posts for each user', async () => {
         await Post.CreatePost(mockedPosts[0], mockedPosts[0].author, primaryCache);
@@ -138,14 +178,11 @@ describe('Post Interaction', () => {
     });
 
     it('should mention user in a post', async () => {
-        const user = await GenerateUsers(2);
-        const user01ID = user[0][0].id;
-        const user02Tag = user[0][0].userTag;
 
         const postObject = {
                 campus: faker.company.companyName(),
-                author: user01ID,
-                text: ` ${user02Tag} ${faker.lorem.sentences(10)}`,
+                author: user01,
+                text: ` ${user02} ${faker.lorem.sentences(10)}`,
             } as IPost;
 
         await Post.CreatePost(postObject, mockedPosts[0].author, primaryCache);
