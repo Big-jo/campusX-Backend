@@ -133,16 +133,16 @@ export class Circle {
         }
     }
 
-    public static async GetCircles(offset: number, category: { [x: string]: string }) {
+    public static async GetCircles(offset: number, category: string) {
         try {
-            const query: { [x: string]: string } = {};
-            for (const categoryElement in category) {
-                if (category.hasOwnProperty(categoryElement)){
-                    query[categoryElement] = category[categoryElement];
-                }
+            let circles;
+
+            if (category !== undefined) {
+                [circles] = await Promise.all([CircleModel.paginate({category: category.toLowerCase()}, { offset, limit: 15, sort: { members_count: -1 } })]);
+            } else {
+                 [circles] = await Promise.all([CircleModel.paginate({}, { offset, limit: 15, sort: { members_count: -1 } })]);
             }
 
-            const [circles] = await Promise.all([CircleModel.paginate(query, { offset, limit: 15, sort: { members_count: -1 } })]);
 
             return { circles: circles.docs };
         } catch (error) {

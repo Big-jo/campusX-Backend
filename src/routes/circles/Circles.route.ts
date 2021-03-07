@@ -136,7 +136,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 export const getCircles = '/list';
 router.get(getCircles, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), {category: req.query.category.toLowerCase()});
+        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), req.query.category);
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
