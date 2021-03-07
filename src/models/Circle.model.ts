@@ -1,6 +1,7 @@
-import mongoose, { Schema } from 'mongoose';
-import { ICircle } from 'src/interfaces/ICircle';
+import mongoose, { Schema, Document } from 'mongoose';
+import { ICircle, ICircleModel } from 'src/interfaces/ICircle';
 import mongoosePaginate from 'mongoose-paginate';
+
 const ModeratorSchema: Schema = new Schema({
     moderator: { type: Schema.Types.ObjectId, ref: 'User' },
 });
@@ -10,9 +11,11 @@ const CircleSchema: Schema = new Schema({
     members_count: { type: Number, default: 0 },
     description: { type: String, required: true },
     avatar: { type: String },
+    coverImage: { type: String },
     moderators: [ModeratorSchema],
+    category: { type: String, required: true },
 });
 
 CircleSchema.plugin(mongoosePaginate);
 
-export default mongoose.model<ICircle>('Circle', CircleSchema);
+export default mongoose.model<ICircleModel>('Circle', CircleSchema);

@@ -26,12 +26,25 @@ const upload = multer({ storage });
  /******************************************************************************/
 
 export const createCircle = '/create';
-router.post(createCircle, auth, upload.single('image'), async (req: Request, res: Response) => {
+const multerUploadConfig = [{
+    name: 'avatar',
+    maxCount: 1,
+}, {
+    name: 'coverImage',
+    maxCount: 1,
+}];
+
+router.post(createCircle, auth, upload.fields(multerUploadConfig), async (req: Request, res: Response) => {
     try {
+        //
         const circleObject = {
-            avatar: req.file,
+            // @ts-ignore
+            avatar: req.files.avatar[0],
+            // @ts-ignore
+            coverImage: req.files.coverImage[0],
             name: req.body.name,
             description: req.body.description,
+            category: req.body.category,
         } as ICircle;
 
         const result = await Circle.Create(circleObject, req.token.userID);
@@ -123,7 +136,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 export const getCircles = '/list';
 router.get(getCircles, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircles(parseInt(req.query.offset, 10));
+        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), {category: req.query.category.toLowerCase()});
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);

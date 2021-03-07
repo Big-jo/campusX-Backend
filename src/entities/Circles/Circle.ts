@@ -21,17 +21,22 @@ export class Circle {
             } else {
                 const newCircle = new CircleModel({
                     name: circleName,
-                    avatar: ' ',
                     description: circleObject.description,
                     moderators: [{ moderator: userID }],
+                    category: circleObject.category.toLowerCase(),
                 });
 
-                // const s3 = new S3(newCircle.id, circleObject.avatar, 'circle-avatars');
-                // newCircle.avatar = await s3.UploadCircleAvatar() as string;
+                const s3Avatar = new S3(`avatar:${newCircle.id}`, circleObject.avatar, 'circle-avatars');
+                const s3CoverImage = new S3(`coverImage:${newCircle.id}`, circleObject.coverImage, 'circle-cover-image');
+
+                newCircle.avatar = await s3Avatar.UploadCircleAvatar() as string;
+                newCircle.coverImage = await s3CoverImage.UploadCircleCoverImage() as string;
                 await newCircle.save();
 
                 // Add the user to that circle
                 this.Join(userID, newCircle.id);
+
+                return {exist: false};
             }
 
         } catch (error) {
@@ -128,9 +133,16 @@ export class Circle {
         }
     }
 
-    public static async GetCircles(offset: number) {
+    public static async GetCircles(offset: number, category: { [x: string]: string }) {
         try {
-            const [circles] = await Promise.all([CircleModel.paginate({}, { offset, limit: 15, sort: { members_count: -1 } })]);
+            const query: { [x: string]: string } = {};
+            for (const categoryElement in category) {
+                if (category.hasOwnProperty(categoryElement)){
+                    query[categoryElement] = category[categoryElement];
+                }
+            }
+
+            const [circles] = await Promise.all([CircleModel.paginate(query, { offset, limit: 15, sort: { members_count: -1 } })]);
 
             return { circles: circles.docs };
         } catch (error) {
