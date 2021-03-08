@@ -161,7 +161,7 @@ describe('Post Interaction',  () => {
     // });
 
     it('Create two posts for each user', async () => {
-        await Post.CreatePost(mockedPosts[0], mockedPosts[0].author, primaryCache);
+        await Post.CreatePost(mockedPosts[0], mockedPosts[0].author, primaryCache, {campusReflect: false});
     });
 
     // TODO: Create function to check if a user has liked a post
@@ -185,7 +185,7 @@ describe('Post Interaction',  () => {
                 text: ` ${user02} ${faker.lorem.sentences(10)}`,
             } as IPost;
 
-        await Post.CreatePost(postObject, mockedPosts[0].author, primaryCache);
+        await Post.CreatePost(postObject, mockedPosts[0].author, primaryCache, {campusReflect: false});
     });
 
     describe('Comment Operations', () => {
