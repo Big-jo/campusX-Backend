@@ -15,6 +15,7 @@ import {IUser} from '../interfaces/IUser';
 import EventEmitter from 'events';
 import {Newsfeed} from '../lib/newsfeeds';
 import {PostParser} from '../lib/postParser';
+import {bool} from 'aws-sdk/clients/signer';
 
 interface IOptions {
     mostRecent?: boolean;
@@ -37,9 +38,18 @@ export const feedEmitter1 = new EventEmitter();
 //     name = 'REPOST',
 // }
 export class Post {
-
-    // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
+    /**
+     *
+     * @param postObject - Object that contains the post
+     * @param userID - users ID
+     * @param primaryCache - Redis instance
+     * @param options - {
+     *     campusReflect: decides if the user's post should appear in the campus timeline
+     * }
+     * @constructor
+     */
+    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis,
+                                   options: {campusReflect: boolean}) {
         try {
             const parsedPost = await new PostParser(postObject).Parse();
 
@@ -88,6 +98,10 @@ export class Post {
                 pipeline.zadd(follower.follower.toString(), ttl.toString(), post.id);
                 pipeline.sadd('dirty', follower.follower);
             }
+            // Add campus name to list of campuses
+            pipeline.zadd('campuses', '0', postObject.campus);
+            // Add post to campus timeline
+            pipeline.zadd(`campusFeed:${postObject.campus}`, '0', post.id);
             pipeline.exec();
 
             if (mentioned.length !== 0) {
@@ -105,8 +119,8 @@ export class Post {
             const newPost = await AggregationQueries.GetPost(post._id);
 
             /**
-             * Setup redis pipline to get all user's followers that are connected
-             **/
+             * Setup redis pipeline to get all user's followers that are connected
+             */
             const p = primaryCache.pipeline();
 
             for (const follower of followers) {

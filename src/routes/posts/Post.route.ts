@@ -74,7 +74,7 @@ router.post(createPostPath, auth, upload.fields([{ name: 'image', maxCount: 1 },
                 anonymous: req.body.anon,
             };
 
-            Post.CreatePost(post, req.token.userID, res.locals.primaryCache);
+            Post.CreatePost(post, req.token.userID, res.locals.primaryCache, {campusReflect: req.body.campusReflect});
 
             res.status(OK).send();
         } catch (error) {
