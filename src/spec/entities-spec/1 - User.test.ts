@@ -26,8 +26,7 @@ before(() => {
         primaryCache = new IORedis();
     }
 
-    // Db.dropCollection('posts');
-    // Db.dropCollection('comments');
+    Db.dropCollection('users');
 
     primaryCache.on('connect', () => {
         logger.info('Redis Connected');

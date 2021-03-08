@@ -15,8 +15,13 @@ import faker from 'faker';
 import CircleMemberModel from '../../models/CircleMember.model';
 import CirclePostModel from '../../models/CirclePost.model';
 import UserModel from 'src/models/User.model';
+import IORedis from 'ioredis';
+import {logger} from 'src/shared';
 
 let user01: string;
+
+let primaryCache: IORedis.Redis;
+
 
 async function GenerateUsers(numberOfUsers: number) {
     let x = 0;
@@ -54,7 +59,7 @@ before(async () => {
     mongoose.set('useUnifiedTopology', true);
     mongoose.set('useCreateIndex', true);
 
-    mongoose.connect(URI, {
+    await mongoose.connect(URI, {
         useNewUrlParser: true,
         useFindAndModify: false,
         // useUnifiedTopology: true,
@@ -65,16 +70,33 @@ before(async () => {
     // tslint:disable-next-line: no-console
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
-    // await Db.dropCollection('circles');
-    // await Db.dropCollection('circlemembers');
-    // await Db.dropCollection('circles');
+    Db.dropCollection('circlemembers');
 
-    // Get A UserID
+    // Redis Connection
+    if (process.env.NODE_ENV === 'development') {
+        primaryCache = new IORedis();
+    }
+
+    primaryCache.on('connect', args => {
+        logger.info('Redis Connected');
+    });
+
+    primaryCache.on('error', err => {
+        logger.error(err);
+        throw new Error(err.message);
+
+        // await Db.dropCollection('circles');
+        // await Db.dropCollection('circlemembers');
+        // await Db.dropCollection('circles');
+
+        // Get A UserID
+    });
+
     user01 = (await GenerateUsers(1))[0][0].id;
+
 });
 
 after(() => {
-    Db.dropCollection('circlemembers');
     Db.close();
 });
 
@@ -82,9 +104,11 @@ describe('Circle Tests', () => {
 
     it('should create a circle', async () => {
         const circleObject = {
-            avatar: faker.image.avatar(),
+            // avatar: faker.image.avatar(),
             description: faker.lorem.words(5),
             name: faker.company.companyName(),
+            category: 'food',
+            // coverImage: faker.image.avatar(),
         } as ICircle;
         await Circle.Create(circleObject, user01);
     });
@@ -104,12 +128,20 @@ describe('Circle Tests', () => {
     //     }).catch(done);
     // });
 
-    it('should get circles with 10 items first', done => {
-        Circle.GetCircles(0).then(value => {
+    it('should get circles', done => {
+        Circle.GetCircles(0, user01 , false, primaryCache).then((value: { circles: string | any[]; }) => {
             expect(value.circles.length).to.be.greaterThan(0);
             done();
         }).catch(done);
     });
+
+        it('should get circles in a category', done => {
+            Circle.GetCircles(0, user01 , false, primaryCache, 'food').then((value: { circles: string | any[]; }) => {
+                expect(value.circles.length).to.be.greaterThan(0);
+                expect(value.circles[0].category).to.equal('food');
+                done();
+            }).catch(done);
+        });
 
     describe('Circle Post Feed', () => {
 
