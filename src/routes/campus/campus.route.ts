@@ -13,71 +13,53 @@ import { Campus } from '../../entities/Campus';
 const router = Router();
 const path = '/campus';
 const auth = validation.validateToken;
-// let client: IORedis.Redis;
-// /******************************************************************************
-//  *                                 SETUP REDIS
-//  /******************************************************************************/
+let client: IORedis.Redis;
 
-// if (process.env.NODE_ENV === 'development') {
-//     client = new IORedis();
-// } else {
-//     const redisPort = Number(process.env.REDIS_PORT_PRIMARY);
-//     client = new IORedis(redisPort, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
-// }
+export const getCampuses = '/list';
+router.get(getCampuses, async (req: Request, res: Response) => {
+    try {
+        const result = await Campus.GetList(res.locals.primaryCache);
+        res.status(OK).json({ campuses: result });
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
 
-// client.on('connect', args => {
-//     logger.info('Redis Connected');
-// });
+export const getPost = '/posts';
+router.get(getPost, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await Campus.GetPosts(res.locals.primaryCache, req.token.campus, req.token.userID);
+        res.status(OK).json({ result });
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
 
-// client.on('error', err => {
-//     logger.error(err);
-// });
+/******************************************************************************
+*                              GET USER'S CAMPUS TRENDS
+/******************************************************************************/
 
-// export const getCampuses = '/list';
-// router.get(getCampuses, async (req: Request, res: Response) => {
-//     try {
-//         const result = await Campus.GetList(client);
-//         res.status(OK).json({ campuses: result });
-//     } catch (error) {
-//         Utility.ErrResponse(res, error);
-//     }
-// });
+export const campusTrend = '/trends/my';
+router.get(campusTrend, async (req: Request, res: Response) => {
+    // try {
+    //     console.log(req.query)
+    //     const result = await Campus.GetCampusTrend(client, req.query.campus);
+    //     res.status(OK).json({ result });
+    // } catch (error) {
+    //     Utility.ErrResponse(res, error);
+    // }
+});
 
-// export const getPost = '/posts';
-// router.get(getPost, async (req: Request, res: Response) => {
-//     try {
-//         const result = await Campus.GetPosts(client, req.body.campus);
-//         res.status(OK).json({ result });
-//     } catch (error) {
-//         Utility.ErrResponse(res, error);
-//     }
-// });
-
-// /******************************************************************************
-// *                              GET USER'S CAMPUS TRENDS
-// /******************************************************************************/
-
-// export const campusTrend = '/trends/my';
-// router.get(campusTrend, async (req: Request, res: Response) => {
-//     try {
-//         console.log(req.query)
-//         const result = await Campus.GetCampusTrend(client, req.query.campus);
-//         res.status(OK).json({ result });
-//     } catch (error) {
-//         Utility.ErrResponse(res, error);
-//     }
-// });
-
-// /******************************************************************************
-// *                            GET ALL CAMPUSES AND THEIR TRENDS
-// /******************************************************************************/
-// export const allCampusTrends = '/trends/campuses/all';
-// router.get(allCampusTrends, async (req: Request, res: Response) => {
-//     try {
-//         const result = await Campus.GetCampusesAndTrends(client);
-//         res.status(OK).json({ result });
-//     } catch (error) {
-//         Utility.ErrResponse(res, error);
-//     }
-// });
+/******************************************************************************
+*                            GET ALL CAMPUSES AND THEIR TRENDS
+/******************************************************************************/
+export const allCampusTrends = '/trends/campuses/all';
+router.get(allCampusTrends, async (req: Request, res: Response) => {
+    // try {
+    //     const result = await Campus.GetCampusesAndTrends(client);
+    //     res.status(OK).json({ result });
+    // } catch (error) {
+    //     Utility.ErrResponse(res, error);
+    // }
+});
 export default { router, path };
