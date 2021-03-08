@@ -120,10 +120,12 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 
         // tslint:disable-next-line: max-line-length
         const media = (req.file !== undefined) ? ((req.file.fieldname === 'image') ? { tag: 'image', file: req.file } : { tag: 'video', file: req.file }) : undefined;
-        const result = await CirclePost.CirclePost(post, media);
+        const result = await CirclePost.CirclePost(post, media, res.locals.primaryCache);
 
-        if (!result.error) {
+        if (result.msg !== undefined) {
             res.status(CREATED).send();
+        } else {
+            res.status(403).json({err: result.msg});
         }
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -136,8 +138,8 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 export const getCircles = '/list';
 router.get(getCircles, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), req.query.category, req.token.userID,
-            req.query.recent, res.locals.primaryCache );
+        const result = await Circle.GetCircles(parseInt(req.query.offset, 10),  req.token.userID,
+            req.query.recent, res.locals.primaryCache, req.query.category);
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -180,7 +182,9 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
     try {
         // Resolve file if any
         // @ts-ignore
-        const media = req.files.image !== undefined ? {type: 'image', file: req.files.image[0]} : {type: 'video', file:req.files.video[0]};
+        // const media = req.files.image !== undefined ?
+        //     // @ts-ignore
+        //     {type: 'image', file: req.files.image[0]} : {type: 'video', file: req.files.video[0]}
 
         const commentObject: ICircleComment = {
             campus: req.token.campus,
@@ -192,7 +196,7 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
         };
 
         // if()
-        CirclePost.CircleComment(commentObject, media);
+        CirclePost.CircleComment(commentObject, undefined, res.locals.primaryCache);
 
         res.status(OK).send();
     } catch (error) {
@@ -206,7 +210,8 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
 export const like = '/post/like';
 router.post(like, auth, async (req: Request, res: Response) => {
     try {
-        const result = await CirclePost.LikePost(req.token.userID, req.body.postID, 'post');
+        const result = await CirclePost.LikePost(req.token.userID, req.body.postID, 'post', res.locals.primaryCache,
+            req.body.circleID);
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
