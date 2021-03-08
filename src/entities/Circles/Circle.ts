@@ -7,6 +7,7 @@ import { S3 } from '@lib';
 import { Types } from 'mongoose';
 import PostModel from '../../models/Post.model';
 import CirclePostModel from '../../models/CirclePost.model';
+import moment from 'moment';
 // import { circleFeed } from 'src/routes/circles/Circles.route';
 // import mongoose from 'mongoose';
 
@@ -133,16 +134,22 @@ export class Circle {
         }
     }
 
-    public static async GetCircles(offset: number, category: string) {
+    public static async GetCircles(offset: number, category: string, userID: string, recent: boolean, redis: IORedis.Redis) {
         try {
             let circles;
 
+            if (recent) {
+                const recentCircles = await redis.zrevrange(`visitedCircles:${userID}`, 0, 10);
+                circles = await CircleModel.find({_id: {$in: recentCircles}}).exec();
+                return {circles};
+            }
+
             if (category !== undefined) {
-                [circles] = await Promise.all([CircleModel.paginate({category: category.toLowerCase()}, { offset, limit: 15, sort: { members_count: -1 } })]);
+                [circles] = await Promise.all([CircleModel.paginate({category: category.toLowerCase()},
+                    { offset, limit: 15, sort: { members_count: -1 } })]);
             } else {
                  [circles] = await Promise.all([CircleModel.paginate({}, { offset, limit: 15, sort: { members_count: -1 } })]);
             }
-
 
             return { circles: circles.docs };
         } catch (error) {
@@ -151,9 +158,12 @@ export class Circle {
         }
     }
 
-    public static async GetCircle(circleId: string, userID: string) {
+    public static async GetCircle(circleId: string, userID: string, redis: IORedis.Redis) {
         try {
             const memberID = await CircleMemberModel.find({ userID, circle: circleId }).lean().exec();
+            // Record that this user has visited this circle in their activity feed
+            const lastVisit = moment().valueOf().toString();
+            redis.zadd(`visitedCircles:${userID}`, lastVisit, circleId);
             const circle = await CircleModel.findById(circleId).lean().exec();
             return { circle, memberID: memberID !== undefined ? memberID : null };
         } catch (error) {

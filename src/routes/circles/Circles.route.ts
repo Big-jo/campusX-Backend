@@ -134,9 +134,10 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
  *                                 GET CIRCLES
  /******************************************************************************/
 export const getCircles = '/list';
-router.get(getCircles, async (req: Request, res: Response) => {
+router.get(getCircles, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), req.query.category);
+        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), req.query.category, req.token.userID,
+            req.query.recent, res.locals.primaryCache );
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -149,7 +150,7 @@ router.get(getCircles, async (req: Request, res: Response) => {
 export const getCircle = '/circle/:circleID';
 router.get(getCircle, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircle(req.params.circleID, req.token.userID);
+        const result = await Circle.GetCircle(req.params.circleID, req.token.userID, res.locals.primaryCache);
 
         res.status(OK).json(result);
     } catch (error) {
