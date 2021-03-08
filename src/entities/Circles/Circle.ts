@@ -27,11 +27,14 @@ export class Circle {
                     category: circleObject.category.toLowerCase(),
                 });
 
-                const s3Avatar = new S3(`avatar:${newCircle.id}`, circleObject.avatar, 'circle-avatars');
-                const s3CoverImage = new S3(`coverImage:${newCircle.id}`, circleObject.coverImage, 'circle-cover-image');
+                if ((circleObject.avatar !== undefined) && (circleObject.coverImage !== undefined)) {
+                    const s3Avatar = new S3(`avatar:${newCircle.id}`, circleObject.avatar, 'circle-avatars');
+                    const s3CoverImage = new S3(`coverImage:${newCircle.id}`, circleObject.coverImage, 'circle-cover-image');
 
-                newCircle.avatar = await s3Avatar.UploadCircleAvatar() as string;
-                newCircle.coverImage = await s3CoverImage.UploadCircleCoverImage() as string;
+                    newCircle.avatar = await s3Avatar.UploadCircleAvatar() as string;
+                    newCircle.coverImage = await s3CoverImage.UploadCircleCoverImage() as string;
+                }
+
                 await newCircle.save();
 
                 // Add the user to that circle
@@ -134,7 +137,7 @@ export class Circle {
         }
     }
 
-    public static async GetCircles(offset: number, category: string, userID: string, recent: boolean, redis: IORedis.Redis) {
+    public static async GetCircles(offset: number, userID: string, recent: boolean, redis: IORedis.Redis, category?: string) {
         try {
             let circles;
 
