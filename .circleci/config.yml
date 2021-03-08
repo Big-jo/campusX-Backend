@@ -15,6 +15,7 @@
            name: Run Unit Tests
            command: |
              npm run tests
+             npm run build
  workflows:
    build_test:
      jobs:
