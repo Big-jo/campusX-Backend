@@ -156,7 +156,7 @@ describe('Circle Tests', () => {
                 parentPost: '',
             };
 
-            await CirclePost.CirclePost(circlePost, undefined);
+            await CirclePost.CirclePost(circlePost, undefined, primaryCache);
         });
 
         it('should get feed from circle ', async () => {
