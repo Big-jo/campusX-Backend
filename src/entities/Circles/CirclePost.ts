@@ -23,7 +23,7 @@ export class CirclePost extends Post {
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, media: any) {
+    public static async CirclePost(circlePost: ICirclePost, media: any, redis: IORedis.Redis) {
         try {
             const isMember = await CircleMemberModel.findById(circlePost.memberID).lean().exec();
             if (isMember !== null) {
@@ -49,7 +49,10 @@ export class CirclePost extends Post {
                     media.tag === 'image' ? post.image = await s3.UploadImage() as string : post.video = await s3.UploadImage() as string;
                 }
 
+                redis.zadd(`circlePost:${circlePost.circleID}`, '0', post.id);
+
                 await post.save();
+                return {msg: 'Created'};
             } else {
                 return { error: 'Sorry cannot post if you are not a member' };
             }
@@ -59,8 +62,10 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async LikePost(userID: string, postID: string, collection: string) {
+    public static async LikePost(userID: string, postID: string, collection: string, redis: IORedis.Redis, circleID: string) {
         try {
+            // Check if member exists in circlePosts set
+            redis.zincrby(`circlePost:${circleID}`, 1, postID);
             return (await super.LikePost(userID, postID, 'circlePost', null, null));
 
         } catch (error) {
@@ -69,7 +74,7 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async CircleComment(commentObject: ICircleComment, media: any) {
+    public static async CircleComment(commentObject: ICircleComment, media: any, redis: IORedis.Redis) {
         try {
             const comment: ICircleComment = {
                 campus: commentObject.campus,
@@ -88,24 +93,29 @@ export class CirclePost extends Post {
 
             const createdComment = new CircleCommentModel(comment);
 
-            let s3;
-
-            if (media.type === 'image') {
-                s3 = new S3(createdComment.id, media.file, 'image');
-                createdComment.image = await s3.UploadImage();
-            } else {
-                s3 = new S3(createdComment.id, media.file, 'video');
-                createdComment.video = await s3.UploadVideo();
-            }
+            // let s3;
+            //
+            // if (media.type === 'image') {
+            //     s3 = new S3(createdComment.id, media.file, 'image');
+            //     createdComment.image = await s3.UploadImage();
+            // } else {
+            //     s3 = new S3(createdComment.id, media.file, 'video');
+            //     createdComment.video = await s3.UploadVideo();
+            // }
 
             createdComment.postID = createdComment.id;
 
             createdComment.save();
+            // TODO: Indicate if the comment is a reply to a post or comment, so a reply for comment isn't scored
+            redis.zincrby(`circlePost:${commentObject.circleID}`, 1, commentObject.parentPost);
+
         } catch (error) {
             logger.error(error);
             throw new Error(error);
         }
     }
+
+
     // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
     //
     // }
