@@ -1,5 +1,5 @@
-import { Types } from "mongoose";
-import PostModel from "../models/Post.model";
+import { Types } from 'mongoose';
+import PostModel from '../models/Post.model';
 
 export class AggregationQueries {
 
