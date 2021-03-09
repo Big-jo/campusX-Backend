@@ -87,9 +87,11 @@ export class Chat {
             'userProfile.university': 1,
             'userProfile.rep_points': 1,
             'name': 1,
+            '_id': 1,
         };
 
         if (exist) {
+            // TODO: set expiration
             let conversations = await this.primaryCache.zrevrange(`conversations:${userID}`, 0, -1);
             conversations = await ConversationModel.find({_id: {$in   : conversations}})
                 .populate('sender', select)
