@@ -53,7 +53,7 @@ router.get(searchCirclePosts, async (req, res) => {
 /******************************************************************************
  *                                 SEARCH FOR USERS
  /******************************************************************************/
-const searchUser = '/user?term&criteria';
+const searchUser = '/user';
 router.get(searchUser, async (req, res) => {
     try {
         const search = new Search(req.query.term);
