@@ -337,7 +337,7 @@ export class User {
     }
 
     public static async AvailableUserTag(userTag: string) {
-        const available = await UserModel.findOne({ userTag: { $regex: userTag, $options: '$i' } });
+        const available = await UserModel.findOne({ userTag: { $regex: userTag, $options: '$i' } }).limit(20);
         if (available) {
             // Return 0 if the userTag exists
             return 0;
