@@ -17,6 +17,7 @@ import CirclePostModel from '../../models/CirclePost.model';
 import UserModel from 'src/models/User.model';
 import IORedis from 'ioredis';
 import {logger} from 'src/shared';
+import {error} from 'winston';
 
 let user01: string;
 
@@ -70,8 +71,6 @@ before(async () => {
     // tslint:disable-next-line: no-console
     Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
-    Db.dropCollection('circlemembers');
-
     // Redis Connection
     if (process.env.NODE_ENV === 'development') {
         primaryCache = new IORedis();
@@ -114,18 +113,18 @@ describe('Circle Tests', () => {
     });
 
     it('should join a circle', async () => {
+        Db.dropCollection('circlemembers');
         // Get A CircleID
         const circleID = await GetCircle();
         const value = await Circle.Join(user01, circleID.toString());
         expect(value).to.have.property('memberID');
         expect(value.memberID).to.be.a('string');
     });
-
-    // it('should leave circe', done => {
-    //     Circle.Leave(GetCircle(), user01).then((value: any) => {
-    //         expect(value).to.equal(0);
-    //         done();
-    //     }).catch(done);
+    //
+    // it('should leave circe', async () => {
+    //     const circleID = await GetCircle();
+    //     const value = await Circle.Leave(circleID.toString(), user01);
+    //
     // });
 
     it('should get circles', done => {
