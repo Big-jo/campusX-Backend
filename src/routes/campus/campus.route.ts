@@ -25,10 +25,11 @@ router.get(getCampuses, async (req: Request, res: Response) => {
     }
 });
 
-export const getPost = '/posts';
+export const getPost = '/posts/:campus';
 router.get(getPost, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Campus.GetPosts(res.locals.primaryCache, req.token.campus, req.token.userID);
+        const campus = req.params.campus === 'mine' ? req.token.campus : req.params.campus;
+        const result = await Campus.GetPosts(res.locals.primaryCache, campus, req.token.userID);
         res.status(OK).json({ result });
     } catch (error) {
         Utility.ErrResponse(res, error);
