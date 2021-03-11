@@ -96,10 +96,11 @@ export class Post {
                 const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
                 const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
                 pipeline.zadd(follower.follower.toString(), ttl.toString(), post.id);
-                pipeline.sadd('dirty', follower.follower);
             }
             // Add campus name to list of campuses
+            // TODO: Find a better way to rank active campuses
             pipeline.zadd('campuses', '0', postObject.campus);
+
             // Add post to campus timeline
             pipeline.zadd(`campusFeed:${postObject.campus}`, '0', post.id);
             pipeline.exec();
@@ -156,7 +157,6 @@ export class Post {
                     const postKeys = await primaryCache.zrevrange(userID, 0, -1);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
-                    primaryCache.srem('dirty', userID);
 
                     // Convert all keys to objectIDs
                     const objectIDs = postKeys.map(key => Types.ObjectId(key));
