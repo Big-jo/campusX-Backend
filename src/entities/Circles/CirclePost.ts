@@ -13,6 +13,9 @@ import CommentModel from '../../models/Comment.model';
 import { ICommentModel, IComment } from '../../interfaces/IPost';
 import moment from 'moment';
 import CircleCommentModel from '../../models/CircleComment.model';
+import {AggregationQueries, Utility} from '@lib';
+import sort from 'array-sort';
+import {Types} from 'mongoose';
 
 // interface ICPost {
 
@@ -115,8 +118,45 @@ export class CirclePost extends Post {
         }
     }
 
+    public static async TopPosts(userID: string, redis: IORedis.Redis) {
+        const lastVisitedCircles = await redis.zrevrange(`visitedCircles:${userID}`, 0, -1);
+        const pipeline = redis.pipeline();
+        lastVisitedCircles.forEach(circleID => {
+            pipeline.zrevrange(`circlePost:${circleID}`, 0, 10, 'WITHSCORES');
+        });
+        const circlePosts = await pipeline.exec();
 
-    // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
+        // Filter response from redis pipleline, remove error notification content,
+        const filtered = Utility.filterRedisPipeline(circlePosts);
+
+        // Filter further and sort posts and scores into an array of objects
+        const grouped = [];
+
+        for (let i = 0; i < filtered[0].length; i++) {
+            const currentElement = filtered[0][i];
+            const nextElement = filtered[0][i + 1];
+
+            if (isNaN(currentElement / 2)) {
+                grouped.push({
+                    circlePostID: Types.ObjectId(currentElement),
+                    score: parseInt(nextElement, 10),
+                });
+            }
+        }
+
+        // Sort posts by score
+        const sorted = sort(grouped, 'score', {reverse: true});
+        // Pick first 8 posts
+        const picked = sorted.slice(0, 8);
+        const postIDs = picked.map(value => value.circlePostID);
+
+        // Hydrate posts with their content
+        const hydratedPosts = await AggregationQueries.CirclePostsAggreg(userID, postIDs);
+
+        return { top: hydratedPosts};
+    }
+
+        // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
     //
     // }
 }

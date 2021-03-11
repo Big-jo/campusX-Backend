@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import PostModel from '../models/Post.model';
+import CirclePostModel from '../models/CirclePost.model';
 
 export class AggregationQueries {
 
@@ -123,5 +124,45 @@ export class AggregationQueries {
                 $gt: new Date().getTime() - (60 * 60 * 1000)
             }
         ]
+    }
+
+    public static async CirclePostsAggreg(userID: string, postIDs: Types.ObjectId[]) {
+        const query = [
+            {
+                $match: {_id: {$in: postIDs}},
+            },
+            {
+                $addFields: {
+                    isLiked: { $in: [userID, '$likedBy'] },
+                },
+            },
+            {
+                $project: {
+                    likedBy: 0,
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    let: { authorID: '$author' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                        { $project: { password: 0, email: 0 } },
+                    ],
+                    as: 'author',
+                },
+            },
+            {
+                $lookup: {
+                    from: 'circles',
+                    let: { circleID: '$circleID' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$circleID'] } } },
+                    ],
+                    as: 'circle',
+                },
+            },
+        ];
+        return (await CirclePostModel.aggregate(query));
     }
 }

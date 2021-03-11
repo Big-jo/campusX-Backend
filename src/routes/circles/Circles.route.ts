@@ -219,6 +219,19 @@ router.post(like, auth, async (req: Request, res: Response) => {
 });
 
 /******************************************************************************
+ *                      GET TOP CIRCLE POSTS
+ /******************************************************************************/
+export const top = '/post/top';
+router.get(top, auth, async (req: Request, res: Response) => {
+    try {
+        const result = await CirclePost.TopPosts(req.token.userID, res.locals.primaryCache);
+        res.status(OK).json({ result });
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
 *                                 Like A Comment
 /******************************************************************************/
 // export const likeComment = '/comment/like';
