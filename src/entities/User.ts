@@ -1,16 +1,16 @@
 import UserModel from '../models/User.model';
-import { IUser } from 'src/interfaces/IUser';
+import {IUser} from 'src/interfaces/IUser';
 import bcrypt from 'bcrypt';
-import { logger } from '@shared';
+import {logger} from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
-import { Utility } from '@lib';
-import { S3 } from '@lib';
-import { ITokenPayload } from '../interfaces/ITokenPayload';
-import { Notification } from '../lib/notifications';
-import { AggregationQueries } from '../lib/aggregationQueries';
-import { Post } from './Post';
+import {S3, Utility} from '@lib';
+import {ITokenPayload} from '../interfaces/ITokenPayload';
+import {Notification} from '../lib/notifications';
+import {AggregationQueries} from '../lib/aggregationQueries';
+import {Post} from './Post';
 import IORedis from 'ioredis';
+import random from 'random-number';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -44,8 +44,11 @@ export class User {
                         password: userObject.password,
                     });
                     user.userID = user._id;
-                    const rounds = await bcrypt.genSalt(10);
+                    // Generate random number for seed in image api
+                    const rn = random({integer: true, min: -10000, max: 10000});
+                    user.userProfile.avatar = `https://picsum.photos/seed/${rn}/500`;
 
+                    const rounds = await bcrypt.genSalt(10);
                     // Hash Password
                     user.password = await bcrypt.hash(user.password, rounds);
                     await user.save();
