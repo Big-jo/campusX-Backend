@@ -5,7 +5,7 @@ import {logger} from '@shared';
 import FollowsModel, {IFollower} from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
-import {S3} from '@lib';
+import {S3, Utility} from '@lib';
 import {Types} from 'mongoose';
 import moment from 'moment';
 import CirclePostModel from '../models/CirclePost.model';
@@ -102,8 +102,10 @@ export class Post {
             pipeline.zadd('campuses', '0', postObject.campus);
 
             // Add post to campus timeline
-            pipeline.zadd(`campusFeed:${postObject.campus}`, '0', post.id);
+            pipeline.zadd(`campusFeed:${postObject.campus}`, '0', `${postObject.campus}:${post.id}`);
             pipeline.exec();
+
+            Utility.CacheExpiryTracker('campusFeedExpiry', `${postObject.campus}:${post.id}`, 5, 'days', primaryCache);
 
             if (mentioned.length !== 0) {
                 const users = await UserModel.find({userTag: {$in: mentioned}}, {password: 0}).lean().exec();
