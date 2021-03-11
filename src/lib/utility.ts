@@ -21,4 +21,8 @@ export class Utility {
             logger.error(e);
         }
     }
+    
+    public static filterRedisPipeline(piplelineResult: Array<[Error | null, any]>) {
+        return piplelineResult.map(value => value[1]);
+    }
 }
