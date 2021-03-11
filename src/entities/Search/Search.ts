@@ -13,6 +13,10 @@ import {IUser} from '../../interfaces/IUser';
 export class Search {
     private term: string;
 
+    /**
+     *
+     * @param term - What to search strings to search for
+     */
     constructor(term: string) {
         this.term = term;
     }
@@ -25,18 +29,24 @@ export class Search {
         }
     }
 
+    /**
+     *
+     * @param searchCriteria - What to search for
+     * @constructor
+     */
     public async UserSearch(searchCriteria: string): Promise<IUser[]> {
         try {
             const projections = {
-                password: 0,
-                email: 0,
+                'password': 0,
+                'email': 0,
                 'userProfile.visits': 0,
             };
             switch (searchCriteria) {
                 case 'name':
                     return await UserModel.find({$text: {$search: this.term}}, projections).exec();
                 case 'userTag':
-                    return await UserModel.find({$text: {$search: this.term}}, projections).exec();
+                    return await  UserModel.find({userTag: { $regex: this.term, $options: '$i'} }, projections ).limit(20).exec();
+                    // return await UserModel.find({$text: {$search: this.term}}, projections).exec();
                 case 'campus':
                     return await UserModel.find({'userProfile.university': this.term}, projections).exec();
                 default:
