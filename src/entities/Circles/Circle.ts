@@ -3,7 +3,7 @@ import CircleModel from '../../models/Circle.model';
 import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
-import { S3 } from '@lib';
+import { S3, Utility } from '@lib';
 import { Types } from 'mongoose';
 import PostModel from '../../models/Post.model';
 import CirclePostModel from '../../models/CirclePost.model';
@@ -167,6 +167,7 @@ export class Circle {
             // Record that this user has visited this circle in their activity feed
             const lastVisit = moment().valueOf().toString();
             redis.zadd(`visitedCircles:${userID}`, lastVisit, circleId);
+            Utility.CacheExpiryTracker('VistedCirclesExpiry', circleId, 2, 'days', redis);
             const circle = await CircleModel.findById(circleId).lean().exec();
             return { circle, memberID: memberID !== undefined ? memberID : null };
         } catch (error) {
