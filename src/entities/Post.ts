@@ -106,7 +106,7 @@ export class Post {
             pipeline.exec();
 
             // Expiry values
-            const expTime = process.env.CAMPUS_T_EXPIRY_TIME as unknown as number;
+            const expTime = parseInt(process.env.CAMPUS_T_EXPIRY_TIME, 10);
             const expUnit = process.env.CAMPUS_T_EXPIRY_UNIT as any;
 
             // Keep track of postIDs to remove from campus timeline
