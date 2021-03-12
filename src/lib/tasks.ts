@@ -36,45 +36,12 @@ export class Tasks {
         }
 
         this.redis.on('connect', args => {
-            logger.info('Redis Connected, Trending');
+            logger.info('Redis Connected, Tasks');
         });
 
         this.redis.on('error', err => {
             logger.error(err);
         });
-    }
-
-    public TrendTask() {
-        // this.agenda.define('Calculate Trending', async job => {
-        //     try {
-        //         // const posts = await PostModel.find({ createdAt: { $gte: new Date().getTime() - (2 * 60 * 60 * 1000) } }).exec();
-        //         const posts = await PostModel.find({}).exec();
-        //         const trend = new Trend(posts).GenerateTrend();
-        //
-        //         // cache results
-        //         const pipeline = this.redis.pipeline();
-        //
-        //         Object.keys(trend).forEach(key => {
-        //             // console.log(key, trend[key]);
-        //             // console.log('key');
-        //             const currentTrendElement = trend[key];
-        //             const campus = key;
-        //             for (let index = 0; index < (currentTrendElement.length > 5 ? 5 : currentTrendElement.length); index++) {
-        //                 const element = currentTrendElement[index];
-        //                 pipeline.zadd(`campusesTrends:${campus}`, `${element.count.toString()}`, element.keyword);
-        //             }
-        //         });
-        //
-        //         pipeline.exec();
-        //     } catch (error) {
-        //         logger.error(error);
-        //     }
-        // });
-        //
-        // this.agenda.on('ready', () => {
-        //     this.agenda.start();
-        //     this.agenda.every('30 minutes', 'Calculate Trending');
-        // });
     }
 
     public CleanUpRedisTask() {
@@ -109,6 +76,39 @@ export class Tasks {
             this.agenda.every(interval, 'Clean Campus Timeline');
         });
 
+    }
+
+    public CleanUpVisitedCircles() {
+        this.agenda.define('Clean Visited Circles Cache', async job => {
+            try {
+                // Get Current time
+                const unixNow = moment().utc().valueOf();
+                logger.info(`Visited Circles Clean Up Started At ${moment().format('MMMM Do YYYY, h:mm:ss a')}`);
+
+                // Get circles to be removed
+                const expiredCircles = await this.redis.zrangebyscore('VistedCirclesExpiry', 0, unixNow);
+                this.redis.zremrangebyscore('VistedCirclesExpiry', 0, unixNow);
+
+                // Filter expired circles to get the userID and the circleID
+                const filterExpired = expiredCircles.map(circle => {
+                    return { userID: circle.split(':')[0], circleId: circle.split(':')[1] };
+                });
+
+                const pipeline = await this.redis.pipeline();
+                filterExpired.forEach(filtered => pipeline.zrem(`visitedCircles:${filtered.userID}`, filtered.circleId));
+
+                pipeline.exec();
+            } catch (e) {
+                logger.error(e);
+            }
+        });
+
+        this.agenda.on('ready', args => {
+            this.agenda.start();
+            // Extract interval to environment variable
+            const interval = process.env.VISITED_CIRCLE_CLEAN_UP_INTERVAL;
+            this.agenda.every(interval, 'Clean Visited Circles Cache');
+        });
     }
     // public GenerateFakePosts() {
     //     for (let index = 0; index < 100000; index++) {
