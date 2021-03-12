@@ -82,10 +82,12 @@ export class Tasks {
             try {
                 // Get Current time
                 const unixNow = moment().utc().valueOf();
+                logger.info(`CampusFeed Clean Up Started At ${moment().format('MMMM Do YYYY, h:mm:ss a')}`);
 
                 // Get campus posts to be removed
-                const expiredPosts = await this.redis.zrevrangebyscore('campusFeedExpiry', 0, unixNow);
+                const expiredPosts = await this.redis.zrangebyscore('campusFeedExpiry', 0, unixNow);
                 this.redis.zremrangebyscore('campusFeedExpiry', 0, unixNow);
+
                 // Filter expired posts to get the campus names
                 const filterExpired = expiredPosts.map(post => {
                     return { campus: post.split(':')[0], member: post };
@@ -94,14 +96,19 @@ export class Tasks {
                 const pipeline = await this.redis.pipeline();
                 filterExpired.forEach(filtered => pipeline.zrem(`campusFeed:${filtered.campus}`, filtered.member));
 
-                this.agenda.on('ready', args => {
-                    this.agenda.start();
-                    this.agenda.every('10 hours', 'Clean Campus Timeline')
-                });
+                pipeline.exec();
             } catch (e) {
                 logger.error(e);
             }
         });
+
+        this.agenda.on('ready', args => {
+            this.agenda.start();
+            // Extract interval to environment variable
+            const interval = process.env.CAMPUS_T_CLEANUP_INTERVAL;
+            this.agenda.every(interval, 'Clean Campus Timeline');
+        });
+
     }
     // public GenerateFakePosts() {
     //     for (let index = 0; index < 100000; index++) {

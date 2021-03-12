@@ -15,6 +15,7 @@ import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import IORedis from 'ioredis';
 import { Chat } from './entities/Chat/Chat';
+import {Tasks} from '@lib';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -119,8 +120,8 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
 
 
 // Schedule task
-// const task = new Tasks(URI);
-// task.TrendTask();
+const task = new Tasks(URI);
+task.CleanUpRedisTask();
 // task.GenerateFakePosts();
 
 // Export express instance
