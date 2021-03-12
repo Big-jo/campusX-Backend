@@ -105,7 +105,12 @@ export class Post {
             pipeline.zadd(`campusFeed:${postObject.campus}`, '0', `${postObject.campus}:${post.id}`);
             pipeline.exec();
 
-            Utility.CacheExpiryTracker('campusFeedExpiry', `${postObject.campus}:${post.id}`, 5, 'days', primaryCache);
+            // Expiry values
+            const expTime = process.env.CAMPUS_T_EXPIRY_TIME as unknown as number;
+            const expUnit = process.env.CAMPUS_T_EXPIRY_UNIT as any;
+
+            // Keep track of postIDs to remove from campus timeline
+            Utility.CacheExpiryTracker('campusFeedExpiry', `${postObject.campus}:${post.id}`, expTime, expUnit, primaryCache);
 
             if (mentioned.length !== 0) {
                 const users = await UserModel.find({userTag: {$in: mentioned}}, {password: 0}).lean().exec();
