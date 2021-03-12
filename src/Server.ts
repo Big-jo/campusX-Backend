@@ -33,6 +33,13 @@ Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
+// Drop tasks collection at every startup since it causes issues
+try {
+    Db.dropCollection('tasks');
+} catch (e) {
+    // tslint:disable-next-line:no-console
+    console.log.bind(console, 'MongoDB connected');
+}
 
 /******************************************************************************
  *                                 SETUP REDIS
@@ -122,6 +129,7 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
 // Schedule task
 const task = new Tasks(URI);
 task.CleanUpRedisTask();
+task.CleanUpVisitedCircles();
 // task.GenerateFakePosts();
 
 // Export express instance
