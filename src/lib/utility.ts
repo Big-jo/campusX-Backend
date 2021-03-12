@@ -40,7 +40,7 @@ export class Utility {
      * @param redis
      */
     public static CacheExpiryTracker(key: string, member: string, expiryTime: number, timeUnit: Moment.unitOfTime.DurationConstructor, redis: IORedis.Redis) {
-        const ttl = moment().utc().add(expiryTime, timeUnit).valueOf().toString();;
+        const ttl = moment().utc().add(expiryTime, timeUnit).valueOf().toString();
         redis.zadd(key, ttl, member );
     }
 }
