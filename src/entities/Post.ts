@@ -49,7 +49,7 @@ export class Post {
      * @constructor
      */
     public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis,
-                                   options: {campusReflect: boolean}) {
+                                   options: { campusReflect: boolean }) {
         try {
             const parsedPost = await new PostParser(postObject).Parse();
 
@@ -431,8 +431,50 @@ export class Post {
                     },
                 },
                 {
+                    $lookup: {
+                        from: 'comments',
+                        let: {commentID: '$_id'},
+                        pipeline: [
+                            {$match: {$expr: {$eq: ['$parentPost', '$$commentID']}}},
+                            {
+                                $addFields: {
+                                    isLiked: {$in: [Types.ObjectId(userID), '$likedBy']},
+                                },
+                            },
+                            {
+                                $project: {
+                                    likedBy: 0,
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: 'users',
+                                    let: {authorID: '$author'},
+                                    pipeline: [
+                                        {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
+                                        {$project: {password: 0, email: 0}},
+                                    ],
+                                    as: 'author',
+                                },
+                            },
+                            {
+                                $sort: {
+                                    likes: -1,
+                                    comments: -1,
+                                    createdAt: -1,
+                                },
+                            },
+                            {
+                                $limit: 4,
+                            },
+                        ],
+                        as: 'replies',
+                    },
+                },
+                {
                     $sort: {
                         likes: -1,
+                        comments: -1,
                         createdAt: -1,
                     },
                 },
