@@ -84,7 +84,7 @@ export class Post {
 
             const followers: IFollower[] = await FollowsModel.find({target: userID}).lean().exec();
             /**
-             * Small art of deciption here to add post to the user's feed
+             * Small art of descriptions here to add post to the user's feed
              */
             followers.push({target: null, follower: userID} as IFollower);
 
@@ -94,8 +94,12 @@ export class Post {
                 // primaryCache.lpush(follower.follower, post.id);
                 const ttl_time = process.env.POST_EXPIRE;
                 const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
+                const expiryTime = process.env.POST_EXPIRE as any;
+                const expiryUnit = process.env.POST_EXPIRE_UNIT as any;
                 const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
                 pipeline.zadd(follower.follower.toString(), ttl.toString(), post.id);
+                
+                Utility.CacheExpiryTracker(`ExpiredPosts`, `${follower.follower}:${post.id}`, expiryTime, expiryUnit, primaryCache);
             }
             // Add campus name to list of campuses
             // TODO: Find a better way to rank active campuses

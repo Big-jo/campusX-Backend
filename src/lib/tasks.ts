@@ -110,6 +110,40 @@ export class Tasks {
             this.agenda.every(interval, 'Clean Visited Circles Cache');
         });
     }
+
+    public CleanUpTimelines() {
+        this.agenda.define('Clean Up Timelines', async job => {
+            try {
+                // Get Current time
+                const unixNow = moment().utc().valueOf();
+                logger.info(`Timeline Clean Up Started At ${moment().format('MMMM Do YYYY, h:mm:ss a')}`);
+
+                // Get timeline to be removed
+                const expiredPosts = await this.redis.zrangebyscore('ExpiredPosts', 0, unixNow);
+                this.redis.zremrangebyscore('ExpiredPosts', 0, unixNow);
+
+                // Filter expired posts to get the timeline they belong to
+                const filterExpired = expiredPosts.map(post => {
+                    return { timelineID: post.split(':')[0], postID: post.split(':')[1] };
+                });
+
+                const pipeline = await this.redis.pipeline();
+                filterExpired.forEach(filtered => pipeline.zrem(`${filtered.timelineID}`, filtered.postID));
+
+                pipeline.exec();
+
+            } catch (e) {
+                logger.error(e);
+            }
+        });
+
+        this.agenda.on('ready', args => {
+            this.agenda.start();
+            // Extract interval to environment variable
+            const interval = process.env.TIMELINE_CLEAN_UP_INTERVAL;
+            this.agenda.every(interval, 'Clean Up Timelines');
+        });
+    }
     // public GenerateFakePosts() {
     //     for (let index = 0; index < 100000; index++) {
     //         const post = new PostModel({

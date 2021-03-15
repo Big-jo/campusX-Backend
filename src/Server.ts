@@ -130,6 +130,7 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
 const task = new Tasks(URI);
 task.CleanUpRedisTask();
 task.CleanUpVisitedCircles();
+task.CleanUpTimelines();
 // task.GenerateFakePosts();
 
 // Export express instance
