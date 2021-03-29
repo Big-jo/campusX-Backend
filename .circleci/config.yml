@@ -28,7 +28,7 @@ jobs:
       - image: arvindr226/alpine-ssh
     steps:
       - checkout
-      - run: ssh  -oStrictHostKeyChecking=no -v insightx@167.99.211.77  "source ~/.nvm/nvm.sh; ./deploy.sh"
+      - run: ssh  -oStrictHostKeyChecking=no -v insightx@80.85.87.71  "source ~/.nvm/nvm.sh; ./deploy.sh"
 
 # Orchestrate our job run sequence
 workflows:
