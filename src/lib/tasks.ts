@@ -4,7 +4,7 @@ import moment from 'moment';
 import faker, { fake } from 'faker';
 import { Trend } from './trends';
 import IORedis from 'ioredis';
-import { logger } from '@shared';
+import { logger } from '../shared';
 
 export class Tasks {
     private mongoUri: string;
@@ -12,6 +12,8 @@ export class Tasks {
     private redis: IORedis.Redis;
 
     constructor(MongoUri: string) {
+
+        console.log('tasks logged');
         this.mongoUri = MongoUri;
         const agendaConfig: agenda.AgendaConfiguration = {
             db: {

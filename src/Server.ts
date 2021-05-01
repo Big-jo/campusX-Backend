@@ -72,8 +72,8 @@ const server = http.createServer(app);
 
 const io = socketIO.listen(server, {path: '/timeline'});
 const chatIO = socketIO.listen(server, {path: '/chat'});
-new Newsfeed(io);
-new Chat(chatIO, primaryCache);
+// new Newsfeed(io);
+// new Chat(chatIO, primaryCache);
 
 // Handle Websockets
 // io.of('/get-newsfeed').on('connection', (socket: any) => {

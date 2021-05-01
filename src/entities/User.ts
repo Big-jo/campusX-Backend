@@ -6,7 +6,7 @@ import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
 import {S3, Utility} from '@lib';
 import {ITokenPayload} from '../interfaces/ITokenPayload';
-import {Notification} from '../lib/notifications';
+import {Notification} from '@lib';
 import {AggregationQueries} from '../lib/aggregationQueries';
 import {Post} from './Post';
 import IORedis from 'ioredis';
