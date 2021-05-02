@@ -5,7 +5,7 @@ import {logger} from '@shared';
 import FollowsModel, {IFollower} from '../models/Follower.model';
 import * as IORedis from 'ioredis';
 import CommentModel from '../models/Comment.model';
-import {S3} from '@lib';
+import {S3, Utility} from '@lib';
 import {Types} from 'mongoose';
 import moment from 'moment';
 import CirclePostModel from '../models/CirclePost.model';
@@ -15,6 +15,7 @@ import {IUser} from '../interfaces/IUser';
 import EventEmitter from 'events';
 import {Newsfeed} from '../lib/newsfeeds';
 import {PostParser} from '../lib/postParser';
+import {bool} from 'aws-sdk/clients/signer';
 
 interface IOptions {
     mostRecent?: boolean;
@@ -37,9 +38,18 @@ export const feedEmitter1 = new EventEmitter();
 //     name = 'REPOST',
 // }
 export class Post {
-
-    // tslint:disable-next-line: max-line-length
-    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis) {
+    /**
+     *
+     * @param postObject - Object that contains the post
+     * @param userID - users ID
+     * @param primaryCache - Redis instance
+     * @param options - {
+     *     campusReflect: decides if the user's post should appear in the campus timeline
+     * }
+     * @constructor
+     */
+    public static async CreatePost(postObject: IPost, userID: string, primaryCache: IORedis.Redis,
+                                   options: { campusReflect: boolean }) {
         try {
             const parsedPost = await new PostParser(postObject).Parse();
 
@@ -74,7 +84,7 @@ export class Post {
 
             const followers: IFollower[] = await FollowsModel.find({target: userID}).lean().exec();
             /**
-             * Small art of deciption here to add post to the user's feed
+             * Small art of descriptions here to add post to the user's feed
              */
             followers.push({target: null, follower: userID} as IFollower);
 
@@ -84,11 +94,27 @@ export class Post {
                 // primaryCache.lpush(follower.follower, post.id);
                 const ttl_time = process.env.POST_EXPIRE;
                 const ttl_unit = process.env.POST_EXPIRE_UNIT as any;
+                const expiryTime = process.env.POST_EXPIRE as any;
+                const expiryUnit = process.env.POST_EXPIRE_UNIT as any;
                 const ttl = moment().utc().add(ttl_time, ttl_unit).valueOf();
                 pipeline.zadd(follower.follower.toString(), ttl.toString(), post.id);
-                pipeline.sadd('dirty', follower.follower);
+                
+                Utility.CacheExpiryTracker(`ExpiredPosts`, `${follower.follower}:${post.id}`, expiryTime, expiryUnit, primaryCache);
             }
+            // Add campus name to list of campuses
+            // TODO: Find a better way to rank active campuses
+            pipeline.zadd('campuses', '0', postObject.campus);
+
+            // Add post to campus timeline
+            pipeline.zadd(`campusFeed:${postObject.campus}`, '0', `${postObject.campus}:${post.id}`);
             pipeline.exec();
+
+            // Expiry values
+            const expTime = parseInt(process.env.CAMPUS_T_EXPIRY_TIME, 10);
+            const expUnit = process.env.CAMPUS_T_EXPIRY_UNIT as any;
+
+            // Keep track of postIDs to remove from campus timeline
+            Utility.CacheExpiryTracker('campusFeedExpiry', `${postObject.campus}:${post.id}`, expTime, expUnit, primaryCache);
 
             if (mentioned.length !== 0) {
                 const users = await UserModel.find({userTag: {$in: mentioned}}, {password: 0}).lean().exec();
@@ -105,8 +131,8 @@ export class Post {
             const newPost = await AggregationQueries.GetPost(post._id);
 
             /**
-             * Setup redis pipline to get all user's followers that are connected
-             **/
+             * Setup redis pipeline to get all user's followers that are connected
+             */
             const p = primaryCache.pipeline();
 
             for (const follower of followers) {
@@ -142,7 +168,6 @@ export class Post {
                     const postKeys = await primaryCache.zrevrange(userID, 0, -1);
 
                     // Since feed has been retrieved, remove it from set of dirty feeds
-                    primaryCache.srem('dirty', userID);
 
                     // Convert all keys to objectIDs
                     const objectIDs = postKeys.map(key => Types.ObjectId(key));
@@ -244,10 +269,10 @@ export class Post {
                     case 'comment':
                         const comment = await CommentModel.findByIdAndUpdate(postID, updateLikeQuery).lean().exec();
                         if (comment === null) {
-                            throw new Error('Author missing');
+                            throw new Error('Cannot find comment');
                         } else {
                             author = await UserModel.findByIdAndUpdate(comment.author, updateUserQuery).lean().exec();
-                                new Notification(fcm_token, {
+                            new Notification(fcm_token, {
                                 body: comment.text !== undefined ? comment.text : 'Media',
                                 title: `${actor.userTag} liked your comment`,
                                 sound: 'default',
@@ -349,9 +374,10 @@ export class Post {
             comment.commentID = comment.id;
             comment.save();
 
+            // Get fcm_token of the recipient
             new Notification(fcm_token, {
                 body: commentObject.text !== undefined ? commentObject.text : 'Media',
-                title: commentObject.type === 'reply' ? `${user.userTag} replied to your comment` : `${user.userTag} commented on your post`,
+                title: commentObject.type === 'reply' ? `${user.userTag} replied your comment` : `${user.userTag} commented on your post`,
             }, authorOfPost.author, user.userProfile.avatar, 'comment').SendPushNotification();
 
             // Notify mentioned users
@@ -409,8 +435,50 @@ export class Post {
                     },
                 },
                 {
+                    $lookup: {
+                        from: 'comments',
+                        let: {commentID: '$_id'},
+                        pipeline: [
+                            {$match: {$expr: {$eq: ['$parentPost', '$$commentID']}}},
+                            {
+                                $addFields: {
+                                    isLiked: {$in: [Types.ObjectId(userID), '$likedBy']},
+                                },
+                            },
+                            {
+                                $project: {
+                                    likedBy: 0,
+                                },
+                            },
+                            {
+                                $lookup: {
+                                    from: 'users',
+                                    let: {authorID: '$author'},
+                                    pipeline: [
+                                        {$match: {$expr: {$eq: ['$_id', '$$authorID']}}},
+                                        {$project: {password: 0, email: 0}},
+                                    ],
+                                    as: 'author',
+                                },
+                            },
+                            {
+                                $sort: {
+                                    likes: -1,
+                                    comments: -1,
+                                    createdAt: -1,
+                                },
+                            },
+                            {
+                                $limit: 4,
+                            },
+                        ],
+                        as: 'replies',
+                    },
+                },
+                {
                     $sort: {
                         likes: -1,
+                        comments: -1,
                         createdAt: -1,
                     },
                 },

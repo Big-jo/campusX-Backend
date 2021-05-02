@@ -74,7 +74,7 @@ router.post(createPostPath, auth, upload.fields([{ name: 'image', maxCount: 1 },
                 anonymous: req.body.anon,
             };
 
-            Post.CreatePost(post, req.token.userID, res.locals.primaryCache);
+            Post.CreatePost(post, req.token.userID, res.locals.primaryCache, {campusReflect: req.body.campusReflect});
 
             res.status(OK).send();
         } catch (error) {
@@ -97,10 +97,10 @@ router.post(createComment, auth, async (req: Request, res: Response) => {
             parentPost: req.body.parentPost,
             campus: req.token.campus,
             type: req.body.type,
-            hashTags: null
+            hashTags: null,
         };
 
-        const result = await Post.Comment(commentObject, req.token.fcm_token, res.locals.primaryCache);
+        const result = await Post.Comment(commentObject, req.body.fcm_token, res.locals.primaryCache);
         res.status(CREATED).send();
     } catch (e) {
         logger.error(e);

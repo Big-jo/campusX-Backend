@@ -14,6 +14,8 @@ import { Newsfeed } from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import IORedis from 'ioredis';
+import { Chat } from './entities/Chat/Chat';
+import {Tasks} from '@lib';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -31,6 +33,13 @@ Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', console.log.bind(console, 'MongoDB connected'));
 
+// Drop tasks collection at every startup since it causes issues
+try {
+    Db.dropCollection('tasks');
+} catch (e) {
+    // tslint:disable-next-line:no-console
+    console.log.bind(console, 'MongoDB connected');
+}
 
 /******************************************************************************
  *                                 SETUP REDIS
@@ -62,7 +71,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = socketIO.listen(server, {path: '/timeline'});
-const newsfeed = new Newsfeed(io);
+const chatIO = socketIO.listen(server, {path: '/chat'});
+// new Newsfeed(io);
+// new Chat(chatIO, primaryCache);
+
 // Handle Websockets
 // io.of('/get-newsfeed').on('connection', (socket: any) => {
 //     console.log(socket.id);
@@ -115,8 +127,10 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
 
 
 // Schedule task
-// const task = new Tasks(URI);
-// task.TrendTask();
+const task = new Tasks(URI);
+task.CleanUpRedisTask();
+task.CleanUpVisitedCircles();
+task.CleanUpTimelines();
 // task.GenerateFakePosts();
 
 // Export express instance

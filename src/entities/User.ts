@@ -1,16 +1,17 @@
-import UserModel from "../models/User.model";
-import { IUser } from "src/interfaces/IUser";
-import bcrypt from "bcrypt";
-import { logger } from "@shared";
-import FollowsModel from "../models/Follower.model";
-import FollowingsModel from "../models/Following.model";
-import { Utility } from "@lib";
-import { S3 } from "@lib";
-import { ITokenPayload } from "../interfaces/ITokenPayload";
-import { Notification } from "../lib/notifications";
-import { AggregationQueries } from "../lib/aggregationQueries";
-import { Post } from "./Post";
-import IORedis from "ioredis";
+
+import UserModel from '../models/User.model';
+import {IUser} from 'src/interfaces/IUser';
+import bcrypt from 'bcrypt';
+import {logger} from '@shared';
+import FollowsModel from '../models/Follower.model';
+import FollowingsModel from '../models/Following.model';
+import {S3, Utility} from '@lib';
+import {ITokenPayload} from '../interfaces/ITokenPayload';
+import {Notification} from '@lib';
+import {AggregationQueries} from '../lib/aggregationQueries';
+import {Post} from './Post';
+import IORedis from 'ioredis';
+import random from 'random-number';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -78,6 +79,53 @@ export class User {
               avatar: user.userProfile.avatar,
             },
           };
+
+            try {
+                // check if userTag is available
+                const foundUser = await UserModel.findOne({ userTag: userObject.userTag }).exec();
+                if (foundUser) {
+                    return { exists: true, err_message: 'This userTag has been taken already' };
+                } else {
+                    const user = new UserModel({
+                        name: userObject.name,
+                        userProfile: userObject.userProfile != null ? {
+                            avatar: userObject.userProfile.avatar,
+                            bio: userObject.userProfile.bio,
+                            gender: userObject.userProfile.gender,
+                            university: userObject.userProfile.university,
+                        } : null,
+                        userID: '',
+                        userTag: `${userObject.userTag}`,
+                        email: userObject.email.toLowerCase(),
+                        password: userObject.password,
+                    });
+                    user.userID = user._id;
+                    // Generate random number for seed in image api
+                    const rn = random({integer: true, min: -10000, max: 10000});
+                    user.userProfile.avatar = `https://picsum.photos/seed/${rn}/500`;
+
+                    const rounds = await bcrypt.genSalt(10);
+                    // Hash Password
+                    user.password = await bcrypt.hash(user.password, rounds);
+                    await user.save();
+
+                    const payload: ITokenPayload = {
+                        userID: user.id,
+                        userTag: user.userTag,
+                        campus: user.userProfile.university,
+                        name: user.name,
+                        avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
+                        fcm_token: user.fcm_token,
+                        // userProfile: user.userProfile,
+                    };
+
+                    return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
+                }
+
+            } catch (error) {
+                logger.error(error);
+                throw new Error(error);
+            }
         }
       } catch (error) {
         logger.error(error);
@@ -293,6 +341,34 @@ export class User {
             return {
               user,
               isFollowing: true,
+    /**
+     * @static
+     * @memberof User
+     */
+
+    public static async UpdateUser(userID: string, updates: { [x: string]: string }) {
+        try {
+            const update: { [x: string]: string } = {};
+            for (const key in updates) {
+                if (updates.hasOwnProperty(key)) {
+                    update[key] = updates[key];
+                }
+            }
+            
+            if (update.password !== undefined) {
+                const rounds = await bcrypt.genSalt(10);
+                // Hash Password
+                update.password = await bcrypt.hash(updates.password, rounds);
+            }
+
+            const updated = await UserModel.findOneAndUpdate({ _id: userID }, { $set: update }).lean().exec();
+            const payload: ITokenPayload = {
+                avatar: updated.userProfile.avatar,
+                campus: updated.userProfile.university,
+                name: updated.userProfile.name,
+                userID,
+                userTag: updated.userTag,
+                fcm_token: updated.fcm_token,
             };
           } else {
             return {
@@ -452,6 +528,16 @@ export class User {
       )
         .lean()
         .exec();
+
+    public static async AvailableUserTag(userTag: string) {
+        const available = await UserModel.findOne({ userTag: { $regex: userTag, $options: '$i' } }).limit(20);
+        if (available) {
+            // Return 0 if the userTag exists
+            return 0;
+        } else {
+            // Return 1 is the userTag doesnt exist
+            return 1;
+        }
     }
 
     return { connectUsers };

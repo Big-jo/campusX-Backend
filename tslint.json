@@ -3,14 +3,17 @@
   "rules": {
     "member-ordering": false,
     "object-literal-sort-keys": false,
+    "quotemark": {
+      "severity": "none"
+    },
+    "only-arrow-functions": {
+      "severity": "none"
+    },
     "ordered-imports": false,
-    "quotemark": [
-      true,
-      "single"
-    ],
     "no-trailing-whitespace": false,
+    "no-console": false,
     "arrow-parens": {
-      "options": "ban-single-arg-parens"
+      "severity": "off"
     },
     "max-line-length": {
       "options": {

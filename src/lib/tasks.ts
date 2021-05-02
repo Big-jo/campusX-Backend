@@ -4,14 +4,16 @@ import moment from 'moment';
 import faker, { fake } from 'faker';
 import { Trend } from './trends';
 import IORedis from 'ioredis';
-import { logger } from '@shared';
+import { logger } from '../shared';
 
 export class Tasks {
     private mongoUri: string;
     private agenda: agenda;
-    private postCache: IORedis.Redis;
+    private redis: IORedis.Redis;
 
     constructor(MongoUri: string) {
+
+        console.log('tasks logged');
         this.mongoUri = MongoUri;
         const agendaConfig: agenda.AgendaConfiguration = {
             db: {
@@ -27,56 +29,123 @@ export class Tasks {
          /******************************************************************************/
 
         if (process.env.NODE_ENV === 'development') {
-            this.postCache = new IORedis({ port: 6379 });
+            this.redis = new IORedis({ port: 6379 });
         } else {
             const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
             const redisPortPC = Number(process.env.REDIS_PORT_PC);
 
-            this.postCache = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
+            this.redis = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
         }
 
-        this.postCache.on('connect', args => {
-            logger.info('Redis Connected, Trending');
+        this.redis.on('connect', args => {
+            logger.info('Redis Connected, Tasks');
         });
 
-        this.postCache.on('error', err => {
+        this.redis.on('error', err => {
             logger.error(err);
         });
     }
 
-    public TrendTask() {
-        this.agenda.define('Calculate Trending', async job => {
+    public CleanUpRedisTask() {
+        this.agenda.define('Clean Campus Timeline', async job => {
             try {
-                // const posts = await PostModel.find({ createdAt: { $gte: new Date().getTime() - (2 * 60 * 60 * 1000) } }).exec();
-                const posts = await PostModel.find({}).exec();
-                const trend = new Trend(posts).GenerateTrend();
+                // Get Current time
+                const unixNow = moment().utc().valueOf();
+                logger.info(`CampusFeed Clean Up Started At ${moment().format('MMMM Do YYYY, h:mm:ss a')}`);
 
-                // cache results 
-                const pipeline = this.postCache.pipeline();
+                // Get campus posts to be removed
+                const expiredPosts = await this.redis.zrangebyscore('campusFeedExpiry', 0, unixNow);
+                this.redis.zremrangebyscore('campusFeedExpiry', 0, unixNow);
 
-                Object.keys(trend).forEach(key => {
-                    // console.log(key, trend[key]);
-                    // console.log('key');
-                    const currentTrendElement = trend[key];
-                    const campus = key;
-                    for (let index = 0; index < (currentTrendElement.length > 5 ? 5 : currentTrendElement.length); index++) {
-                        const element = currentTrendElement[index];
-                        pipeline.zadd(`campusesTrends:${campus}`, `${element.count.toString()}`, element.keyword);
-                    }
+                // Filter expired posts to get the campus names
+                const filterExpired = expiredPosts.map(post => {
+                    return { campus: post.split(':')[0], member: post };
                 });
 
+                const pipeline = await this.redis.pipeline();
+                filterExpired.forEach(filtered => pipeline.zrem(`campusFeed:${filtered.campus}`, filtered.member));
+
                 pipeline.exec();
-            } catch (error) {
-                logger.error(error);
+            } catch (e) {
+                logger.error(e);
             }
         });
 
-        this.agenda.on('ready', () => {
+        this.agenda.on('ready', args => {
             this.agenda.start();
-            this.agenda.every('30 minutes', 'Calculate Trending');
+            // Extract interval to environment variable
+            const interval = process.env.CAMPUS_T_CLEANUP_INTERVAL;
+            this.agenda.every(interval, 'Clean Campus Timeline');
+        });
+
+    }
+
+    public CleanUpVisitedCircles() {
+        this.agenda.define('Clean Visited Circles Cache', async job => {
+            try {
+                // Get Current time
+                const unixNow = moment().utc().valueOf();
+                logger.info(`Visited Circles Clean Up Started At ${moment().format('MMMM Do YYYY, h:mm:ss a')}`);
+
+                // Get circles to be removed
+                const expiredCircles = await this.redis.zrangebyscore('VistedCirclesExpiry', 0, unixNow);
+                this.redis.zremrangebyscore('VistedCirclesExpiry', 0, unixNow);
+
+                // Filter expired circles to get the userID and the circleID
+                const filterExpired = expiredCircles.map(circle => {
+                    return { userID: circle.split(':')[0], circleId: circle.split(':')[1] };
+                });
+
+                const pipeline = await this.redis.pipeline();
+                filterExpired.forEach(filtered => pipeline.zrem(`visitedCircles:${filtered.userID}`, filtered.circleId));
+
+                pipeline.exec();
+            } catch (e) {
+                logger.error(e);
+            }
+        });
+
+        this.agenda.on('ready', args => {
+            this.agenda.start();
+            // Extract interval to environment variable
+            const interval = process.env.VISITED_CIRCLE_CLEAN_UP_INTERVAL;
+            this.agenda.every(interval, 'Clean Visited Circles Cache');
         });
     }
 
+    public CleanUpTimelines() {
+        this.agenda.define('Clean Up Timelines', async job => {
+            try {
+                // Get Current time
+                const unixNow = moment().utc().valueOf();
+                logger.info(`Timeline Clean Up Started At ${moment().format('MMMM Do YYYY, h:mm:ss a')}`);
+
+                // Get timeline to be removed
+                const expiredPosts = await this.redis.zrangebyscore('ExpiredPosts', 0, unixNow);
+                this.redis.zremrangebyscore('ExpiredPosts', 0, unixNow);
+
+                // Filter expired posts to get the timeline they belong to
+                const filterExpired = expiredPosts.map(post => {
+                    return { timelineID: post.split(':')[0], postID: post.split(':')[1] };
+                });
+
+                const pipeline = await this.redis.pipeline();
+                filterExpired.forEach(filtered => pipeline.zrem(`${filtered.timelineID}`, filtered.postID));
+
+                pipeline.exec();
+
+            } catch (e) {
+                logger.error(e);
+            }
+        });
+
+        this.agenda.on('ready', args => {
+            this.agenda.start();
+            // Extract interval to environment variable
+            const interval = process.env.TIMELINE_CLEAN_UP_INTERVAL;
+            this.agenda.every(interval, 'Clean Up Timelines');
+        });
+    }
     // public GenerateFakePosts() {
     //     for (let index = 0; index < 100000; index++) {
     //         const post = new PostModel({
