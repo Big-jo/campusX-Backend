@@ -1,8 +1,10 @@
 import faker from 'faker';
 import {User} from '../../entities/User';
 import UserModel from '../../models/User.model';
-import {IPost} from '../../interfaces/IPost';
+import {IPost} from '../../interfaces';
 import PostModel from 'src/models/Post.model';
+
+import {IUser} from '../../interfaces';
 
 export async function GetUserID() {
   // Main User
@@ -14,7 +16,7 @@ export function GenerateUsers(quantity: number) {
   let x = 0;
 
   while (quantity > x) {
-    const mockedPost = {
+    const user = {
       name: `${faker.name.firstName(1)} ${faker.name.lastName(1)}`,
       userTag: faker.internet.userName(),
       email: faker.internet.email(),
@@ -26,13 +28,14 @@ export function GenerateUsers(quantity: number) {
         avatar: "https://picsum.photos/200/300",
         department: '',
       },
-    }
-    User.CreateUser(mockedPost)
+
+    } as IUser;
+    User.CreateUser(user)
       .then((r: any) => {
         console.log(
-          quantity > 1 ? `${quantity} user's created` : `${quantity} user created`
+          quantity > 1 ? `${quantity} user's created` : `${quantity} user created`,
         );
-        return mockedPost;
+        return user;
       })
       .catch((e: any) => {
         console.log(e);
@@ -54,7 +57,7 @@ export async function GetUsers(numberOfUsers: number) {
 export async function GeneratePost(quantity: number) {
   let x = 0;
   const generated = [];
-  while (x < number) {
+  while (x < quantity) {
     generated.push({
       campus: faker.company.companyName(),
       author: (await GetUserID()).toString(),
