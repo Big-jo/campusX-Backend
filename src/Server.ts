@@ -15,7 +15,7 @@ import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import IORedis from 'ioredis';
 import { Chat } from './entities/Chat/Chat';
-import {Tasks} from '@lib';
+import { Tasks } from '@lib';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -70,9 +70,9 @@ const app = express();
 //  Setup socketIO
 const server = http.createServer(app);
 
-const io = socketIO.listen(server, {path: '/timeline'});
-const chatIO = socketIO.listen(server, {path: '/chat'});
-// new Newsfeed(io);
+const io = socketIO.listen(server, { path: '/timeline' });
+const chatIO = socketIO.listen(server, { path: '/chat' });
+new Newsfeed(io);
 // new Chat(chatIO, primaryCache);
 
 // Handle Websockets
