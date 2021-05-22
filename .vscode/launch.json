@@ -134,12 +134,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Launch index.ts",
       "type": "node",
-      "request": "attach",
-      "name": "Node: Nodemon",
-      "port": 9229,
+      "request": "launch",
+      "runtimeArgs": ["--respawn", "-r", "tsconfig-paths/register"],
       "restart": true,
-      "protocol": "inspector"
+      "internalConsoleOptions": "openOnSessionStart",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/ts-node-dev",
+      "skipFiles": ["<node_internals>/**"],
+      "args": ["${workspaceFolder}/src/index.ts"]
     }
   ]
 }
