@@ -9,6 +9,8 @@ export interface ICampus extends Document {
 const CampusSchema: Schema = new Schema({
   name: {type: String},
   abbreviation: {type: String},
+  createdAt: {type: String, default: new Date()}
+
   // members: {type: Number, default: 0},
 });
 

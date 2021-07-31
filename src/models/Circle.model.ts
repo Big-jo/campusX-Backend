@@ -14,6 +14,8 @@ const CircleSchema: Schema = new Schema({
     coverImage: { type: String },
     moderators: [ModeratorSchema],
     category: { type: String, required: true },
+    createdAt: {type: String, default: new Date()}
+
 });
 
 CircleSchema.plugin(mongoosePaginate);

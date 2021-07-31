@@ -12,6 +12,7 @@ const commentSchema: Schema = new Schema({
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
+    
 });
 
 commentSchema.index('parentPost');

@@ -23,6 +23,7 @@ const UserSchema: Schema = new Schema({
         post_count: {type: Number, default: 0},
     },
     fcm_token: {type: String},
+    createdAt: {type: String, default: new Date()}
     // lastActive: {type: Date},  Implement last active
 });
 UserSchema.plugin(mongoosePaginate);

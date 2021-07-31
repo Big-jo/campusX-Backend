@@ -11,7 +11,7 @@ const FollowingSchema: Schema = new Schema({
 
   // Target : Person being followed
   target: { type: Schema.Types.ObjectId, ref: 'User' },
-
+  createdAt: {type: String, default: new Date()}
 });
 
 export default mongoose.model<IFollowing>('Followings', FollowingSchema);

@@ -8,6 +8,7 @@ interface ILikedBy extends Document {
 const likedBySchema = new Schema({
     userID: {type: Schema.Types.ObjectId, ref: 'user'},
     postID: {type: Schema.Types.ObjectId, ref: 'post'},
+    createdAt: {type: String, default: new Date()}
 });
 
 export default mongoose.model<ILikedBy>('likedBy', likedBySchema);
