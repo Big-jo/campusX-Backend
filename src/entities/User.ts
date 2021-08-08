@@ -329,11 +329,11 @@ export class User {
         }
     }
 
-    public static async GetUserPosts(userID: string, page: number, limit: number) {
+    public static async GetUserPosts(userID: string, type: string ,page: number, limit: number) {
         try {
-            const posts = await AggregationQueries.GetUserPostsAggreg(userID, { page, limit });
+            const posts = await AggregationQueries.GetUserPostsAggreg(userID, type, { page, limit });
 
-            return { userPosts: posts.docs.reverse() };
+            return { userPosts: posts.reverse() };
 
         } catch (error) {
             logger.error(error);

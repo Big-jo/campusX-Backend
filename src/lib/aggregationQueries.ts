@@ -43,10 +43,34 @@ export class AggregationQueries {
         return (await PostModel.aggregate(aggregate).exec());
     }
 
-    public static async GetUserPostsAggreg(userID: string, options: { page: number, limit: number }) {
+    public static async GetUserPostsAggreg(userID: string, postType: string, options: { page: number , limit: number } = {page: 1, limit: 50}) {
+
+        const query: any = 
+        { 
+            author: Types.ObjectId(userID)
+        }
+
+        if (postType === 'video') {
+            query['video'] = {$ne: null}
+            query['image'] = {$eq: null}
+
+        }
+
+        if (postType === 'text') {
+            query['text'] = {$ne: ""}
+            query['video'] = {$eq: null}
+            query['image'] = {$eq: null}
+        }
+
+        if (postType === 'image') {
+            query['image'] = {$ne: null}
+            query['video'] = {$eq: null}
+
+        }
+
         const aggregate = [
             {
-                $match: { author: Types.ObjectId(userID) },
+                $match: query,
             },
             {
                 $addFields: {
@@ -71,9 +95,8 @@ export class AggregationQueries {
             },
         ];
 
-        const agg = PostModel.aggregate(aggregate);
-        //@ts-ignore
-        return (await PostModel.aggregatePaginate(agg, options));
+        const agg = await PostModel.aggregate(aggregate).exec();
+        return agg;
     }
 
     public static async GetPost(postID: string) {
