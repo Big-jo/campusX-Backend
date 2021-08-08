@@ -20,6 +20,8 @@ const PostSchema: Schema = new Schema({
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     hashTags: [{type: String}],
     mentions:[{type: String}],
+}, {
+    timestamps: true
 });
 
 // PostSchema.plugin(mongoosePaginate);

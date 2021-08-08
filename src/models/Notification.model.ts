@@ -8,6 +8,8 @@ const NotificationsSchema: Schema = new Schema({
     createdAt: {type: Number},
     title: {type: String},
     body: {type: String},
+} {
+    timestamps: true
 });
 
 export default mongoose.model('Notifications', NotificationsSchema);

@@ -40,7 +40,7 @@ router.post(createUserPath, async (req: Request, res: Response) => {
         } else {
             res.status(CREATED).json({
                 message: 'User created',
-                result: result.token,
+                result,
             });
         }
     } catch (error) {

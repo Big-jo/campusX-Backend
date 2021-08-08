@@ -21,10 +21,12 @@ const UserSchema: Schema = new Schema({
         followers: {type: Number, default: 0},
         followings: {type: Number, default: 0},
         post_count: {type: Number, default: 0},
+        profileComplete: {type: Boolean, default: false}
     },
     fcm_token: {type: String},
-    createdAt: {type: String, default: new Date()}
     // lastActive: {type: Date},  Implement last active
+}, {
+    timestamps: true
 });
 UserSchema.plugin(mongoosePaginate);
 UserSchema.index({'name': 'text', 'userTag': 'text', 'userProfile.university': 1});

@@ -51,7 +51,10 @@ export class User {
                     const rounds = await bcrypt.genSalt(10);
                     // Hash Password
                     user.password = await bcrypt.hash(user.password, rounds);
-                    await user.save();
+
+                    let savedUser = await user.save();
+                    savedUser = savedUser.toObject();
+                    delete savedUser.password;
 
                     const payload: ITokenPayload = {
                         userID: user.id,
@@ -62,8 +65,7 @@ export class User {
                         fcm_token: user.fcm_token,
                         // userProfile: user.userProfile,
                     };
-
-                    return { token: Utility.createToken(payload), user: { userTag: user.userTag, userID: user.id, avatar: user.userProfile.avatar } };
+                    return { token: Utility.createToken(payload), user: savedUser };
                 }
 
             } catch (error) {

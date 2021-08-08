@@ -19,6 +19,8 @@ const commentSchema: Schema = new Schema({
     dislikes: { type: Number, default: 0 },
     comments: { type: Number, default: 0 },
     type: { type: String, }
+}, {
+    timestamps: true
 });
 
 commentSchema.plugin(aggregatePlugin);

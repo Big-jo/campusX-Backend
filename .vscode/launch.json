@@ -1,148 +1,20 @@
-// {
-//   "version": "0.2.0",
-//   "configurations": [
-//     {
-//       "args": [],
-//       "cwd": "${workspaceRoot}",
-//       "env": {
-//         "MONGO_URI": "mongodb://localhost:27017/campusX",
-//         "PORT": "3000",
-//         "HOST": "localhost",
-//         "JWT_SECRET": "abcdefghijklmnop",
-//         "NODE_ENV": "development",
-//         "REDIS_PORT": "6379",
-//         "SERVER_KEY": "absceceec",
-//         "SPACES_ACCESS_KEY": "FTVDMDSV4BNQ3QZKE6DW",
-//         "SPACES_SECRET": "7Rm+X+P1yad276laydyenQmSQzclMIH3qtgYuLQRM0A",
-//         "SPACES_BUCKET_AVATAR": "campusx/avatars",
-//         "SPACES_BUCKET_IMAGE":"campusx/images",
-//         "SPACES_BUCKET_VIDEO":"campusx/videos",
-//         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGUiLCJ1c2VyUHJvZmlsZSI6eyJyZXBfcG9pbnRzIjoyLjQ1LCJfaWQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGYiLCJ1bml2ZXJzaXR5IjoiQmVsbHMgVW5pdmVyc2l0eSBPZiBUZWNobm9sb2d5IiwiZ2VuZGVyIjoibWFsZSIsImJpbyI6IjMwMCJ9LCJpYXQiOjE1ODc4NTIwODR9.85Supm15TpTSpZbSvEVy0wfLIh9B6Fl8r490AOuUbmI"
-//       },
-//       "console": "internalConsole",
-//       "name": "DEBUG",
-//       "outFiles": ["${workspaceRoot}/dist/**/*.js"],
-//       "preLaunchTask": "compile",
-//       "program": "${workspaceRoot}/src/Start.ts",
-//       "request": "launch",
-//       "runtimeArgs": ["--nolazy", "-r","module-alias/register"],
-//       "runtimeExecutable": null,
-//       "sourceMaps": true,
-//       "stopOnEntry": false,
-//       "type": "node"
-//     },
-//     {
-//       "name": "Attach",
-//       "type": "node",
-//       "request": "attach",
-//       "port": 3000,
-//       "address": "localhost"
-//     }
-//   ]
-// }
-// {
-// Use IntelliSense to learn about possible attributes.
-// Hover to view descriptions of existing attributes.
-// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-//     "version": "0.2.0",
-//     "configurations": [
-//         {
-//             "args": [],
-//             "cwd": "${workspaceRoot}",
-//             "env": {
-//                 "MONGO_URI": "mongodb://localhost:27017/campusX",
-//                 "PORT": "3000",
-//                 "HOST":"localhost",
-//                 "JWT_SECRET":"abcdefghijklmnop",
-//                 "NODE_ENV":"development",
-//                 "REDIS_PORT": "6379",
-//                 "SERVER_KEY": "absceceec",
-//                 "SPACES_ACCESS_KEY":"FTVDMDSV4BNQ3QZKE6DW",
-//                 "SPACES_SECRET":"7Rm+X+P1yad276laydyenQmSQzclMIH3qtgYuLQRM0A",
-//                 "SPACES_BUCKET_AVATAR":"campusx/avatars",
-//                 "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGUiLCJ1c2VyUHJvZmlsZSI6eyJyZXBfcG9pbnRzIjoyLjQ1LCJfaWQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGYiLCJ1bml2ZXJzaXR5IjoiQmVsbHMgVW5pdmVyc2l0eSBPZiBUZWNobm9sb2d5IiwiZ2VuZGVyIjoibWFsZSIsImJpbyI6IjMwMCJ9LCJpYXQiOjE1ODc4NTIwODR9.85Supm15TpTSpZbSvEVy0wfLIh9B6Fl8r490AOuUbmI"
-//             },
-//             "name": "DEBUG",
-//             "outFiles": ["${workspaceRoot}/dist/**/*.js"],
-//             "preLaunchTask": "compile",
-//             "program": "${workspaceRoot}/src/Start.ts",
-//             "console": "internalConsole",
-//             "request": "launch",
-//             "runtimeArgs": [
-//                 "--nolazy"
-//             ],
-//             "runtimeExecutable": null,
-//             "sourceMaps": true,
-//             "stopOnEntry": false,
-//             "type": "node"
-//         },
-//         {
-//             "name": "Attach",
-//             "type": "node",
-//             "request": "attach",
-//             "port": 3000,
-//             "address": "localhost",
-//             "restart": false,
-//             "sourceMaps": false,
-//             "outFiles": [],
-//             "localRoot": "${workspaceRoot}",
-//             "remoteRoot": null
-//         },
-//     ]
-// }
-// NORMAL DEBUG
-// {
-//   "version": "0.2.0",
-//   "configurations": [
-//     {
-//       "name": "DEBUG-01",
-//       "type": "pwa-node",
-//       "request": "launch",
-//       "env": {
-//         "MONGO_URI": "mongodb://localhost:27017/campusX",
-//         "PORT": "3000",
-//         "HOST": "localhost",
-//         "JWT_SECRET": "abcdefghijklmnop",
-//         "NODE_ENV": "development",
-//         "REDIS_PORT": "6379",
-//         "SERVER_KEY": "absceceec",
-//         "SPACES_ACCESS_KEY": "FTVDMDSV4BNQ3QZKE6DW",
-//         "SPACES_SECRET": "7Rm+X+P1yad276laydyenQmSQzclMIH3qtgYuLQRM0A",
-//         "SPACES_BUCKET_AVATAR": "campusx/avatars",
-//         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGUiLCJ1c2VyUHJvZmlsZSI6eyJyZXBfcG9pbnRzIjoyLjQ1LCJfaWQiOiI1ZGRhODU0ODg0M2Q5ZDQzM2VkMjNiNGYiLCJ1bml2ZXJzaXR5IjoiQmVsbHMgVW5pdmVyc2l0eSBPZiBUZWNobm9sb2d5IiwiZ2VuZGVyIjoibWFsZSIsImJpbyI6IjMwMCJ9LCJpYXQiOjE1ODc4NTIwODR9.85Supm15TpTSpZbSvEVy0wfLIh9B6Fl8r490AOuUbmI"
-//       },
-//       "runtimeArgs": [
-//         "-r",
-//         "ts-node/register",
-//         "-r",
-//         "tsconfig-paths/register"
-//       ],
-//       "runtimeExecutable": "nodemon",
-//       "restart": true,
-//       "args": [
-//         "${workspaceFolder}/src/Start.ts"
-//       ],
-//       "resolveSourceMapLocations": [
-//         "${workspaceFolder}/**",
-//         "!**/node_modules/**"
-//       ]
-//     }
-//   ]
-// }
-// NODEMON_
 {
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-    {
-      "name": "Launch index.ts",
-      "type": "node",
-      "request": "launch",
-      "runtimeArgs": ["--respawn", "-r", "tsconfig-paths/register"],
-      "restart": true,
-      "internalConsoleOptions": "openOnSessionStart",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/ts-node-dev",
-      "skipFiles": ["<node_internals>/**"],
-      "args": ["${workspaceFolder}/src/Start.ts"]
-    }
-  ]
+      {
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "name": "Debug Ts",
+        "restart": true,
+        "request": "launch",
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/ts-node-dev",
+        "skipFiles": [ "<node_internals>/**" ],
+        "type": "node",
+        "runtimeArgs": [ "--respawn", "-r", "tsconfig-paths/register", "-r", "./env" ],
+        "args": [ "${workspaceFolder}/src/Start.ts" ]
+      }
+    ]
 }

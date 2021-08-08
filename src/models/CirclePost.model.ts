@@ -17,7 +17,8 @@ const CirclePostSchema: Schema = new Schema({
     comments: {type: Number, default: 0},
     trash: { type: Number, default: 0 },
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
-    createdAt: { type: String,   createdAt: {type: String, default: new Date()}
+},  {
+    timestamps: true
 });
 
 CirclePostSchema.plugin(aggregatePlugin);
