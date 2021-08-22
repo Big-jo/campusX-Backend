@@ -7,7 +7,7 @@ import CircleModel from 'src/models/Circle.model';
 export class S3 {
     // public Endpoint = new aws.Endpoint('ams3.digitaloceanspaces.com');
     public s3Bucket = new aws.S3({
-        endpoint: 'ams3.digitaloceanspaces.com',
+        endpoint: 'alpha.us-east-1.linodeobjects.com',
         accessKeyId: process.env.SPACES_ACCESS_KEY,
         secretAccessKey: process.env.SPACES_SECRET,
     });
