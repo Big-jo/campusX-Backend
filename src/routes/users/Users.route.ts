@@ -190,7 +190,7 @@ router.get(availableUserTag, async (req: Request, res: Response) => {
 const getUserPosts = '/posts';
 router.get(getUserPosts, auth, async (req, res) => {
     try {
-        const result = await User.GetUserPosts(req.query.userID,  req.params.query.postType ,req.query.page, req.query.limit);
+        const result = await User.GetUserPosts(req.query.userID,  req.query.postType ,req.query.page, req.query.limit);
         res.status(OK).json({ result });
     } catch (e) {
         Utility.ErrResponse(res, e);
