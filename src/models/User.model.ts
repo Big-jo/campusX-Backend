@@ -21,8 +21,9 @@ const UserSchema: Schema = new Schema({
         followers: {type: Number, default: 0},
         followings: {type: Number, default: 0},
         post_count: {type: Number, default: 0},
-        profileComplete: {type: Boolean, default: false}
+        profileComplete: {type: Boolean, default: false},
     },
+    profileComplete: {type: Boolean, default: false},
     fcm_token: {type: String},
     // lastActive: {type: Date},  Implement last active
 }, {
