@@ -15,7 +15,7 @@ import random from 'random-number';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 // tslint:disable-next-line:no-var-requires
-// const  ObjectId = require('mongoose').Types.ObjectId;
+const  ObjectId = require('mongoose').Types.ObjectId;
 
 export class User {
 
@@ -93,10 +93,10 @@ export class User {
                     };
 
                     const token = Utility.createToken(payload);
-
+                    delete user.password;
                     return {
                         token,
-                        user: { userTag: user.userTag, university: user.userProfile.university, avatar: user.userProfile.avatar, userID: user._id },
+                        user,
                     };
                 } else {
                     return { incorrect: true };
@@ -352,16 +352,17 @@ export class User {
         }
     }
 
-    public static async ConnectUser(userID: string, filter: string , campus: string,offset: number) {
+    public static async ConnectUser(userID: string, filter: string , campus: string, offset: number) {
         // variable declarations
         // let users;
         let connectUsers;
 
         if (filter === 'sameCampus') {
-            connectUsers = await UserModel.find({ 'userProfile.university': campus }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
+            connectUsers = await UserModel.find({ 'userProfile.university': campus, _id: {$ne: ObjectId(userID)} }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
         } else {
             connectUsers = await UserModel.find({ 'userProfile.university': {$ne: campus} }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
-        }
+        };
+
 
         return {connectUsers};
     }
