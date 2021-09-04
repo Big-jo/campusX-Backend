@@ -163,8 +163,6 @@ export class Circle {
 
     public static async GetCircle(circleId: string, userID: string, redis: IORedis.Redis) {
         try {
-            const memberID = await CircleMemberModel.find({ userID, circle: circleId }).lean().exec();
-
             // Record that this user has visited this circle in their activity feed
             const lastVisit = moment().valueOf().toString();
             redis.zadd(`visitedCircles:${userID}`, lastVisit, circleId);
@@ -175,7 +173,16 @@ export class Circle {
             Utility.CacheExpiryTracker('VistedCirclesExpiry', `${userID}:${circleId}`, VisitedCirclesExpiryTime, VisitedCirclesExpiryUnit, redis);
 
             const circle = await CircleModel.findById(circleId).lean().exec();
-            return { circle, memberID: memberID !== undefined ? memberID : null };
+            const member = await CircleMemberModel.find({circle: circleId, userID}).limit(1).exec();
+
+            
+            if (member.length > 0) {
+                circle.member = true
+            } else {
+                circle.member = false
+            }
+
+            return { circle };
         } catch (error) {
             logger.error(error.message);
             throw new Error(error);
