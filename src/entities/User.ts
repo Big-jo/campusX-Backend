@@ -20,13 +20,13 @@ const  ObjectId = require('mongoose').Types.ObjectId;
 export class User {
 
     public static async CreateUser(userObject: IUser) {
-        const foundUser = await UserModel.findOne({ email: userObject.email }).exec();
+        const foundUser = await UserModel.findOne({ email: userObject.email.toLowerCase() }).exec();
         if (foundUser) {
             return { exists: true, err_message: 'This user exists' };
         } else {
             try {
                 // check if userTag is available
-                const foundUser = await UserModel.findOne({ userTag: userObject.userTag }).exec();
+                const foundUser = await UserModel.findOne({ userTag: userObject.userTag.toLowerCase() }).exec();
                 if (foundUser) {
                     return { exists: true, err_message: 'This userTag has been taken already' };
                 } else {
@@ -39,7 +39,7 @@ export class User {
                             university: userObject.userProfile.university,
                         } : null,
                         userID: '',
-                        userTag: `${userObject.userTag}`,
+                        userTag: `${userObject.userTag.toLowerCase()}`,
                         email: userObject.email.toLowerCase(),
                         password: userObject.password,
                     });
