@@ -54,10 +54,20 @@ export class Notification {
         }
     }
 
-    public static async GetNotifications(userID: string) {
+    public static async GetNotifications(userID: string, category?: string) {
         // logger.info(Types.ObjectId(userID));
-        const notifications = await NotificationModel.find({userID}).lean().exec();
+        
+        const query: any = {
+            userID: Types.ObjectId(userID),
+        };
+
+        if (!!category) {
+            query['category'] = category;
+        }
+        const notifications = await NotificationModel.find(query).lean().exec();
         return {payload: notifications.reverse()};
+
+
 
         // if ((await primaryCache.exists(`notifications:${userID}`) === 1)) {
         //     const notif = await primaryCache.zrevrange(`notifications:${userID}`, 0, -1);

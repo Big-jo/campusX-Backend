@@ -15,7 +15,7 @@ const auth = validation.validateToken;
 export const getNotif = '/retrieve';
 router.get(getNotif, auth, async (req: Request, res: Response) => {
     try {
-        const notifications = await Notification.GetNotifications(req.token.userID);
+        const notifications = await Notification.GetNotifications(req.token.userID, req.query.category);
         res.json({notifications});
     } catch (e) {
         Utility.ErrResponse(res, e);
