@@ -14,7 +14,8 @@ admin.initializeApp({
 export class Notification {
     private fcm = admin.messaging();
 
-    constructor(private deviceToken: string, private notificationPayload: admin.messaging.NotificationMessagePayload,
+    constructor(private deviceToken: string, 
+                private notificationPayload: admin.messaging.NotificationMessagePayload,
                 private userID: string,
                 private avatar: string,
                 private category: string,
@@ -48,15 +49,13 @@ export class Notification {
                     sound: 'default',
                 },
             };
-            this.fcm.sendToDevice(this.deviceToken, payload);
+            this.fcm.sendToDevice(this.deviceToken, payload, {priority: 'high'});
         } catch (error) {
             logger.error(error);
         }
     }
 
-    public static async GetNotifications(userID: string, category?: string) {
-        // logger.info(Types.ObjectId(userID));
-        
+    public static async GetNotifications(userID: string, category?: string) {        
         const query: any = {
             userID: Types.ObjectId(userID),
         };
