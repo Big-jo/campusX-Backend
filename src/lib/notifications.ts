@@ -30,6 +30,11 @@ export class Notification {
                 createdAt: moment().utc().valueOf(),
                 category: this.category,
             } as any;
+
+            if(!!notificationPayload.data) {
+                notif.data = notificationPayload.data;
+            }
+
             new NotificationModel(notif).save();
             // const payload = JSON.stringify(notif);
             // primaryCache.zadd(`notifications:${this.userID}`, notif.createdAt.toString(), payload);
@@ -63,7 +68,10 @@ export class Notification {
         if (!!category) {
             query['category'] = category;
         }
-        const notifications = await NotificationModel.find(query).lean().exec();
+        const notifications = await NotificationModel.find(query).populate({path: 'data', populate: {
+            path: 'author',
+            select: {pasword: 0}
+        }}).exec();
         return {payload: notifications.reverse()};
 
 

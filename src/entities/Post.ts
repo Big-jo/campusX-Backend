@@ -325,6 +325,7 @@ export class Post {
                 body: post.text !== undefined ? post.text : "Media",
                 title: `${actor.userTag} liked your post`,
                 sound: "default",
+                data: post._id
               },
               author.id,
               actor.userProfile.avatar,
@@ -355,6 +356,7 @@ export class Post {
                   body: comment.text !== undefined ? comment.text : "Media",
                   title: `${actor.userTag} liked your comment`,
                   sound: "default",
+                  data: comment._id
                 },
                 author.id,
                 actor.userProfile.avatar,
@@ -523,7 +525,7 @@ export class Post {
         },
         authorOfPost.author,
         user.userProfile.avatar,
-        "comment"
+        "comment",
       ).SendPushNotification();
 
       // Notify mentioned users

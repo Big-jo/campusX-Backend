@@ -8,6 +8,7 @@ const NotificationsSchema: Schema = new Schema({
     createdAt: {type: Number},
     title: {type: String},
     body: {type: String},
+    data: {type: Schema.Types.ObjectId, ref: 'Post'} //  would mostly point to another collection
 }, {
     timestamps: true
 });
