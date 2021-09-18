@@ -44,7 +44,7 @@ export class Campus {
         // TODO: Sort campus based on the amount of activity happening in it
 
         const posts = await client.zrange(`campusFeed:${campus}`, 0 , -1);
-        const converted = posts.map(postID =>  Types.ObjectId(postID));
+        const converted = posts.map(postID =>  Types.ObjectId((postID.split(':')[1])));
         
         const aggregatedPosts = await AggregationQueries.NewsfeedPostAggreg(userID, converted);
         // TODO: Sort posts by a score
