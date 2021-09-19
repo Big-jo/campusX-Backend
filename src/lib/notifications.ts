@@ -54,7 +54,7 @@ export class Notification {
                     sound: 'default',
                 },
             };
-            this.fcm.sendToDevice(this.deviceToken, payload, {priority: 'high'});
+            this.fcm.sendToDevice(this.deviceToken, payload);
         } catch (error) {
             logger.error(error);
         }
