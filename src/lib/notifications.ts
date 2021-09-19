@@ -4,6 +4,7 @@ import IORedis from 'ioredis';
 import moment from 'moment';
 import NotificationModel from '../models/Notification.model';
 import { Types } from 'mongoose';
+// Just a comment
 // tslint:disable-next-line:no-var-requires
 const serviceAccount = require('../../env/service-file.json');
 
