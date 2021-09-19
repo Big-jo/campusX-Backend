@@ -122,3 +122,4 @@ node_modules
 .idea
 .mocharc.json
 # src/spec
+.circleci
