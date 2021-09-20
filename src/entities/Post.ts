@@ -160,7 +160,8 @@ export class Post {
             },
             user._id,
             user.userProfile.avatar,
-            "mention"
+            "mention",
+            author._id,
           ).SendPushNotification();
         });
       }
@@ -325,11 +326,13 @@ export class Post {
                 body: post.text !== undefined ? post.text : "Media",
                 title: `${actor.userTag} liked your post`,
                 sound: "default",
-                data: post._id
+                data: post._id,
               },
               author.id,
               actor.userProfile.avatar,
-              "like"
+              "like",
+              actor._id,
+
             ).SendPushNotification();
 
             return { result: "liked" };
@@ -356,11 +359,12 @@ export class Post {
                   body: comment.text !== undefined ? comment.text : "Media",
                   title: `${actor.userTag} liked your comment`,
                   sound: "default",
-                  data: comment._id
+                  data: comment._id,
                 },
                 author.id,
                 actor.userProfile.avatar,
-                "like"
+                "like",
+                actor._id,
               ).SendPushNotification();
               return { result: "liked" };
             }
@@ -522,10 +526,12 @@ export class Post {
             commentObject.type === "reply"
               ? `${user.userTag} replied your comment`
               : `${user.userTag} commented on your post`,
+              data: comment._id,
         },
         authorOfPost.author,
         user.userProfile.avatar,
         "comment",
+        user._id
       ).SendPushNotification();
 
       // Notify mentioned users
@@ -546,7 +552,8 @@ export class Post {
             },
             user0._id,
             user.userProfile.avatar,
-            "mention"
+            "mention",
+            user._id,
           ).SendPushNotification();
         });
       }

@@ -20,6 +20,7 @@ export class Notification {
                 private userID: string,
                 private avatar: string,
                 private category: string,
+                private actor: string,
                 ) { // Allowed categories: like, comment, mention
 
         try {// Allowed categories: like, comment, mention
@@ -30,6 +31,7 @@ export class Notification {
                 avatar: this.avatar,
                 createdAt: moment().utc().valueOf(),
                 category: this.category,
+                actor,
             } as any;
 
             if(!!notificationPayload.data) {
@@ -72,7 +74,7 @@ export class Notification {
         const notifications = await NotificationModel.find(query).populate({path: 'data', populate: {
             path: 'author',
             select: {pasword: 0}
-        }}).exec();
+        }}).populate({path: 'actor', select: {password: 0}}).exec();
         return {payload: notifications.reverse()};
 
 
