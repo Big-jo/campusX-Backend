@@ -57,7 +57,10 @@ export class Notification {
                     sound: 'default',
                 },
             };
-            this.fcm.sendToDevice(this.deviceToken, payload);
+
+            //@ts-ignore
+            if(this.actor.toString() !== this.userID.toString) this.fcm.sendToDevice(this.deviceToken, payload);
+
         } catch (error) {
             logger.error(error);
         }
