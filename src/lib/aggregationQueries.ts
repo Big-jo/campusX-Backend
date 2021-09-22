@@ -74,7 +74,7 @@ export class AggregationQueries {
             },
             {
                 $addFields: {
-                    isLiked: { $in: [userID, '$likedBy'] },
+                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {
@@ -156,7 +156,7 @@ export class AggregationQueries {
             },
             {
                 $addFields: {
-                    isLiked: { $in: [userID, '$likedBy'] },
+                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {
