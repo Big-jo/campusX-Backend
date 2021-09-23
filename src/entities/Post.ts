@@ -284,7 +284,6 @@ export class Post {
 
         case "comment":
           likedBy = await CommentModel.findOne(findLikedByQuery).lean().exec();
-
           break;
 
         case "circlePost":
@@ -585,7 +584,7 @@ export class Post {
         },
         {
           $addFields: {
-            isLiked: { $in: [userID, "$likedBy"] },
+            isLiked: { $in: [Types.ObjectId(userID), "$likedBy"] },
           },
         },
         {
