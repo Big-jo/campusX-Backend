@@ -35,12 +35,16 @@ export class Circle {
                     newCircle.coverImage = await s3CoverImage.UploadCircleCoverImage() as string;
                 }
 
-                await newCircle.save();
+                const circle = await newCircle.save();
 
                 // Add the user to that circle
-                this.Join(userID, newCircle.id);
+                const memberID = await this.Join(userID, newCircle.id);
+                //@ts-ignore
+                const converted = circle.toObject();
 
-                return {exist: false};
+                converted.memberID = memberID.memberID;
+
+                return {exist: false, converted};
             }
 
         } catch (error) {
