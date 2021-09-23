@@ -180,11 +180,9 @@ export class Circle {
             const member = await CircleMemberModel.find({circle: circleId, userID}).limit(1).exec();
 
             
-            if (member.length > 0) {
-                circle.member = true
-            } else {
-                circle.member = false
-            }
+            circle.member = member.length > 0 ? true : false;
+            
+            if (circle.member) circle.memberID = member[0].id;
 
             return { circle };
         } catch (error) {
