@@ -36,8 +36,8 @@ jobs:
         - run:
             name: Run Unit Tests
             command: |
-              npm run tests
-              
+              npm run build
+
     pull-and-build:
       docker:
         - image: arvindr226/alpine-ssh
