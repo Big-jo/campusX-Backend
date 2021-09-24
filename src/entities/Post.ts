@@ -25,8 +25,8 @@ interface IOptions {
 }
 
 export interface IPostOptions {
-  anonymous?: boolean;
-  campusReflect?: boolean;
+  anonymous?: string;
+  campusReflect?: string;
 }
 
 interface IPostType {
@@ -63,7 +63,7 @@ export class Post {
 
       // tslint:disable-next-line: no-shadowed-variable
       let post = new PostModel({
-        author: !!options.anonymous ? null : postObject.author,
+        author: options.anonymous === String("true") ? null : postObject.author,
         text: postObject.text,
         campus: postObject.campus,
         parentPost: postObject.parentPost,
@@ -124,7 +124,7 @@ export class Post {
       // TODO: Find a better way to rank active campuses
       pipeline.zadd("campuses", "0", postObject.campus);
 
-      if (!!options.campusReflect) {
+      if (options.campusReflect === String("true")) {
         // Add post to campus timeline
         pipeline.zadd(
           `campusFeed:${postObject.campus}`,
