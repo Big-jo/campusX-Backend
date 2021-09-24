@@ -6,7 +6,7 @@
     "lint": "tslint --project \"tsconfig.json\"",
     "postinstall": "tsc",
     "start": "ENV_FILE=production node -r ./env -r module-alias/register dist/Start.js",
-    "staging": "ENV_FILE=staging node -r ./env -r module-alias/register dist/Start.js"
+    "staging": "ENV_FILE=staging node -r ./env -r module-alias/register dist/Start.js",
     "start-dev": "nodemon --config \"./util/nodemon.json\"",
     "start-debug": "nodemon --config \"./util/nodemon.debug.json\" --inspect src/Start.ts",
     "start-staging": "nodemon --config \"./util/nodemon.staging.json\"",
