@@ -20,6 +20,7 @@ export class Notification {
                 private userID: string,
                 private avatar: string,
                 private category: string,
+                private actor: string,
                 ) { // Allowed categories: like, comment, mention
 
         try {// Allowed categories: like, comment, mention
@@ -30,6 +31,7 @@ export class Notification {
                 avatar: this.avatar,
                 createdAt: moment().utc().valueOf(),
                 category: this.category,
+                actor,
             } as any;
 
             if(!!notificationPayload.data) {
@@ -55,7 +57,10 @@ export class Notification {
                     sound: 'default',
                 },
             };
-            this.fcm.sendToDevice(this.deviceToken, payload);
+
+            //@ts-ignore
+            if(this.actor.toString() !== this.userID.toString) this.fcm.sendToDevice(this.deviceToken, payload);
+
         } catch (error) {
             logger.error(error);
         }
@@ -72,7 +77,7 @@ export class Notification {
         const notifications = await NotificationModel.find(query).populate({path: 'data', populate: {
             path: 'author',
             select: {pasword: 0}
-        }}).exec();
+        }}).populate({path: 'actor', select: {password: 0}}).exec();
         return {payload: notifications.reverse()};
 
 

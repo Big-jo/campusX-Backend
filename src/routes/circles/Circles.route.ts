@@ -49,7 +49,7 @@ router.post(createCircle, auth, upload.fields(multerUploadConfig), async (req: R
 
         const result = await Circle.Create(circleObject, req.token.userID);
         if (!result.exist) {
-            res.status(CREATED).json('created');
+            res.status(CREATED).json(result);
         } else {
             res.status(BAD_REQUEST).json({ exist: true });
         }

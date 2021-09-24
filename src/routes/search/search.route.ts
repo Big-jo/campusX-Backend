@@ -9,7 +9,7 @@ const path = '/search';
 /******************************************************************************
  *                                 SEARCH FOR POSTS
  /******************************************************************************/
-export const searchPost = '/posts?term';
+export const searchPost = '/posts';
 router.get(searchPost, async (req, res) => {
     try {
         const search = new Search(req.query.term);

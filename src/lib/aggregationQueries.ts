@@ -35,7 +35,35 @@ export class AggregationQueries {
                     ],
                     as: 'author',
                 },
-            }, {
+            },
+            {
+                $lookup: {from: 'comments',
+                let: {
+                  parentPost: "$_id"
+                },
+                pipeline: [
+                  {
+                  "$match": {
+                    $expr: {
+                      $eq: ["$parentPost", "$$parentPost"]}
+                  },
+                  },
+                  {
+                    $addFields: {
+                      score: {$add: [{$multiply: [2, "$likes"]}, {$multiply: [4.7, "$comments"]}]}
+                    }
+                  },{
+                    $sort: {
+                      score: -1
+                    }
+                  },{
+                    $limit: 4
+                  }
+                ],
+                as: 'top_comments'
+              }}
+            ,
+             {
                 $sort: { createdAt: -1 }
             }
         ];
@@ -74,7 +102,7 @@ export class AggregationQueries {
             },
             {
                 $addFields: {
-                    isLiked: { $in: [userID, '$likedBy'] },
+                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {
@@ -93,6 +121,32 @@ export class AggregationQueries {
                     as: 'author',
                 },
             },
+            {
+               $lookup: {from: 'comments',
+                let: {
+                  parentPost: "$_id"
+                },
+                pipeline: [
+                  {
+                  "$match": {
+                    $expr: {
+                      $eq: ["$parentPost", "$$parentPost"]}
+                  },
+                  },
+                  {
+                    $addFields: {
+                      score: {$add: [{$multiply: [2, "$likes"]}, {$multiply: [4.7, "$comments"]}]}
+                    }
+                  },{
+                    $sort: {
+                      score: -1
+                    }
+                  },{
+                    $limit: 4
+                  }
+                ],
+                as: 'top_comments'
+            }}
         ];
 
         const agg = await PostModel.aggregate(aggregate).exec();
@@ -156,7 +210,7 @@ export class AggregationQueries {
             },
             {
                 $addFields: {
-                    isLiked: { $in: [userID, '$likedBy'] },
+                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {

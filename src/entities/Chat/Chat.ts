@@ -74,7 +74,7 @@ export class Chat {
                 title: `New Conversation`,
                 body: `${Sender.userTag} started a conversation with you`,
                 sound: 'default',
-            }, receiverID, Sender.userProfile.avatar, 'Conversation').SendPushNotification();
+            }, receiverID, Sender.userProfile.avatar, 'Conversation', Sender._id).SendPushNotification();
         }
 
     }

@@ -146,7 +146,7 @@ export class User {
                     title: 'New Follower',
                     body: `${follower.userTag} followed you`,
                     sound: 'default',
-                }, targetUserID, follower.userProfile.avatar, 'follower').SendPushNotification();
+                }, targetUserID, follower.userProfile.avatar, 'follower', follower._id).SendPushNotification();
 
                 // Add target user's recent post to user's feed 
                 Post.AddToFeed(userID, targetUserID, primaryCache);
