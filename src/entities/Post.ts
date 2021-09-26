@@ -637,8 +637,6 @@ export class Post {
               },
               {
                 $sort: {
-                  likes: -1,
-                  comments: -1,
                   createdAt: -1,
                 },
               },
