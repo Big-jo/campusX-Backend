@@ -54,7 +54,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
       - run_tests:
           filters:
             branches:
