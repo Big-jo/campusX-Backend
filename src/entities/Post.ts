@@ -25,7 +25,8 @@ interface IOptions {
 }
 
 export interface IPostOptions {
-  anonymous: boolean;
+  anonymous?: string;
+  campusReflect?: string;
 }
 
 interface IPostType {
@@ -52,7 +53,7 @@ export class Post {
     postObject: IPost,
     userID: string,
     primaryCache: IORedis.Redis,
-    options: { campusReflect: boolean }
+    options: IPostOptions
   ) {
     try {
       const parsedPost = await new PostParser(postObject).Parse();
@@ -62,7 +63,7 @@ export class Post {
 
       // tslint:disable-next-line: no-shadowed-variable
       let post = new PostModel({
-        author: postObject.author,
+        author: options.anonymous === String("true") ? null : postObject.author,
         text: postObject.text,
         campus: postObject.campus,
         parentPost: postObject.parentPost,
@@ -70,7 +71,7 @@ export class Post {
         hashTags,
         mentions: mentioned,
       });
-
+5
       if (postObject.image !== undefined) {
         const s3 = new S3(post.id + "image", postObject.image, "image");
         post.image = (await s3.UploadImage()) as string;
@@ -118,16 +119,20 @@ export class Post {
           primaryCache
         );
       }
+
       // Add campus name to list of campuses
       // TODO: Find a better way to rank active campuses
       pipeline.zadd("campuses", "0", postObject.campus);
 
-      // Add post to campus timeline
-      pipeline.zadd(
-        `campusFeed:${postObject.campus}`,
-        "0",
-        `${postObject.campus}:${post.id}`
-      );
+      if (options.campusReflect === String("true")) {
+        // Add post to campus timeline
+        pipeline.zadd(
+          `campusFeed:${postObject.campus}`,
+          "0",
+          `${postObject.campus}:${post.id}`
+        );
+
+      }
       pipeline.exec();
 
       // Expiry values
@@ -525,7 +530,7 @@ export class Post {
             commentObject.type === "reply"
               ? `${user.userTag} replied your comment`
               : `${user.userTag} commented on your post`,
-              data: comment._id,
+          data: comment._id,
         },
         authorOfPost.author,
         user.userProfile.avatar,
@@ -634,11 +639,11 @@ export class Post {
                 $sort: {
                   likes: -1,
                   comments: -1,
-                  createdAt: -1,
+                  // createdAt: -1,
                 },
               },
               {
-                $limit: 4,
+                $limit: 2,
               },
             ],
             as: "replies",
@@ -646,8 +651,8 @@ export class Post {
         },
         {
           $sort: {
-            likes: -1,
-            comments: -1,
+            // likes: -1,
+            // comments: -1,
             createdAt: -1,
           },
         },

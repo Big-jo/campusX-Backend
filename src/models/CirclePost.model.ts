@@ -17,6 +17,7 @@ const CirclePostSchema: Schema = new Schema({
     comments: {type: Number, default: 0},
     trash: { type: Number, default: 0 },
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    createdAt: { type: Number },
 },  {
     timestamps: true
 });
