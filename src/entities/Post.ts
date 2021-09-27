@@ -637,11 +637,13 @@ export class Post {
               },
               {
                 $sort: {
-                  createdAt: -1,
+                  likes: -1,
+                  comments: -1,
+                  // createdAt: -1,
                 },
               },
               {
-                $limit: 4,
+                $limit: 2,
               },
             ],
             as: "replies",
@@ -649,8 +651,8 @@ export class Post {
         },
         {
           $sort: {
-            likes: -1,
-            comments: -1,
+            // likes: -1,
+            // comments: -1,
             createdAt: -1,
           },
         },
