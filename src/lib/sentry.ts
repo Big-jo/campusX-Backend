@@ -1,7 +1,7 @@
 import * as sentry from '@sentry/node';
 
 if (process.env.NODE_ENV === 'production') {
-    sentry.init({dsn: 'https://1c1c4292267644e2b1fbed99f9eebfb0@o411372.ingest.sentry.io/5286469'});
+    sentry.init({dsn: process.env.DSN, environment: process.env.NODE_ENV});
 }
 
 export default sentry;
