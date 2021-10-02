@@ -225,6 +225,20 @@ router.get(checkFeedStatus, auth, async (req: Request, res: Response) => {
         Utility.ErrResponse(res, error);
     }
 });
+
+/******************************************************************************
+ *                                 Delete Post
+ /******************************************************************************/
+ router.post("/delete", auth, async (req: Request, res: Response) => {
+    try {
+        Post.Delete(req.token.userID, req.body.postID);
+
+        res.status(OK).send();
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
 /******************************************************************************
  *                                 Trash Post
  /******************************************************************************/

@@ -163,6 +163,15 @@ export class CirclePost extends Post {
         return { top: hydratedPosts};
     }
 
+    public static async Delete(userID: string, postID: string) {
+        try {
+            // TODO: Might want to check if the person deleteing is the author of the post
+            CirclePostModel.findByIdAndRemove(postID).exec();
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+
         // private static async SortPost(posts: any[], options: { reverse: boolean }): Promise<any[]> {
     //
     // }

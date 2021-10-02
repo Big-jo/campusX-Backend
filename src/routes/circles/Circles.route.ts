@@ -125,7 +125,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
         if (result.msg !== undefined) {
             res.status(CREATED).send();
         } else {
-            res.status(403).json({err: result.msg});
+            res.status(403).json({ err: result.msg });
         }
     } catch (error) {
         Utility.ErrResponse(res, error);
@@ -138,7 +138,7 @@ router.post(circlePost, upload.single('image'), auth, async (req: Request, res: 
 export const getCircles = '/list';
 router.get(getCircles, auth, async (req: Request, res: Response) => {
     try {
-        const result = await Circle.GetCircles(parseInt(req.query.offset, 10),  req.token.userID,
+        const result = await Circle.GetCircles(parseInt(req.query.offset, 10), req.token.userID,
             req.query.recent, res.locals.primaryCache, req.query.category);
         res.status(OK).json({ result });
     } catch (error) {
@@ -197,7 +197,7 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
             text: req.body.text,
         };
 
-        CirclePost.Comment(commentObject, req.token.fcm_token , res.locals.primaryCache);
+        CirclePost.Comment(commentObject, req.token.fcm_token, res.locals.primaryCache);
 
         res.status(OK).send();
     } catch (error) {
@@ -210,7 +210,7 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
 *                                 GET POST COMMENTS
 /******************************************************************************/
 export const getComments = '/post/comment';
-router.get(getComments, auth, async (req:Request, res: Response) => {
+router.get(getComments, auth, async (req: Request, res: Response) => {
     const comments = await CirclePost.GetComments(req.query.circleID, req.token.userID, req.query.limit, req.query.page);
 
     res.status(OK).send(comments);
@@ -242,6 +242,21 @@ router.get(top, auth, async (req: Request, res: Response) => {
         Utility.ErrResponse(res, error);
     }
 });
+
+/******************************************************************************
+*                                 DELETE A POST
+/******************************************************************************/
+router.post('/post/delete', auth, async (req: Request, res: Response) => {
+    try {
+        CirclePost.Delete(req.token.userID, req.body.postID);
+        res.status(OK).send();
+
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+
 
 /******************************************************************************
 *                                 Like A Comment

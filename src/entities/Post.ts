@@ -780,4 +780,19 @@ export class Post {
       logger.error(error);
     }
   }
+
+  public static async Delete(userID: string, postID: string) {
+    try {
+        const post = await PostModel.findOne({authorID: userID, _id: postID}).lean().exec();
+
+        if (!!!post) {
+            PostModel.findByIdAndDelete({_id: postID}).exec();
+        } else {
+            throw new Error('Cannot delete a post that is not yours');
+        }
+        
+    } catch (err) {
+        logger.error(err);
+    }
+}
 }
