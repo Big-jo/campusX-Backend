@@ -77,46 +77,53 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async CircleComment(commentObject: ICircleComment, media: any, redis: IORedis.Redis) {
+    public static async Comment(commentObject: ICircleComment, fcm_token: string, primaryCache: IORedis.Redis) {
         try {
-            const comment: ICircleComment = {
-                campus: commentObject.campus,
-                parentPost: commentObject.parentPost,
-                createdAt: moment().valueOf(),
-                author: commentObject.author,
-                comments: 0,
-                dislikes: 0,
-                image: commentObject.image,
-                likes: 0,
-                text: commentObject.text,
-                video: commentObject.video,
-                circleID: commentObject.circleID,
-                memberID: commentObject.memberID,
-            };
-
-            const createdComment = new CircleCommentModel(comment);
-
-            // let s3;
-            //
-            // if (media.type === 'image') {
-            //     s3 = new S3(createdComment.id, media.file, 'image');
-            //     createdComment.image = await s3.UploadImage();
-            // } else {
-            //     s3 = new S3(createdComment.id, media.file, 'video');
-            //     createdComment.video = await s3.UploadVideo();
-            // }
-
-            createdComment.postID = createdComment.id;
-
-            createdComment.save();
-            // TODO: Indicate if the comment is a reply to a post or comment, so a reply for comment isn't scored
-            redis.zincrby(`circlePost:${commentObject.circleID}`, 1, commentObject.parentPost);
-
+            return super.Comment(commentObject, fcm_token, primaryCache);
         } catch (error) {
-            logger.error(error);
-            throw new Error(error);
+            
         }
     }
+    // public static async CircleComment(commentObject: ICircleComment, media: any, redis: IORedis.Redis) {
+    //     try {
+    //         const comment: ICircleComment = {
+    //             campus: commentObject.campus,
+    //             parentPost: commentObject.parentPost,
+    //             createdAt: moment().valueOf(),
+    //             author: commentObject.author,
+    //             comments: 0,
+    //             dislikes: 0,
+    //             image: commentObject.image,
+    //             likes: 0,
+    //             text: commentObject.text,
+    //             video: commentObject.video,
+    //             circleID: commentObject.circleID,
+    //             memberID: commentObject.memberID,
+    //         };
+
+    //         const createdComment = new CircleCommentModel(comment);
+
+    //         // let s3;
+    //         //
+    //         // if (media.type === 'image') {
+    //         //     s3 = new S3(createdComment.id, media.file, 'image');
+    //         //     createdComment.image = await s3.UploadImage();
+    //         // } else {
+    //         //     s3 = new S3(createdComment.id, media.file, 'video');
+    //         //     createdComment.video = await s3.UploadVideo();
+    //         // }
+
+    //         createdComment.postID = createdComment.id;
+
+    //         createdComment.save();
+    //         // TODO: Indicate if the comment is a reply to a post or comment, so a reply for comment isn't scored
+    //         redis.zincrby(`circlePost:${commentObject.circleID}`, 1, commentObject.parentPost);
+
+    //     } catch (error) {
+    //         logger.error(error);
+    //         throw new Error(error);
+    //     }
+    // }
 
     public static async TopPosts(userID: string, redis: IORedis.Redis) {
         const lastVisitedCircles = await redis.zrevrange(`visitedCircles:${userID}`, 0, -1);

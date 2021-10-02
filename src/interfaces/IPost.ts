@@ -4,6 +4,14 @@ export interface IPostModel extends Document, IPost {
     createdAt: number;
 }
 
+export enum CommentTypes {
+    REPLY = 'reply',
+    POST_COMMENT = 'postComment',
+    CIRCLE_COMMENT = 'circleComment',
+    CIRCLE_COMMENT_REPLY = 'circleCommentReply',
+    HF = 'hf',
+}
+
 export interface IPost {
     postID?: string;
     author?: string;
@@ -26,12 +34,16 @@ export interface ICommentModel extends IPostModel {
     type: string;
 }
 
+
 export interface IComment extends IPost {
-    type?: string;
+    type?: CommentTypes;
     // type: string;
     parentPost: string;
     // parentPostID: string;
     hashTags?: string[]
+    // Depending on if comment belongs to a circle or not
+    circleID? : string;
+    memberID?: string;
 
 }
 
@@ -42,6 +54,7 @@ export interface IRepostModel extends IPostModel {
 export interface IRepost extends IPost {
     parentPost: string;
 }
+
 // export interface IPostCached {
 //     [newsfeedID: string]: IPost;
 // } 

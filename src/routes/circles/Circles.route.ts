@@ -8,7 +8,7 @@ import { Utility } from '@lib';
 import { logger } from '@shared';
 import validation from '../../middleware/auth';
 import multer from 'multer';
-import { ICircle } from '@interfaces';
+import { ICircle, IComment } from '@interfaces';
 import { ICirclePost, ICircleComment } from '@interfaces';
 
 /******************************************************************************
@@ -160,6 +160,8 @@ router.get(getCircle, auth, async (req: Request, res: Response) => {
     }
 });
 
+
+
 /******************************************************************************
 *                                 GET USER CIRCLES
 /******************************************************************************/
@@ -195,14 +197,24 @@ router.post(comment, auth, upload.fields([{ name: 'image', maxCount: 1 }, { name
             text: req.body.text,
         };
 
-        // if()
-        CirclePost.CircleComment(commentObject, undefined, res.locals.primaryCache);
+        CirclePost.Comment(commentObject, req.token.fcm_token , res.locals.primaryCache);
 
         res.status(OK).send();
     } catch (error) {
         Utility.ErrResponse(res, error);
     }
 });
+
+
+/******************************************************************************
+*                                 GET POST COMMENTS
+/******************************************************************************/
+export const getComments = '/post/comment';
+router.get(getComments, auth, async (req:Request, res: Response) => {
+    const comments = await CirclePost.GetComments(req.query.circleID, req.token.userID, req.query.limit, req.query.page);
+
+    res.status(OK).send(comments);
+})
 
 /******************************************************************************
 *                                 LIKE A POST
