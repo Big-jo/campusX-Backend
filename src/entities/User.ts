@@ -11,6 +11,10 @@ import {AggregationQueries} from '../lib/aggregationQueries';
 import {Post} from './Post';
 import IORedis from 'ioredis';
 import random from 'random-number';
+import { EmailService } from 'src/services/email.service';
+import Request from 'express';
+import Response from 'express';
+import shortid from "shortid";
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -51,6 +55,9 @@ export class User {
                     const rounds = await bcrypt.genSalt(10);
                     // Hash Password
                     user.password = await bcrypt.hash(user.password, rounds);
+
+                    // Reset Token 
+                    user.resetToken = await bcrypt.hash(user.userTag, rounds);
 
                     let savedUser = await user.save();
                     savedUser = savedUser.toObject();
@@ -365,5 +372,67 @@ export class User {
 
 
         return {connectUsers};
+    }
+
+    public static async ResetPassword(email: string, token: string, newPassword: string) {
+        try {
+            const user = UserModel.findOne({ resetToken: token }).lean().exec();
+
+            if (!!user) {
+                const rounds = await bcrypt.genSalt(10);
+                    // Hash Password
+                    const updatedPasswordHash = await bcrypt.hash(newPassword, rounds);
+                    await UserModel.update({ resetToken: token }, {$set: {password: updatedPasswordHash}}).exec();
+
+            } else {
+                throw new Error('Wrong Token')
+            }
+
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
+
+    public static async ForgotPassword(email: string) {
+        try {
+            //@ts-ignore
+            const user = await UserModel.findOne({ email }).lean().exec();
+
+            if (!!user) {
+                const sid = shortid.generate();
+
+                UserModel.update({email}, {$set: {resetToken: sid}}).exec();
+
+                const body = `Hi ${user.name}, we heard you forgot your password, here is your unique key: ${sid}`
+
+                const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <!-- HTML Codes by Quackit.com -->
+                <title>
+                Campusx  Password Reset </title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                body {background-color:#ffffff;background-repeat:no-repeat;background-position:top left;background-attachment:fixed;}
+                h3{font-family:Helvetica, sans-serif;color:#000000;background-color:#ffffff;}
+                p {font-family:Helvetica, sans-serif;font-size:14px;font-style:normal;font-weight:normal;color:#000000;background-color:#ffffff;}
+                </style>
+                </head>
+                <body>
+                <h3>Forgot Password</h3>
+                <p>Hi hi, we heard you forgot your password, here you go, your unique code: <b>${sid}</b></p>
+                </body>
+                </html>
+                
+                `
+                const emailService = new EmailService(email, 'Reset Password', body, html)
+                emailService.send();
+
+            }
+
+        } catch (err) {
+            logger.error(err);
+        }
     }
 }

@@ -7,6 +7,7 @@ const UserSchema: Schema = new Schema({
     userTag: {type: String, required: true},
     email: {type: String, required: true},
     password: {type: String, required: true},
+    resetToken: {type: String, required: true},
     userProfile: {
         avatar: {type: String},
         level: {type: Number},

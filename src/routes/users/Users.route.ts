@@ -209,6 +209,35 @@ router.get(getClientPosts, auth, async (req: Request, res: Response) => {
         Utility.ErrResponse(error, res);
     }
 });
+
+/******************************************************************************
+*                                 FORGOT PASSWORD
+/******************************************************************************/
+router.post('/forgot-password', (req, res) => {
+    try {
+        User.ForgotPassword(req.body.email);
+
+        //@ts-ignore
+        res.status(200).send()
+    } catch (error) {
+        res.status(500).send(error.message)
+    }
+});
+
+/******************************************************************************
+*                                 RESET PASSWORD
+/******************************************************************************/
+router.post('/reset-password', (req, res) => {
+    try {
+        User.ResetPassword(req.body.email, req.body.token, req.body.password);
+
+        //@ts-ignore
+        res.status(200).send()
+    } catch (error) {
+        res.status(500).send(error.message)
+    }
+});
+
 /******************************************************************************
  *                          Get Follower Notification
  /******************************************************************************/
