@@ -119,6 +119,8 @@ export class Circle {
                 },
                 {
                     $sort: {
+                        createdAt: -1,
+                        comments: -1,
                         likes: -1,
                     },
                 },

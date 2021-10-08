@@ -239,6 +239,11 @@ export class AggregationQueries {
                     as: 'circle',
                 },
             },
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            }
         ];
         return (await CirclePostModel.aggregate(query));
     }
