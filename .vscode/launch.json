@@ -13,7 +13,10 @@
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/ts-node-dev",
         "skipFiles": [ "<node_internals>/**" ],
         "type": "node",
-        "runtimeArgs": [ "--respawn", "-r", "tsconfig-paths/register", "-r", "./env" ],
+        "env": {
+          "NODE_ENV": "development"
+        },
+        "runtimeArgs": ["--respawn", "-r", "tsconfig-paths/register", "-r", "./env" ],
         "args": [ "${workspaceFolder}/src/Start.ts" ]
       }
     ]

@@ -1,6 +1,6 @@
 import PostModel from "../models/Post.model";
 import UserModel from "../models/User.model";
-import { IComment, IPost } from "../interfaces/IPost";
+import { CommentTypes, IComment, IPost } from "../interfaces/IPost";
 import { logger } from "@shared";
 import FollowsModel, { IFollower } from "../models/Follower.model";
 import * as IORedis from "ioredis";
@@ -16,6 +16,7 @@ import EventEmitter from "events";
 import { Newsfeed } from "../lib/newsfeeds";
 import { PostParser } from "../lib/postParser";
 import { bool } from "aws-sdk/clients/signer";
+import CircleModel from "src/models/Circle.model";
 
 interface IOptions {
   mostRecent?: boolean;
@@ -71,7 +72,7 @@ export class Post {
         hashTags,
         mentions: mentioned,
       });
-5
+      5
       if (postObject.image !== undefined) {
         const s3 = new S3(post.id + "image", postObject.image, "image");
         post.image = (await s3.UploadImage()) as string;
@@ -471,10 +472,9 @@ export class Post {
     primaryCache: IORedis.Redis
   ) {
     try {
-      let authorOfPost;
-
+      let authoredPost;
       if (commentObject.type === "reply") {
-        authorOfPost = await CommentModel.findByIdAndUpdate(
+        authoredPost = await CommentModel.findByIdAndUpdate(
           commentObject.parentPost,
           {
             $inc: {
@@ -484,8 +484,8 @@ export class Post {
         )
           .lean()
           .exec();
-      } else {
-        authorOfPost = await PostModel.findByIdAndUpdate(
+      } else if (commentObject.type === "postComment") {
+        authoredPost = await PostModel.findByIdAndUpdate(
           commentObject.parentPost,
           {
             $inc: {
@@ -495,6 +495,24 @@ export class Post {
         )
           .lean()
           .exec();
+      } else if (commentObject.type === "circleComment") {
+        authoredPost = await CirclePostModel.findByIdAndUpdate(
+          commentObject.parentPost,
+          {
+            $inc: {
+              comments: 1,
+            },
+          }
+        )
+      } else if (commentObject.type = CommentTypes.CIRCLE_COMMENT_REPLY) {
+        authoredPost = await CirclePostModel.findByIdAndUpdate(
+          commentObject.parentPost,
+          {
+            $inc: {
+              comments: 1,
+            },
+          }
+        ).populate("circleID")
       }
 
       const user = await UserModel.findById(commentObject.author).exec();
@@ -520,19 +538,54 @@ export class Post {
       const comment = new CommentModel(newComment);
       comment.commentID = comment.id;
       comment.save();
+      let circle;
 
+      let notificationPayload;
+
+      switch (commentObject.type) {
+        case "reply":
+          notificationPayload = {
+            body: commentObject.text !== undefined ? commentObject.text : "Media",
+            title: `${user.userTag} replied your comment`,
+            data: comment._id,
+          };
+          break;
+
+        case "circleComment":
+          circle = authoredPost.circleID.name;
+
+          notificationPayload = {
+            body: commentObject.text !== undefined ? commentObject.text : "Media",
+            title: `${user.userTag} commented on your post in ${circle.name} circle`,
+            data: comment._id,
+          };
+
+        case "postComment":
+          notificationPayload = {
+            body: commentObject.text !== undefined ? commentObject.text : "Media",
+            title: `${user.userTag} commented on your post`,
+            data: comment._id,
+          };
+          break;
+
+        case "circleCommentReply":
+          circle = authoredPost.circleID.name;
+
+          notificationPayload = {
+            body: commentObject.text !== undefined ? commentObject.text : "Media",
+            title: `${user.userTag} replied to comment in ${circle.name} circle`,
+            data: comment._id,
+          };
+
+          break;
+        default:
+          break;
+      }
       // Get fcm_token of the recipient
       new Notification(
         fcm_token,
-        {
-          body: commentObject.text !== undefined ? commentObject.text : "Media",
-          title:
-            commentObject.type === "reply"
-              ? `${user.userTag} replied your comment`
-              : `${user.userTag} commented on your post`,
-          data: comment._id,
-        },
-        authorOfPost.author,
+        notificationPayload,
+        authoredPost.author,
         user.userProfile.avatar,
         "comment",
         user._id
@@ -580,7 +633,7 @@ export class Post {
     parentPostID: string,
     userID: string,
     limit: number,
-    page: number
+    page: number,
   ) {
     try {
       const aggregate = [
@@ -727,4 +780,19 @@ export class Post {
       logger.error(error);
     }
   }
+
+  public static async Delete(userID: string, postID: string) {
+    try {
+        const post = await PostModel.findOne({authorID: userID, _id: postID}).lean().exec();
+
+        if (!!!post) {
+            PostModel.findByIdAndDelete({_id: postID}).exec();
+        } else {
+            throw new Error('Cannot delete a post that is not yours');
+        }
+        
+    } catch (err) {
+        logger.error(err);
+    }
+}
 }

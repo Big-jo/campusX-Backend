@@ -113,6 +113,7 @@ app.use((req, res, next) => {
 
 app.use(BaseRouter.path, BaseRouter.router);
 
+
 app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
 
 // Optional fallthrough error handler

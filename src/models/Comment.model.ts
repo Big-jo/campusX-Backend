@@ -18,7 +18,7 @@ const commentSchema: Schema = new Schema({
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
     comments: { type: Number, default: 0 },
-    type: { type: String, }
+    type: { type: String, enum: ["reply", "postComment", "circleComment", "circleCommentReply", "hf"] }  // hf just to support mobile because he wouldnt want to change it
 }, {
     timestamps: true
 });

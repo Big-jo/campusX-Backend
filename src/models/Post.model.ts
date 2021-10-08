@@ -20,6 +20,7 @@ const PostSchema: Schema = new Schema({
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     hashTags: [{type: String}],
     mentions:[{type: String}],
+    // deleted: {type: Boolean}
 }, {
     timestamps: true
 });
