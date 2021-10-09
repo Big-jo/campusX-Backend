@@ -11,7 +11,7 @@ import {AggregationQueries} from '../lib/aggregationQueries';
 import {Post} from './Post';
 import IORedis from 'ioredis';
 import random from 'random-number';
-import { EmailService } from 'src/services/email.service';
+import { EmailService } from '../services/email.service';
 import Request from 'express';
 import Response from 'express';
 import shortid from "shortid";
