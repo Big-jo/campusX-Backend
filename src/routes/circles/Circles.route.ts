@@ -10,6 +10,7 @@ import validation from '../../middleware/auth';
 import multer from 'multer';
 import { ICircle, IComment } from '@interfaces';
 import { ICirclePost, ICircleComment } from '@interfaces';
+import { CircleConversation } from 'src/entities/Circles/CircleConversations';
 
 /******************************************************************************
  *                                 Router Setup
@@ -256,6 +257,92 @@ router.post('/post/delete', auth, async (req: Request, res: Response) => {
     }
 });
 
+/******************************************************************************
+*                                 CREATE CIRCLE CONVERSATION
+/******************************************************************************/
+router.post('/conversation', auth, async (req: Request, res: Response) => {
+    try {
+        const circleConversation = new CircleConversation(res.locals.primaryCache, req.token.userID);
+
+        const result = await circleConversation.createConversation(req.body.circle, req.body.memberID, req.body.description, req.body.circlePost);
+        res.status(OK).json({ result });
+
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+
+/******************************************************************************
+*                                 JOIN CIRCLE CONVERSATION
+/******************************************************************************/
+router.patch('/conversation/:status', auth, async (req: Request, res: Response) => {
+    try {
+        const circleConversation = new CircleConversation(res.locals.primaryCache, req.token.userID);
+        const conversationID = req.body.conversationID;
+        let status; 
+
+        if (req.params.status === 'join') {
+
+            circleConversation.joinConversation(conversationID); 
+            status = "Joined";
+
+        } else if (req.params.status === 'leave') {
+            circleConversation.leaveConversation(conversationID)
+            status = "left"
+        }
+
+        res.status(OK).json({status});
+
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
+*                                  SEND MESSAGE
+/******************************************************************************/
+// router.post('/conversation/message', auth, async (req: Request, res: Response) => {
+//     try {
+        
+//         const circleConversation = new CircleConversation()
+//         CircleConversation.sendMessage(req.body, res.locals.primaryCache)
+
+//         res.status(OK).send();
+//     } catch (error) {
+//         Utility.ErrResponse(res, error);
+//     }
+// });
+
+/******************************************************************************
+*                                  GET MESSAGES
+/******************************************************************************/
+router.get('/conversation/message', auth, async (req: Request, res: Response) => {
+    try {
+        
+        const circleConversation = new CircleConversation(res.locals.primaryCache, req.token.userID);
+        const result = await circleConversation.getConversationMessages(req.query.conversationID);
+
+        res.status(OK).json({result});
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
+
+/******************************************************************************
+*                                  GET HGIHLIGHTED CONVERSATIONS
+/******************************************************************************/
+router.get('/conversation/highlighted', auth, async (req: Request, res: Response) => {
+    try {
+        
+        const circleConversation = new CircleConversation(res.locals.primaryCache, req.token.userID);
+        const result = await circleConversation.getHighlightedConversations();
+
+        res.status(OK).json({result});
+    } catch (error) {
+        Utility.ErrResponse(res, error);
+    }
+});
 
 
 /******************************************************************************
