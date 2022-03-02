@@ -204,4 +204,8 @@ export class Circle {
             throw new Error(error);
         }
     }
+
+    public static async CreateConversation(userID: string, circleId: string) {
+        
+    }
 }
