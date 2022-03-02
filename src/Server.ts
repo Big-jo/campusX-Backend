@@ -16,6 +16,7 @@ import sentry from './lib/sentry';
 import IORedis from 'ioredis';
 import { Chat } from './entities/Chat/Chat';
 import { Tasks } from '@lib';
+import { CircleConversation } from './lib/circle-conversation';
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 
@@ -71,8 +72,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = socketIO.listen(server, { path: '/timeline' });
+const cirleIO = socketIO.listen(server, { path: '/circle-conversations'});
 const chatIO = socketIO.listen(server, { path: '/chat' });
 new Newsfeed(io);
+new CircleConversation(cirleIO)
 // new Chat(chatIO, primaryCache);
 
 // Handle Websockets

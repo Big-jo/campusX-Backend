@@ -72,7 +72,7 @@ export class Post {
         hashTags,
         mentions: mentioned,
       });
-      5
+      
       if (postObject.image !== undefined) {
         const s3 = new S3(post.id + "image", postObject.image, "image");
         post.image = (await s3.UploadImage()) as string;

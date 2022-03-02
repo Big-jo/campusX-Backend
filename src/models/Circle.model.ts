@@ -4,6 +4,7 @@ import mongoosePaginate from 'mongoose-paginate';
 
 const ModeratorSchema: Schema = new Schema({
     moderator: { type: Schema.Types.ObjectId, ref: 'User' },
+    priviledges: ['ADD-USER', 'BAN', 'LOCK', 'WARN']
 });
 
 const CircleSchema: Schema = new Schema({
@@ -15,7 +16,6 @@ const CircleSchema: Schema = new Schema({
     moderators: [ModeratorSchema],
     category: { type: String, required: true },
     createdAt: {type: String, default: new Date()}
-
 });
 
 CircleSchema.plugin(mongoosePaginate);
