@@ -22,7 +22,7 @@
     "@lib": "dist/lib"
   },
   "dependencies": {
-    "@sentry/node": "^5.17.0",
+    "@sentry/node": "^9.2.0",
     "@types/bcrypt-nodejs": "0.0.30",
     "@types/express-ws": "^3.0.0",
     "@types/ioredis": "^4.14.9",
@@ -37,11 +37,11 @@
     "bcrypt": "^5.0.0",
     "bcrypt-nodejs": "0.0.3",
     "connect-mongo": "^3.0.0",
-    "cookie-parser": "^1.4.4",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^8.0.0",
-    "express": "^4.17.1",
-    "express-session": "^1.16.2",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
     "express-ws": "^4.0.0",
     "fcm-node": "^1.5.2",
     "firebase-admin": "^9.4.2",
@@ -67,7 +67,7 @@
     "pm2": "^4.5.1",
     "random-number": "0.0.9",
     "shortid": "^2.2.16",
-    "socket.io": "^2.3.0",
+    "socket.io": "^4.8.1",
     "tslib": "^2.0.0",
     "uuid": "^3.3.2",
     "winston": "^3.2.1"
