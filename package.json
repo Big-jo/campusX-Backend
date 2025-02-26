@@ -55,7 +55,7 @@
     "mention-hashtag": "^1.1.1",
     "module-alias": "^2.2.0",
     "moment": "^2.24.0",
-    "mongoose": "^5.7.5",
+    "mongoose": "^8.10.2",
     "mongoose-aggregate-paginate-v2": "^1.0.42",
     "mongoose-paginate": "^5.0.3",
     "morgan": "^1.9.1",
