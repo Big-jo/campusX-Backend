@@ -1,0 +1,56 @@
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+bun.lockb
+
+# Build output
+dist
+build
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test and coverage
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+src/spec
+
+# Documentation
+*.md
+!README.md
+docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc
+.editorconfig
+.eslintrc
+.prettierrc
+tslint.json

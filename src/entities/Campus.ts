@@ -3,7 +3,7 @@ import CampusModel from 'src/models/Campus.model';
 import * as IORedis from 'ioredis';
 import { logger } from '@shared';
 import {AggregationQueries} from '@lib';
-import {Types} from 'mongoose';
+import mongoose from 'mongoose';
 
 export class Campus {
     constructor() {
@@ -44,7 +44,7 @@ export class Campus {
         // TODO: Sort campus based on the amount of activity happening in it
 
         const posts = await client.zrange(`campusFeed:${campus}`, 0 , -1);
-        const converted = posts.map(postID =>  Types.ObjectId((postID.split(':')[1])));
+        const converted = posts.map(postID =>  mongoose.Types.ObjectId((postID.split(':')[1])));
         
         const aggregatedPosts = await AggregationQueries.NewsfeedPostAggreg(userID, converted);
         // TODO: Sort posts by a score

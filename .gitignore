@@ -123,3 +123,5 @@ node_modules
 .mocharc.json
 # src/spec
 # .circleci
+.env
+.DS_Store

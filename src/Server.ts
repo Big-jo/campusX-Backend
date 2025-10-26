@@ -51,9 +51,8 @@ let primaryCache: IORedis.Redis;
 if (process.env.NODE_ENV === 'development') {
     primaryCache = new IORedis();
 } else {
-    const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
-    const redisPortPC = Number(process.env.REDIS_PORT_PC);
-    primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
+    const redisPort = Number(process.env.REDIS_PORT);
+    primaryCache = new IORedis(redisPort, process.env.REDIS_HOST, { password: process.env.REDIS_PASS });
 }
 
 primaryCache.on('connect', args => {

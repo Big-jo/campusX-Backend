@@ -6,7 +6,7 @@ import FollowsModel, { IFollower } from "../models/Follower.model";
 import * as IORedis from "ioredis";
 import CommentModel from "../models/Comment.model";
 import { S3, Utility } from "@lib";
-import { Types } from "mongoose";
+import mongoose from "mongoose";
 import moment from "moment";
 import CirclePostModel from "../models/CirclePost.model";
 import { AggregationQueries } from "@lib";
@@ -217,7 +217,7 @@ export class Post {
           // Since feed has been retrieved, remove it from set of dirty feeds
 
           // Convert all keys to objectIDs
-          const objectIDs = postKeys.map((key) => Types.ObjectId(key));
+          const objectIDs = postKeys.map((key) => mongoose.Types.ObjectId(key));
 
           // Hydrate the feed list (Get posts with the keys retrieved)
           const newsfeed = await this.Hydrate(objectIDs, userID);
@@ -638,11 +638,11 @@ export class Post {
     try {
       const aggregate = [
         {
-          $match: { parentPost: Types.ObjectId(parentPostID) },
+          $match: { parentPost: mongoose.Types.ObjectId(parentPostID) },
         },
         {
           $addFields: {
-            isLiked: { $in: [Types.ObjectId(userID), "$likedBy"] },
+            isLiked: { $in: [mongoose.Types.ObjectId(userID), "$likedBy"] },
           },
         },
         {
@@ -669,7 +669,7 @@ export class Post {
               { $match: { $expr: { $eq: ["$parentPost", "$$commentID"] } } },
               {
                 $addFields: {
-                  isLiked: { $in: [Types.ObjectId(userID), "$likedBy"] },
+                  isLiked: { $in: [mongoose.Types.ObjectId(userID), "$likedBy"] },
                 },
               },
               {
@@ -743,7 +743,7 @@ export class Post {
    * @param keys Keys of the post
    * @param userID
    */
-  private static async Hydrate(keys: Types.ObjectId[], userID: string) {
+  private static async Hydrate(keys: mongoose.Types.ObjectId[], userID: string) {
     try {
       return await AggregationQueries.NewsfeedPostAggreg(userID, keys);
     } catch (e) {

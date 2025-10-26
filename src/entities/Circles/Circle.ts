@@ -4,7 +4,7 @@ import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
 import IORedis from 'ioredis';
 import { S3, Utility } from '@lib';
-import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 import PostModel from '../../models/Post.model';
 import CirclePostModel from '../../models/CirclePost.model';
 import moment from 'moment';
@@ -94,7 +94,7 @@ export class Circle {
         try {
             const query = [
                 {
-                    $match: {circleID: Types.ObjectId(circleID)},
+                    $match: {circleID: mongoose.Types.ObjectId(circleID)},
                 },
                 {
                     $addFields: {

@@ -29,12 +29,13 @@ export class Tasks {
          /******************************************************************************/
 
         if (process.env.NODE_ENV === 'development') {
-            this.redis = new IORedis({ port: 6379 });
+            this.redis = new IORedis({ port: 6379, keyPrefix: 'tasks:' });
         } else {
-            const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
-            const redisPortPC = Number(process.env.REDIS_PORT_PC);
-
-            this.redis = new IORedis(redisPortPC, process.env.REDIS_HOST_PC, { password: process.env.REDIS_PASS_PC });
+            const redisPort = Number(process.env.REDIS_PORT);
+            this.redis = new IORedis(redisPort, process.env.REDIS_HOST, {
+                password: process.env.REDIS_PASS,
+                keyPrefix: 'tasks:'
+            });
         }
 
         this.redis.on('connect', args => {

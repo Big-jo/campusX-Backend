@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
 import { ICircleConversationModel } from 'src/interfaces/ICircleConversation';
 

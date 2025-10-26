@@ -15,7 +15,7 @@ import moment from 'moment';
 import CircleCommentModel from '../../models/CircleComment.model';
 import {AggregationQueries, Utility} from '@lib';
 import sort from 'array-sort';
-import {Types} from 'mongoose';
+import mongoose from 'mongoose';
 
 // interface ICPost {
 
@@ -145,7 +145,7 @@ export class CirclePost extends Post {
 
             if (isNaN(currentElement / 2)) {
                 grouped.push({
-                    circlePostID: Types.ObjectId(currentElement),
+                    circlePostID: mongoose.Types.ObjectId(currentElement),
                     score: parseInt(nextElement, 10),
                 });
             }

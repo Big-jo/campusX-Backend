@@ -3,14 +3,14 @@ import * as admin from 'firebase-admin';
 import IORedis from 'ioredis';
 import moment from 'moment';
 import NotificationModel from '../models/Notification.model';
-import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 // Just a comment
 // tslint:disable-next-line:no-var-requires
-const serviceAccount = require('../../env/service-file.json');
+// const serviceAccount = require('../../env/service-file.json');
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
+// admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount),
+// });
 
 export class Notification {
     private fcm = admin.messaging();
@@ -68,7 +68,7 @@ export class Notification {
 
     public static async GetNotifications(userID: string, category?: string) {        
         const query: any = {
-            userID: Types.ObjectId(userID),
+            userID: mongoose.Types.ObjectId(userID),
         };
 
         if (!!category) {

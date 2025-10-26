@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 import PostModel from '../models/Post.model';
 import CirclePostModel from '../models/CirclePost.model';
 
@@ -9,7 +9,7 @@ export class AggregationQueries {
      * @param userID 
      * @param postIDs
      */
-    public static async NewsfeedPostAggreg(userID: string, postIDs: Types.ObjectId[]) {
+    public static async NewsfeedPostAggreg(userID: string, postIDs: mongoose.Types.ObjectId[]) {
 
         const aggregate = [
             {
@@ -17,7 +17,7 @@ export class AggregationQueries {
             },
             {
                 $addFields: {
-                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
+                    isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {
@@ -75,7 +75,7 @@ export class AggregationQueries {
 
         const query: any = 
         { 
-            author: Types.ObjectId(userID)
+            author: mongoose.Types.ObjectId(userID)
         }
 
         if (postType === 'video') {
@@ -102,7 +102,7 @@ export class AggregationQueries {
             },
             {
                 $addFields: {
-                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
+                    isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {
@@ -203,14 +203,14 @@ export class AggregationQueries {
         ]
     }
 
-    public static async CirclePostsAggreg(userID: string, postIDs: Types.ObjectId[]) {
+    public static async CirclePostsAggreg(userID: string, postIDs: mongoose.Types.ObjectId[]) {
         const query = [
             {
                 $match: {_id: {$in: postIDs}},
             },
             {
                 $addFields: {
-                    isLiked: { $in: [Types.ObjectId(userID), '$likedBy'] },
+                    isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
                 },
             },
             {

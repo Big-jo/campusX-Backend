@@ -16,10 +16,13 @@ export class CircleConversation {
         try {
 
             if (process.env.NODE_ENV === 'development') {
-                this.primaryCache = new IORedis();
+                this.primaryCache = new IORedis({ keyPrefix: 'circle:' });
             } else {
-                const redisPortPrimary = Number(process.env.REDIS_PORT_PRIMARY);
-                this.primaryCache = new IORedis(redisPortPrimary, process.env.REDIS_HOST_PRIMARY, { password: process.env.REDIS_PASS_PRIMARY });
+                const redisPort = Number(process.env.REDIS_PORT);
+                this.primaryCache = new IORedis(redisPort, process.env.REDIS_HOST, {
+                    password: process.env.REDIS_PASS,
+                    keyPrefix: 'circle:'
+                });
             }
 
             this.primaryCache.on('connect', args => {
