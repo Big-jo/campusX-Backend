@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "build": "bun build:compile",
-    "build:compile": "bun build src/Start.ts --target=bun --outdir=dist --sourcemap=external --external mock-aws-s3 --external nock",
+    "build:compile": "bun build src/Start.ts --target=bun --format=esm --outdir=dist --sourcemap=external --external mock-aws-s3 --external nock",
     "lint": "tslint --project \"tsconfig.json\"",
     "dev": "bun --watch src/Start.ts",
-    "start": "bun run dist/Start.js",
+    "start": "bun src/Start.ts",
     "staging": "bun run dist/Start.js",
     "start-dev": "bun --watch src/Start.ts",
     "start-debug": "bun --inspect --watch src/Start.ts",
