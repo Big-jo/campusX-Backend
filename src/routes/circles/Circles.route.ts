@@ -40,9 +40,9 @@ router.post(createCircle, auth, upload.fields(multerUploadConfig), async (req: R
         //
         const circleObject = {
             // @ts-ignore
-            avatar: req.files.avatar[0],
+            avatar: req.files && req.files.avatar ? req.files.avatar[0] : undefined,
             // @ts-ignore
-            coverImage: req.files.coverImage[0],
+            coverImage: req.files && req.files.coverImage ? req.files.coverImage[0] : undefined,
             name: req.body.name,
             description: req.body.description,
             category: req.body.category,

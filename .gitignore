@@ -125,3 +125,4 @@ node_modules
 # .circleci
 .env
 .DS_STORE
+.local

@@ -139,15 +139,18 @@ export class CirclePost extends Post {
         // Filter further and sort posts and scores into an array of objects
         const grouped = [];
 
-        for (let i = 0; i < filtered[0].length; i++) {
-            const currentElement = filtered[0][i];
-            const nextElement = filtered[0][i + 1];
+        // Check if filtered and filtered[0] exist before processing
+        if (filtered && filtered[0] && filtered[0].length > 0) {
+            for (let i = 0; i < filtered[0].length; i++) {
+                const currentElement = filtered[0][i];
+                const nextElement = filtered[0][i + 1];
 
-            if (isNaN(currentElement / 2)) {
-                grouped.push({
-                    circlePostID: mongoose.Types.ObjectId(currentElement),
-                    score: parseInt(nextElement, 10),
-                });
+                if (isNaN(currentElement / 2)) {
+                    grouped.push({
+                        circlePostID: mongoose.Types.ObjectId(currentElement),
+                        score: parseInt(nextElement, 10),
+                    });
+                }
             }
         }
 
