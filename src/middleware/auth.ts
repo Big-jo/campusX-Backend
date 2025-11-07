@@ -42,4 +42,7 @@ const validation = {
     },
 };
 
+// Named export for v2 API
+export const auth = validation.validateToken;
+
 export default validation;

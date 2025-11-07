@@ -94,40 +94,8 @@ export class UsersController {
    * Save user interests
    */
   saveInterests = async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?._id;
-
-      if (!userId) {
-        return res.status(401).json({
-          error: 'Unauthorized',
-          message: 'User not authenticated'
-        });
-      }
-
-      const { topicIds } = req.body;
-      const result = await this.usersService.saveInterests(userId, topicIds);
-      return res.status(200).json(result);
-    } catch (error) {
-      console.error('Error saving interests:', error);
-
-      if (error instanceof Error && error.message.startsWith('Invalid topic IDs')) {
-        return res.status(400).json({
-          error: 'Invalid topic IDs',
-          message: error.message
-        });
-      }
-
-      if (error instanceof Error && error.message === 'Failed to save interests') {
-        return res.status(400).json({
-          error: 'Failed to save interests',
-          message: error.message
-        });
-      }
-
-      return res.status(500).json({
-        error: 'Failed to save interests',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
+    const { topicIds } = req.body;
+    const result = await this.usersService.saveInterests(req.user._id, topicIds);
+    return res.status(200).json(result);
   };
 }

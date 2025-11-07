@@ -1,4 +1,4 @@
-[{
+export default [{
   "name": "Abia State University",
   "acronym": "ABSU",
   "motto": "Excellence and Service",
@@ -1076,5 +1076,4 @@
   "web": "https://www.nwu.edu.ng/",
   "logo": "https://www.4icu.org/i/logos-seals/16955.png"
 }
-
-]
+];

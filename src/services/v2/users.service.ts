@@ -95,6 +95,7 @@ export class UsersService {
     // Validate that topic IDs exist
     const categories = await this.interestRepository.getAllCategories();
     const allTopicIds = categories.flatMap(cat => cat.topics.map(topic => topic.id));
+    console.log(allTopicIds)
 
     const invalidTopics = topicIds.filter(id => !allTopicIds.includes(id));
     if (invalidTopics.length > 0) {
