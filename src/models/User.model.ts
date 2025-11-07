@@ -9,26 +9,40 @@ const UserSchema: Schema = new Schema({
     password: {type: String, required: true},
     resetToken: {type: String, required: true},
     userProfile: {
-        avatar: {type: String},
-        level: {type: Number},
-        university: {type: String},
-        gender: {type: String},
+        avatar: {type: String, default: null},
+        level: {type: Number, default: null},
+        university: {type: String, default: null},
+        gender: {type: String, default: null},
         rep_points: {type: Number, default: 0},
-        bio: {type: String},
-        course: {type: String},
-        phoneNumber: {type: Number},
+        bio: {type: String, default: null},
+        course: {type: String, default: null},
+        phoneNumber: {type: Number, default: null},
         visits: {type: Number, default: 0},
-        lastSeen: {type: Date},
+        lastSeen: {type: Date, default: null},
         followers: {type: Number, default: 0},
         followings: {type: Number, default: 0},
         post_count: {type: Number, default: 0},
         profileComplete: {type: Boolean, default: false},
+        interests: {type: [String], default: []},
     },
     profileComplete: {type: Boolean, default: false},
-    fcm_token: {type: String},
-    // lastActive: {type: Date},  Implement last active
+    fcm_token: {type: String, default: null},
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: {
+        transform: function(doc, ret) {
+            delete ret.__v;
+            delete ret.password;
+            delete ret.resetToken;
+            return ret;
+        }
+    },
+    toObject: {
+        transform: function(doc, ret) {
+            delete ret.__v;
+            return ret;
+        }
+    }
 });
 UserSchema.plugin(mongoosePaginate);
 UserSchema.index({'name': 'text', 'userTag': 'text', 'userProfile.university': 1});

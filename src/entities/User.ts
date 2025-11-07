@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import {logger} from '@shared';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
-import {S3, Utility} from '@lib';
+import {S3, Utility, Gravatar} from '@lib';
 import {ITokenPayload} from '../interfaces/ITokenPayload';
 import {Notification} from '@lib';
 import {AggregationQueries} from '../lib/aggregationQueries';
@@ -48,9 +48,10 @@ export class User {
                         password: userObject.password,
                     });
                     user.userID = user._id;
-                    // Generate random number for seed in image api
-                    const rn = random({integer: true, min: -10000, max: 10000});
-                    user.userProfile.avatar = `https://picsum.photos/seed/${rn}/500`;
+
+                    if (!user.userProfile.avatar) {
+                        user.userProfile.avatar = Gravatar.generate(user.email, 500, 'identicon');
+                    }
 
                     const rounds = await bcrypt.genSalt(10);
                     // Hash Password

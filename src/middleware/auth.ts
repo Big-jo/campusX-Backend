@@ -5,30 +5,38 @@ import { OK, UNAUTHORIZED } from 'http-status-codes';
 import { IUser, IUserProfile } from 'src/interfaces/IUser';
 import { logger } from '@shared';
 import {Utility} from '../lib/utility';
+import UserModel from '../models/User.model';
 
 const validation = {
-    validateToken: (req: any, res: Response, next: NextFunction) => {
+    validateToken: async (req: any, res: Response, next: NextFunction) => {
         const authorizationHeader = req.headers.authorization;
-        let result: object | string;
 
         if (authorizationHeader) {
             const token = authorizationHeader.split(' ')[1];
             try {
-                // Verify the token
                 const secret = process.env.JWT_SECRET as string;
-                result = jwt.verify(token, secret);
-                req.token = result as {
-                    userID: string,
-                };
+                const decoded = jwt.verify(token, secret) as { userID: string };
+
+                const user = await UserModel.findById(decoded.userID)
+                    .select('-password -resetToken')
+                    .lean();
+
+                if (!user) {
+                    return res.status(UNAUTHORIZED).json({
+                        error: 'User not found',
+                    });
+                }
+
+                req.token = decoded;
+                req.user = user;
 
                 next();
             } catch (error) {
-                // Throw an error if anything goes wrong with verification
                 Utility.ErrResponse(res, error);
             }
         } else {
             res.status(UNAUTHORIZED).json({
-                error: 'Sorry you\'re not authorized to use this endpooint',
+                error: 'Sorry you\'re not authorized to use this endpoint',
             });
         }
     },

@@ -10,6 +10,7 @@ import NotificationRouter from './notifcations/notifications.route';
 import { noConflict } from 'lodash';
 
 import FcmRouter from './fcm/fcm.route';
+import v2Router from './v2';
 
 // Init router and path
 const router = Router();
@@ -26,5 +27,10 @@ router.use(campusRouter.path, campusRouter.router);
 router.use(merchantRouter.path, merchantRouter.router);
 router.use(NotificationRouter.path, NotificationRouter.router);
 
+// V2 routes
+const v2Path = '/api/v2';
+const v2BaseRouter = Router();
+v2BaseRouter.use(v2Path, v2Router);
+
 // Export the base-router
-export default { router, path };
+export default { router, path, v2: { router: v2BaseRouter, path: '' } };

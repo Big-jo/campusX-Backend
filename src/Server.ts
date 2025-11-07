@@ -17,6 +17,8 @@ import IORedis from 'ioredis';
 import { Chat } from './entities/Chat/Chat';
 
 import { CircleConversation } from './lib/circle-conversation';
+import { runSeeds } from './seeds';
+
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;
 console.log(URI);
@@ -32,7 +34,10 @@ const Db = mongoose.connection;
 // tslint:disable-next-line: no-console
 Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
-Db.on('connected', console.log.bind(console, 'MongoDB connected'));
+Db.on('connected', async () => {
+  console.log('MongoDB connected');
+  await runSeeds();
+});
 
 // Drop tasks collection at every startup since it causes issues
 try {
@@ -114,6 +119,7 @@ app.use((req, res, next) => {
 });
 
 app.use(BaseRouter.path, BaseRouter.router);
+app.use(BaseRouter.v2.path, BaseRouter.v2.router);
 
 
 app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
