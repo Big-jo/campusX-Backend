@@ -1,4 +1,5 @@
 import { CampusRepository } from '../../repositories/CampusRepository';
+import { NotFoundError } from '../../errors';
 
 export class CampusService {
   private campusRepository: CampusRepository;
@@ -36,7 +37,7 @@ export class CampusService {
     const campus = await this.campusRepository.getCampusById(id);
 
     if (!campus) {
-      throw new Error('Campus not found');
+      throw new NotFoundError('Campus not found');
     }
 
     return {

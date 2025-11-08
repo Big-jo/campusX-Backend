@@ -6,12 +6,13 @@ import {
   getCampusByIdSchema,
   searchCampusesSchema
 } from '../../validators/v2/campus.validator';
+import { asyncHandler } from '../../utils/asyncHandler';
 
 const router = Router();
 const campusController = new CampusController();
 
-router.get('/', validate(getAllCampusesSchema), campusController.getAllCampuses);
-router.get('/search', validate(searchCampusesSchema), campusController.searchCampuses);
-router.get('/:id', validate(getCampusByIdSchema), campusController.getCampusById);
+router.get('/', validate(getAllCampusesSchema), asyncHandler(campusController.getAllCampuses));
+router.get('/search', validate(searchCampusesSchema), asyncHandler(campusController.searchCampuses));
+router.get('/:id', validate(getCampusByIdSchema), asyncHandler(campusController.getCampusById));
 
 export default router;

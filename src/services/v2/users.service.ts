@@ -1,5 +1,6 @@
 import { InterestRepository } from '../../repositories/InterestRepository';
 import { UserRepository } from '../../repositories/UserRepository';
+import { NotFoundError, ValidationError, AppError } from '../../errors';
 
 export class UsersService {
   private interestRepository: InterestRepository;
@@ -37,7 +38,7 @@ export class UsersService {
     const user = await this.userRepository.findByIdSecure(userId);
 
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
 
     return {
@@ -72,7 +73,7 @@ export class UsersService {
     const updatedUser = await this.userRepository.updateProfile(userId, updateData);
 
     if (!updatedUser) {
-      throw new Error('Failed to update user profile');
+      throw new NotFoundError('Failed to update user profile');
     }
 
     return {
@@ -99,13 +100,13 @@ export class UsersService {
 
     const invalidTopics = topicIds.filter(id => !allTopicIds.includes(id));
     if (invalidTopics.length > 0) {
-      throw new Error(`Invalid topic IDs: ${invalidTopics.join(', ')}`);
+      throw new ValidationError('Invalid topic IDs', { invalidTopics });
     }
 
     const updatedUser = await this.userRepository.saveInterests(userId, topicIds);
 
     if (!updatedUser) {
-      throw new Error('Failed to save interests');
+      throw new AppError('Failed to save interests', 500);
     }
 
     return {
