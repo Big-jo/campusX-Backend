@@ -18,6 +18,16 @@ import { Chat } from './entities/Chat/Chat';
 
 import { CircleConversation } from './lib/circle-conversation';
 import { runSeeds } from './seeds';
+import { validateEnv } from './config/env';
+
+// Validate environment variables before starting the server
+try {
+  validateEnv();
+  console.log('✅ Environment variables validated successfully');
+} catch (error) {
+  console.error('❌ Server startup aborted due to invalid environment configuration');
+  process.exit(1);
+}
 
 // Setup MongoDB
 const URI = process.env.MONGO_URI as string;

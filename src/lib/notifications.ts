@@ -4,20 +4,36 @@ import IORedis from 'ioredis';
 import moment from 'moment';
 import NotificationModel from '../models/Notification.model';
 import mongoose from 'mongoose';
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Initialize Firebase Admin only if not in test environment
 const isTestEnvironment = process.env.NODE_ENV === 'test';
-const serviceFilePath = path.join(__dirname, '../../env/service-file.json');
 
-if (!isTestEnvironment && fs.existsSync(serviceFilePath)) {
-  // tslint:disable-next-line:no-var-requires
-  const serviceAccount = require('../../env/service-file.json');
+if (!isTestEnvironment) {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  // Validate required env vars
+  if (!projectId || !clientEmail || !privateKey) {
+    logger.error('Missing Firebase credentials in environment variables');
+    logger.error('Required: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY');
+    throw new Error('Firebase credentials not configured');
+  }
+
+  // Initialize Firebase Admin with env vars
+  // Replace escaped newlines in private key if needed
+  const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey: formattedPrivateKey,
+    }),
   });
-} else if (isTestEnvironment) {
+
+  logger.info('Firebase Admin initialized successfully');
+} else {
   // Mock initialization for tests
   logger.info('Firebase Admin initialization skipped (test environment)');
 }
