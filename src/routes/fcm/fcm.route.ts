@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { getQueue } from '../../lib/queue';
+import { getQueue } from '../../lib/Queue';
 
 const router = Router();
 

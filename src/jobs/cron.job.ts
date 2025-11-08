@@ -1,5 +1,5 @@
 
-import { getQueue } from '../lib/queue';
+import { getQueue } from '../lib/Queue';
 import Campus from '../models/Campus.model';
 import User from '../models/User.model';
 import { Newsfeed } from '../lib/newsfeeds';

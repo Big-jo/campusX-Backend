@@ -3,7 +3,7 @@ import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import * as sendFcmJob from './jobs/send-fcm.job';
 import * as cronJob from './jobs/cron.job';
-import { registerQueue } from './lib/queue';
+import { registerQueue } from './lib/Queue';
 
 const connection = new IORedis(process.env.REDIS_URL as string, {
   maxRetriesPerRequest: null,
