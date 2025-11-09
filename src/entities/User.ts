@@ -3,7 +3,6 @@ import { logger } from '@shared';
 import bcrypt from 'bcrypt';
 import IORedis from 'ioredis';
 import shortid from "shortid";
-import { BadRequestError } from 'src/errors';
 import { IUser } from 'src/interfaces/IUser';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
 import { AggregationQueries } from '../lib/aggregationQueries';
@@ -23,7 +22,7 @@ export class User {
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({ email: userObject.email.toLowerCase() }).exec();
         if (foundUser) {
-            throw new BadRequestError('This email is already registered. Please sign in or use a different email.');
+            return {exists: true, err_message: 'This email is already registered. Please sign in or use a different email.'};
         } else {
             try {
                 // check if userTag is available
