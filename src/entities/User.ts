@@ -1,20 +1,17 @@
-import UserModel from '../models/User.model';
-import {IUser} from 'src/interfaces/IUser';
+import { Gravatar, Notification, S3, Utility } from '@lib';
+import { logger } from '@shared';
 import bcrypt from 'bcrypt';
-import {logger} from '@shared';
+import IORedis from 'ioredis';
+import shortid from "shortid";
+import { BadRequestError } from 'src/errors';
+import { IUser } from 'src/interfaces/IUser';
+import { ITokenPayload } from '../interfaces/ITokenPayload';
+import { AggregationQueries } from '../lib/aggregationQueries';
 import FollowsModel from '../models/Follower.model';
 import FollowingsModel from '../models/Following.model';
-import {S3, Utility, Gravatar} from '@lib';
-import {ITokenPayload} from '../interfaces/ITokenPayload';
-import {Notification} from '@lib';
-import {AggregationQueries} from '../lib/aggregationQueries';
-import {Post} from './Post';
-import IORedis from 'ioredis';
-import random from 'random-number';
+import UserModel from '../models/User.model';
 import { EmailService } from '../services/email.service';
-import Request from 'express';
-import Response from 'express';
-import shortid from "shortid";
+import { Post } from './Post';
 
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
@@ -26,7 +23,7 @@ export class User {
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({ email: userObject.email.toLowerCase() }).exec();
         if (foundUser) {
-            return { exists: true, err_message: 'This user exists' };
+            throw new BadRequestError('This email is already registered. Please sign in or use a different email.');
         } else {
             try {
                 // check if userTag is available
