@@ -10,9 +10,9 @@ RUN bun install --frozen-lockfile --production
 COPY . .
 
 # ---- Security: non-root user ----
-RUN addgroup --system --gid 1001 bungroup && \
-  adduser --system --uid 1001 bunuser && \
-  chown -R bunuser:bungroup /app
+# RUN addgroup --system --gid 1001 bungroup && \
+#   adduser --system --uid 1001 bunuser && \
+#   chown -R bunuser:bungroup /app
 
 # ---- Runtime settings ----
 EXPOSE 3000
