@@ -20,6 +20,7 @@ class RedisClient {
             rejectUnauthorized: true,
           },
           username: process.env.REDIS_USER,
+          family: 0,
         });
       }
 
