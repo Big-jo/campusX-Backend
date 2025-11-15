@@ -15,7 +15,11 @@ class RedisClient {
       } else {
         const redisPort = Number(process.env.REDIS_PORT);
         RedisClient.instance = new IORedis(redisPort, process.env.REDIS_HOST, {
-          password: process.env.REDIS_PASS
+          password: process.env.REDIS_PASS,
+          tls: {
+            rejectUnauthorized: true,
+          },
+          username: process.env.REDIS_USER,
         });
       }
 
