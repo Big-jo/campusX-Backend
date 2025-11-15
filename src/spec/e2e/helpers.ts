@@ -116,3 +116,31 @@ export async function retry<T>(
 
   throw lastError!;
 }
+
+/**
+ * Create multiple E2E posts for a user
+ */
+export async function createE2EPosts(
+  user: { user: any; token: string },
+  count: number,
+  baseUrl: string = `http://localhost:${process.env.E2E_PORT || 3001}`
+): Promise<string[]> {
+  const request = (await import('supertest')).default;
+  const postIds: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const response = await request(baseUrl)
+      .post("/api/v2/posts/create")
+      .set(e2eAuthHeader(user.token))
+      .send({
+        text: `Test post ${i}`,
+        campus: user.user.userProfile?.university || user.user.campus || 'Test University'
+      });
+
+    if (response.body.data?.post?.id) {
+      postIds.push(response.body.data.post.id);
+    }
+  }
+
+  return postIds;
+}
