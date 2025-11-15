@@ -1,6 +1,7 @@
 import mongoose, {Schema} from 'mongoose';
 import {IUser} from 'src/interfaces/IUser';
 import mongoosePaginate from 'mongoose-paginate';
+import { botTypes } from '../types/types';
 
 const UserSchema: Schema = new Schema({
     name: {type: String, required: true},
@@ -27,6 +28,16 @@ const UserSchema: Schema = new Schema({
     },
     profileComplete: {type: Boolean, default: false},
     fcm_token: {type: String, default: null},
+    accountType: {
+        type: String,
+        enum: ['user', 'bot'],
+        default: 'user'
+    },
+    botMetadata: {
+        botType: {type: String, enum: botTypes, required: false},
+        createdBy: {type: String, default: 'system'},
+        version: {type: String, default: '1.0'}
+    },
 }, {
     timestamps: true,
     toJSON: {

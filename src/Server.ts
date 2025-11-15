@@ -36,17 +36,30 @@ mongoose.connect(URI, {
   useNewUrlParser: true,
   useFindAndModify: false,
   useCreateIndex: true,
+  useUnifiedTopology: true,
 });
 
 // Connection Instance
 const Db = mongoose.connection;
+
+// Flag to ensure seeds only run once per test run
+let seedsHaveRun = false;
 
 // tslint:disable-next-line: no-console
 Db.on('error', console.error.bind(console, 'MongoDB connection error'));
 // tslint:disable-next-line: no-console
 Db.on('connected', async () => {
   console.log('MongoDB connected');
-  await runSeeds();
+
+  // Only run seeds once in test environment, always in other environments
+  if (process.env.NODE_ENV === 'test') {
+    if (!seedsHaveRun) {
+      await runSeeds();
+      seedsHaveRun = true;
+    }
+  } else {
+    await runSeeds();
+  }
 });
 
 // Drop tasks collection at every startup since it causes issues

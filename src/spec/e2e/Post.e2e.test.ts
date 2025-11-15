@@ -1,17 +1,14 @@
 /**
  * Post Routes E2E Tests
  * Integration tests with real MongoDB + Redis via Docker Compose
+ *
+ * Environment configuration is handled by test.setup.ts (loaded via bunfig.toml)
  */
 
-// STEP 1: Import mocks FIRST to setup module mocking
+// Import mocks FIRST to setup module mocking
 import "./mocks";
 
-// STEP 2: Set env vars BEFORE importing Server to avoid wrong DB connection
-process.env.MONGO_URI = process.env.E2E_MONGO_URI || "mongodb://test:testpassword@localhost:27017/campusx_test?authSource=admin";
-process.env.REDIS_HOST = process.env.E2E_REDIS_HOST || "localhost";
-process.env.REDIS_PORT = process.env.E2E_REDIS_PORT || "6379";
-
-// STEP 3: Import dependencies
+// Import dependencies
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
 import request from "supertest";
 import { server } from "../../Server";

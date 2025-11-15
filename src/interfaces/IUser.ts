@@ -37,6 +37,12 @@ export interface IUser extends Document {
     phone_number: string;
     fcm_token: string;
     resetToken: string;
+    accountType?: string;
+    botMetadata?: {
+        botType?: string;
+        createdBy?: string;
+        version?: string;
+    };
 }
 
 export interface IUserModel <T extends Document> extends PaginateModel<T> {}

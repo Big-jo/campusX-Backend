@@ -1,0 +1,6 @@
+[test]
+# Preload test environment before any imports
+preload = ["./test.setup.ts"]
+
+# Test file patterns
+smol = true
