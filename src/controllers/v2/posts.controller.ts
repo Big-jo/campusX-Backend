@@ -17,13 +17,11 @@ export class PostsController {
    * Create a new post
    */
   createPost = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
-    const result = await this.postsService.createPost(req.body, userId);
+    const result = await this.postsService.createPost(req.body, req.user);
     return res.status(201).json(result);
   };
 
@@ -32,14 +30,12 @@ export class PostsController {
    * Delete a post
    */
   deletePost = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { postId } = req.params;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
-    await this.postsService.deletePost(postId, userId);
+    const { postId } = req.params;
+    await this.postsService.deletePost(postId, req.user._id.toString());
     return res.status(200).json({ message: 'Post deleted successfully' });
   };
 
@@ -48,14 +44,12 @@ export class PostsController {
    * Like a post
    */
   likePost = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { postId } = req.params;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
-    const result = await this.postsService.likePost(postId, userId);
+    const { postId } = req.params;
+    const result = await this.postsService.likePost(postId, req.user._id.toString());
     return res.status(200).json(result);
   };
 
@@ -64,14 +58,12 @@ export class PostsController {
    * Unlike a post
    */
   unlikePost = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { postId } = req.params;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
-    const result = await this.postsService.unlikePost(postId, userId);
+    const { postId } = req.params;
+    const result = await this.postsService.unlikePost(postId, req.user._id.toString());
     return res.status(200).json(result);
   };
 
@@ -80,14 +72,12 @@ export class PostsController {
    * Get a single post
    */
   getPost = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { postId } = req.params;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
-    const result = await this.postsService.getPost(postId, userId);
+    const { postId } = req.params;
+    const result = await this.postsService.getPost(postId, req.user._id.toString());
     return res.status(200).json(result);
   };
 
@@ -96,16 +86,14 @@ export class PostsController {
    * Get user's newsfeed (paginated)
    */
   getNewsfeed = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const cursor = req.query.cursor as string | undefined;
 
-    const result = await this.newsfeedService.getFeed(userId, limit, cursor);
+    const result = await this.newsfeedService.getFeed(req.user._id.toString(), limit, cursor);
     return res.status(200).json(result);
   };
 
@@ -114,9 +102,7 @@ export class PostsController {
    * Long polling endpoint for real-time updates
    */
   pollNewsfeed = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
@@ -124,7 +110,7 @@ export class PostsController {
     const timeout = Math.min(parseInt(req.query.timeout as string) || 30, 60);
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
 
-    const result = await this.newsfeedService.pollFeed(userId, since, timeout, limit);
+    const result = await this.newsfeedService.pollFeed(req.user._id.toString(), since, timeout, limit);
     return res.status(200).json(result);
   };
 
@@ -133,20 +119,18 @@ export class PostsController {
    * Get user's posts
    */
   getUserPosts = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { userId: targetUserId } = req.params;
-
-    if (!userId) {
+    if (!req.user) {
       throw new UnauthorizedError('User not authenticated');
     }
 
+    const { userId: targetUserId } = req.params;
     const postType = (req.query.type as string) || 'all';
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
 
     const result = await this.postsService.getUserPosts(
       targetUserId,
-      userId,
+      req.user._id.toString(),
       postType,
       page,
       limit

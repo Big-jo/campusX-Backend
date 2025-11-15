@@ -11,7 +11,7 @@ interface CreatePostData {
   text?: string;
   image?: string;
   video?: string;
-  campus: string;
+  campus?: string;
   hashTags?: string[];
   mentions?: string[];
 }
@@ -31,20 +31,16 @@ export class PostsService {
    * Create a new post and fan out to followers
    */
   async createPost(postData: CreatePostData, user: IUser): Promise<any> {
-    const userId = user.id
+    const userId = user._id.toString();
     // Validation
     if (!postData.text && !postData.image && !postData.video) {
       throw new ValidationError('Post must have text, image, or video');
     }
 
-    //TODO: Campus is not required
-    // if (!postData.campus) {
-    //   throw new ValidationError('Campus is required');
-    // }
+    if (!user.userProfile?.university) {
+      throw new ValidationError('User profile must have university');
+    }
 
-
-    console.log("Right Here")
-    console.log(user.userProfile)
     // Create post
     const post = await this.postRepo.createPost({
       author: user._id,

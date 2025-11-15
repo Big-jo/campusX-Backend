@@ -39,7 +39,8 @@ export class NewsfeedService {
     const timelineKey = `v2:newsfeed:timeline:${userId}`;
 
     // Get post IDs from Redis sorted set (reverse chronological)
-    const maxScore = cursor ? parseInt(cursor) : '+inf';
+    // Use exclusive range to avoid duplicates when cursor is provided
+    const maxScore = cursor ? `(${cursor}` : '+inf'; // (cursor means exclusive
     const postIds = await this.redis.zrevrangebyscore(
       timelineKey,
       maxScore,

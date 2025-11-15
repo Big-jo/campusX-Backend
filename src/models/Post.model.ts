@@ -21,8 +21,6 @@ const PostSchema: Schema = new Schema({
     hashTags: [{type: String}],
     mentions:[{type: String}],
     // deleted: {type: Boolean}
-}, {
-    timestamps: true
 });
 
 // PostSchema.plugin(mongoosePaginate);

@@ -17,7 +17,14 @@ export async function createE2EUser(overrides: Partial<IUser> = {}) {
     password: "TestPassword123!",
     phone_number: `+1${Math.floor(Math.random() * 10000000000)}`,
     userTag: `testuser${Date.now()}`,
-    campus: overrides.campus || "Test University",
+    userProfile: {
+      university: "Test University",
+      department: "Engineering",
+      gender: "other",
+      bio: "Test user bio",
+      lastSeen: new Date(),
+      ...overrides.userProfile
+    },
     ...overrides,
   } as IUser;
 
@@ -133,8 +140,7 @@ export async function createE2EPosts(
       .post("/api/v2/posts/create")
       .set(e2eAuthHeader(user.token))
       .send({
-        text: `Test post ${i}`,
-        campus: user.user.userProfile?.university || user.user.campus || 'Test University'
+        text: `Test post ${i}`
       });
 
     if (response.body.data?.post?.id) {

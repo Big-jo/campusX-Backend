@@ -3,6 +3,7 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { NotFoundError, ValidationError, AppError } from '../../errors';
 import { User } from '../../entities/User';
 import { botTypes } from '../../types/types';
+import Bot from '../../models/bots';
 
 export class UsersService {
   private interestRepository: InterestRepository;
@@ -165,6 +166,17 @@ export class UsersService {
       } as any;
 
       const result = await User.CreateUser(userObject);
+      console.log({result})
+      const newBot = await Bot.create({
+        botType: config.botType,
+        user_id: result.user._id,
+        config: {
+          postingFrequency: 'daily',
+          maxPostsPerDay: 5,
+          autoPostEnabled: true,
+          status: 'active',
+        },
+      })
 
       if (result.exists) {
         console.log(`✗ Failed to create ${config.botType} bot: ${result.err_message}`);

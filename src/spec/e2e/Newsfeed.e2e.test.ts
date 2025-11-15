@@ -59,8 +59,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(author.token))
         .send({
-          text: "Test post for fan-out",
-          campus: author.user.userProfile?.university || author.user.campus
+          text: "Test post for fan-out"
         });
 
       expect(postResponse.status).toBe(201);
@@ -106,8 +105,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(user.token))
         .send({
-          text: "Solo post",
-          campus: user.user.userProfile?.university || user.user.campus
+          text: "Solo post"
         });
 
       expect(postResponse.status).toBe(201);
@@ -145,8 +143,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(author.token))
         .send({
-          text: "New post during poll",
-          campus: author.user.userProfile?.university || author.user.campus
+          text: "New post during poll"
         });
 
       const response = await pollPromise;
@@ -256,8 +253,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(author.token))
         .send({
-          text: "To be deleted",
-          campus: author.user.userProfile?.university || author.user.campus
+          text: "To be deleted"
         });
 
       const postId = postResponse.body.data.post.id;
@@ -301,8 +297,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(author.token))
         .send({
-          text: "Author's post",
-          campus: author.user.userProfile?.university || author.user.campus
+          text: "Author's post"
         });
 
       const postId = postResponse.body.data.post.id;
@@ -326,8 +321,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(user.token))
         .send({
-          text: "My post",
-          campus: user.user.userProfile?.university || user.user.campus
+          text: "My post"
         });
 
       const postId = postResponse.body.data.post.id;
@@ -352,8 +346,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(author.token))
         .send({
-          text: "Like this post",
-          campus: author.user.userProfile?.university || author.user.campus
+          text: "Like this post"
         });
 
       const postId = postResponse.body.data.post.id;
@@ -382,8 +375,7 @@ describe("E2E: V2 Newsfeed", () => {
         .post("/api/v2/posts/create")
         .set(e2eAuthHeader(author.token))
         .send({
-          text: "Like once",
-          campus: author.user.userProfile?.university || author.user.campus
+          text: "Like once"
         });
 
       const postId = postResponse.body.data.post.id;

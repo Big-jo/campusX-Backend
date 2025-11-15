@@ -26,6 +26,8 @@ export class User {
         } else {
             try {
                 // check if userTag is available
+                const bots = await UserModel.find({ accountType: 'bot' }).exec();
+
                 const foundUser = await UserModel.findOne({ userTag: userObject.userTag.toLowerCase() }).exec();
                 if (foundUser) {
                     return { exists: true, err_message: 'This userTag has been taken already' };
@@ -37,6 +39,8 @@ export class User {
                             bio: userObject.userProfile.bio,
                             gender: userObject.userProfile.gender,
                             university: userObject.userProfile.university,
+                            department: userObject.userProfile.department,
+                            lastSeen: userObject.userProfile.lastSeen,
                         } : null,
                         userID: '',
                         userTag: `${userObject.userTag.toLowerCase()}`,
@@ -67,8 +71,8 @@ export class User {
                         name: user.name,
                         avatar: user.userProfile.avatar != null ? user.userProfile.avatar : null,
                         fcm_token: user.fcm_token,
-                        // userProfile: user.userProfile,
                     };
+                    // QUEUE: Trigger bots posts to new user timeline
                     return { token: Utility.createToken(payload), user: savedUser };
                 }
 
