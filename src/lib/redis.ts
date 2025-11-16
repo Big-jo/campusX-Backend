@@ -14,13 +14,12 @@ class RedisClient {
         RedisClient.instance = new IORedis();
       } else {
         const redisPort = Number(process.env.REDIS_PORT);
-        RedisClient.instance = new IORedis(redisPort, process.env.REDIS_HOST, {
+        RedisClient.instance = new IORedis({
           password: process.env.REDIS_PASS,
-          tls: {
-            rejectUnauthorized: true,
-          },
           username: process.env.REDIS_USER,
           family: 6,
+          host: process.env.REDIS_HOST,
+          port: redisPort,
         });
       }
 
