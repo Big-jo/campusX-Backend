@@ -13,10 +13,6 @@ import * as http from 'http';
 import { Newsfeed } from './lib/newsfeeds';
 import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
-import IORedis from 'ioredis';
-import { Chat } from './entities/Chat/Chat';
-
-import { CircleConversation } from './lib/circle-conversation';
 import { runSeeds } from './seeds';
 import { validateEnv } from './config/env';
 
@@ -70,45 +66,8 @@ try {
   console.log.bind(console, 'MongoDB connected');
 }
 
-/******************************************************************************
- *                                 SETUP REDIS
- /******************************************************************************/
-
-let primaryCache: IORedis.Redis;
-
-if (process.env.NODE_ENV === 'development') {
-  primaryCache = new IORedis();
-} else {
-  const redisPort = Number(process.env.REDIS_PORT);
-  primaryCache = new IORedis(redisPort, process.env.REDIS_HOST, { password: process.env.REDIS_PASS });
-}
-
-primaryCache.on('connect', args => {
-  console.log.bind(console, 'Redis Instance Connected');
-});
-
-primaryCache.on('error', err => {
-  console.log.bind(console, err);
-});
-
-
-// Init express
-
 const app = express();
-//  Setup socketIO
 const server = http.createServer(app);
-
-const io = socketIO.listen(server, { path: '/timeline' });
-const cirleIO = socketIO.listen(server, { path: '/circle-conversations' });
-const chatIO = socketIO.listen(server, { path: '/chat' });
-new Newsfeed(io);
-new CircleConversation(cirleIO)
-// new Chat(chatIO, primaryCache);
-
-// Handle Websockets
-// io.of('/get-newsfeed').on('connection', (socket: any) => {
-//     console.log(socket.id);
-// });
 
 app.use(cors());
 app.use((req, res, next) => {
@@ -123,27 +82,14 @@ app.use(express.json());
 app.use(express.urlencoded({
   extended: true,
 }));
-// app.use((req, res, next) => {
-//     // res.locals.socketio = io;
-//     // res.locals.newsfeed = newsfeed;
-//     next();
-// });
+
 app.use(cookieParser());
 app.get('/', (req: Request, res: Response) => {
   res.status(NOT_FOUND).send('Oops the resource does not exist');
 });
 
-// Add to redis connection to req object
-app.use((req, res, next) => {
-  // res.locals.socketio = io;
-  // res.locals.newsfeed = newsfeed;
-  res.locals.primaryCache = primaryCache;
-  next();
-});
-
 app.use(BaseRouter.path, BaseRouter.router);
 app.use(BaseRouter.v2.path, BaseRouter.v2.router);
-
 
 app.use(sentry.Handlers.errorHandler() as express.ErrorRequestHandler);
 
@@ -156,8 +102,5 @@ app.use(function onError(err: any, req: any, res: any, next: any) {
   res.end(res.sentry + '\n');
 });
 
-
-
-
 // Export express instance
-export { server, io };
+export { server };

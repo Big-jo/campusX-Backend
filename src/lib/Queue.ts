@@ -1,10 +1,9 @@
 import { Queue, Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import path from 'path';
+import RedisClient from './redis';
 
-const connection = new IORedis(process.env.REDIS_URL as string, {
-  maxRetriesPerRequest: null,
-});
+const connection = RedisClient.getInstance();
 
 const queues: { [key: string]: Queue } = {};
 
