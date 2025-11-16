@@ -107,10 +107,10 @@ export class User {
                         user,
                     };
                 } else {
-                    return { message: 'Invalid email or password. Please try again.'};
+                    return { message: 'Invalid credentials. Please try again.'};
                 }
             } else {
-                return { message: 'Invalid email or password. Please try again.' };
+                return { status: 401,  message: 'Invalid email or password. Please try again.' };
             }
         } catch (error) {
             throw new Error(error);
