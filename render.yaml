@@ -1,104 +1,120 @@
-version: "1"
+version: "1" # Blueprint spec version
 
 services:
   # -------------------------
   # Backend Application
   # -------------------------
-  - type: web
-    name: campusx-backend
-    env: docker
-    region: frankfurt
-    plan: starter
-    dockerfilePath: ./Dockerfile
-    buildCommand: null
-    startCommand: null
-    envVars:
-      NODE_ENV: production
-      PORT: 3000
-      MONGO_URI: "mongodb://campusx-mongodb:27017/campusx"
-      REDIS_HOST: "campusx-redis"
-      REDIS_PORT: "6379"
-      REDIS_PASS:
-        fromSecret: redis-pass
-      JWT_SECRET:
-        fromSecret: jwt-secret
-      VISITED_CIRCLE_EXP_TIME: "24"
-      VISITED_CIRCLE_EXP_UNI: "hours"
-      POST_EXPIRE: "7"
-      POST_EXPIRE_UNIT: "days"
-      CAMPUS_T_EXPIRY_TIME: "1"
-      CAMPUS_T_EXPIRY_UNIT: "hour"
-      CAMPUS_T_CLEANUP_INTERVAL: "3600000"
-      VISITED_CIRCLE_CLEAN_UP_INTERVAL: "86400000"
-      TIMELINE_CLEAN_UP_INTERVAL: "3600000"
-      SPACES_ACCESS_KEY:
-        fromSecret: spaces-access-key
-      SPACES_SECRET:
-        fromSecret: spaces-secret
-      SPACES_BUCKET_AVATAR: ${SPACES_BUCKET_AVATAR}
-      SPACES_BUCKET_IMAGE: ${SPACES_BUCKET_IMAGE}
-      SPACES_BUCKET_VIDEO: ${SPACES_BUCKET_VIDEO}
-      SPACES_BUCKET_EXPRESSIONS: ${SPACES_BUCKET_EXPRESSIONS}
-      SPACES_BUCKET_CIRCLE_AVATAR: ${SPACES_BUCKET_CIRCLE_AVATAR}
-      SPACES_BUCKET_CIRCLE_COVER_IMAGE: ${SPACES_BUCKET_CIRCLE_COVER_IMAGE}
-      DSN: ${DSN}
-      SMTP_HOST: ${SMTP_HOST}
-      SMPT_PORT: ${SMPT_PORT}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      EMAIL_FROM: ${EMAIL_FROM}
-    disk:
-      name: uploads
-      mountPath: /app/uploads
-      sizeGB: 5
+  - type: web # Service type: web service with public URL
+    name: campusx-backend # Unique service identifier
+    runtime: docker # Build from Dockerfile in repo
+    region: frankfurt # Deploy region
+    plan: starter # Instance size/pricing tier
+    dockerfilePath: ./Dockerfile # Path to Dockerfile
+    envVars: # Environment variables (array format)
+      - key: NODE_ENV # Variable name
+        value: production # Hardcoded value
+      - key: PORT
+        value: 3000
+      - key: MONGO_URI # Get MongoDB connection from private service
+        fromService:
+          name: campusx-mongodb # Service name to reference
+          type: pserv # Service type
+          property: connectionString # Auto-generated connection string
+      - key: REDIS_HOST # Get Redis hostname from private service
+        fromService:
+          name: campusx-redis
+          type: pserv
+          property: host # Internal hostname
+      - key: REDIS_PORT # Get Redis port from private service
+        fromService:
+          name: campusx-redis
+          type: pserv
+          property: port # Internal port
+      - key: JWT_SECRET # Secret value
+        sync: false # Prompt for value in Render dashboard on deploy
+      - key: VISITED_CIRCLE_EXP_TIME
+        value: "24"
+      - key: VISITED_CIRCLE_EXP_UNI
+        value: "hours"
+      - key: POST_EXPIRE
+        value: "7"
+      - key: POST_EXPIRE_UNIT
+        value: "days"
+      - key: CAMPUS_T_EXPIRY_TIME
+        value: "1"
+      - key: CAMPUS_T_EXPIRY_UNIT
+        value: "hour"
+      - key: CAMPUS_T_CLEANUP_INTERVAL
+        value: "3600000"
+      - key: VISITED_CIRCLE_CLEAN_UP_INTERVAL
+        value: "86400000"
+      - key: TIMELINE_CLEAN_UP_INTERVAL
+        value: "3600000"
+      - key: SPACES_ACCESS_KEY # DigitalOcean Spaces credentials
+        sync: false
+      - key: SPACES_SECRET
+        sync: false
+      - key: SPACES_BUCKET_AVATAR # Bucket names
+        sync: false
+      - key: SPACES_BUCKET_IMAGE
+        sync: false
+      - key: SPACES_BUCKET_VIDEO
+        sync: false
+      - key: SPACES_BUCKET_EXPRESSIONS
+        sync: false
+      - key: SPACES_BUCKET_CIRCLE_AVATAR
+        sync: false
+      - key: SPACES_BUCKET_CIRCLE_COVER_IMAGE
+        sync: false
+      - key: DSN # Sentry DSN for error tracking
+        sync: false
+      - key: SMTP_HOST # Email service config
+        sync: false
+      - key: SMPT_PORT
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+    disk: # Persistent storage
+      name: uploads # Disk identifier
+      mountPath: /app/uploads # Container mount path
+      sizeGB: 5 # Disk size in GB
 
   # -------------------------
   # MongoDB Private Service
   # -------------------------
-  - type: private_service
-    name: campusx-mongodb
-    env: docker
-    region: frankfurt
-    plan: starter
-    dockerCommand: "mongod --logpath /dev/null"
-    image: "mongo:5.0"
-    disk:
-      name: mongodb-data
-      mountPath: /data/db
-      sizeGB: 5
-    additionalDisks:
-      - name: mongodb-config
-        mountPath: /data/configdb
-        sizeGB: 1
+  - type: pserv # Private service (internal network only)
+    name: campusx-mongodb # Service identifier
+    runtime: image # Deploy pre-built Docker image
+    image:
+      url: mongo:5.0 # Docker Hub image (full: docker.io/library/mongo:5.0)
+    region: frankfurt # Deploy region (must match web service)
+    plan: starter # Instance size
+    dockerCommand: "mongod --logpath /dev/null" # Override image CMD
+    disk: # Persistent storage for MongoDB data
+      name: mongodb-data # Disk identifier
+      mountPath: /data/db # MongoDB data directory
+      sizeGB: 5 # Disk size
     envVars:
-      MONGO_INITDB_DATABASE: "campusx"
-    serviceEnvVars:
-      MONGO_URI: "mongodb://localhost:27017/campusx"
-    expose: # internal only
-      - port: 27017
+      - key: MONGO_INITDB_DATABASE # Initialize default database
+        value: campusx
 
   # -------------------------
   # Redis Private Service
   # -------------------------
-  - type: private_service
-    name: campusx-redis
-    env: docker
-    region: frankfurt
-    plan: starter
-    image: "redis:7-alpine"
-    dockerCommand: "redis-server --appendonly yes --appendfsync everysec"
-    disk:
-      name: redis-data
-      mountPath: /data
-      sizeGB: 2
-    expose:
-      - port: 6379
+  - type: pserv # Private service (internal network only)
+    name: campusx-redis # Service identifier
+    runtime: image # Deploy pre-built Docker image
+    image:
+      url: redis:7-alpine # Docker Hub image (Alpine Linux variant)
+    region: frankfurt # Deploy region (must match web service)
+    plan: starter # Instance size
+    dockerCommand: "redis-server --appendonly yes --appendfsync everysec" # Enable AOF persistence
+    disk: # Persistent storage for Redis data
+      name: redis-data # Disk identifier
+      mountPath: /data # Redis data directory
+      sizeGB: 2 # Disk size
 
-# -------------------------
-# Secrets (Create in Dashboard)
-# -------------------------
-secrets:
-  - name: redis-pass
-  - name: jwt-secret
-  - name: spaces-access-key
-  - name: spaces-secret
