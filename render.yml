@@ -1,0 +1,104 @@
+version: "1"
+
+services:
+  # -------------------------
+  # Backend Application
+  # -------------------------
+  - type: web
+    name: campusx-backend
+    env: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    buildCommand: null
+    startCommand: null
+    envVars:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: "mongodb://campusx-mongodb:27017/campusx"
+      REDIS_HOST: "campusx-redis"
+      REDIS_PORT: "6379"
+      REDIS_PASS:
+        fromSecret: redis-pass
+      JWT_SECRET:
+        fromSecret: jwt-secret
+      VISITED_CIRCLE_EXP_TIME: "24"
+      VISITED_CIRCLE_EXP_UNI: "hours"
+      POST_EXPIRE: "7"
+      POST_EXPIRE_UNIT: "days"
+      CAMPUS_T_EXPIRY_TIME: "1"
+      CAMPUS_T_EXPIRY_UNIT: "hour"
+      CAMPUS_T_CLEANUP_INTERVAL: "3600000"
+      VISITED_CIRCLE_CLEAN_UP_INTERVAL: "86400000"
+      TIMELINE_CLEAN_UP_INTERVAL: "3600000"
+      SPACES_ACCESS_KEY:
+        fromSecret: spaces-access-key
+      SPACES_SECRET:
+        fromSecret: spaces-secret
+      SPACES_BUCKET_AVATAR: ${SPACES_BUCKET_AVATAR}
+      SPACES_BUCKET_IMAGE: ${SPACES_BUCKET_IMAGE}
+      SPACES_BUCKET_VIDEO: ${SPACES_BUCKET_VIDEO}
+      SPACES_BUCKET_EXPRESSIONS: ${SPACES_BUCKET_EXPRESSIONS}
+      SPACES_BUCKET_CIRCLE_AVATAR: ${SPACES_BUCKET_CIRCLE_AVATAR}
+      SPACES_BUCKET_CIRCLE_COVER_IMAGE: ${SPACES_BUCKET_CIRCLE_COVER_IMAGE}
+      DSN: ${DSN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMPT_PORT: ${SMPT_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+    disk:
+      name: uploads
+      mountPath: /app/uploads
+      sizeGB: 5
+
+  # -------------------------
+  # MongoDB Private Service
+  # -------------------------
+  - type: private_service
+    name: campusx-mongodb
+    env: docker
+    region: frankfurt
+    plan: starter
+    dockerCommand: "mongod --logpath /dev/null"
+    image: "mongo:5.0"
+    disk:
+      name: mongodb-data
+      mountPath: /data/db
+      sizeGB: 5
+    additionalDisks:
+      - name: mongodb-config
+        mountPath: /data/configdb
+        sizeGB: 1
+    envVars:
+      MONGO_INITDB_DATABASE: "campusx"
+    serviceEnvVars:
+      MONGO_URI: "mongodb://localhost:27017/campusx"
+    expose: # internal only
+      - port: 27017
+
+  # -------------------------
+  # Redis Private Service
+  # -------------------------
+  - type: private_service
+    name: campusx-redis
+    env: docker
+    region: frankfurt
+    plan: starter
+    image: "redis:7-alpine"
+    dockerCommand: "redis-server --appendonly yes --appendfsync everysec"
+    disk:
+      name: redis-data
+      mountPath: /data
+      sizeGB: 2
+    expose:
+      - port: 6379
+
+# -------------------------
+# Secrets (Create in Dashboard)
+# -------------------------
+secrets:
+  - name: redis-pass
+  - name: jwt-secret
+  - name: spaces-access-key
+  - name: spaces-secret
