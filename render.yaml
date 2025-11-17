@@ -15,11 +15,15 @@ services:
         value: production # Hardcoded value
       - key: PORT
         value: 3000
-      - key: MONGO_URI # Get MongoDB connection from private service
+      - key: MONGO_HOST # Get MongoDB hostname from private service
         fromService:
           name: campusx-mongodb # Service name to reference
           type: pserv # Service type
-          property: connectionString # Auto-generated connection string
+          property: host # Internal hostname
+      - key: MONGO_PORT # MongoDB port (always 27017)
+        value: "27017"
+      - key: MONGO_DB # Database name
+        value: campusx
       - key: REDIS_HOST # Get Redis hostname from private service
         fromService:
           name: campusx-redis
