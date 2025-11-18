@@ -33,6 +33,7 @@ mongoose.connect(URI, {
   useFindAndModify: false,
   useCreateIndex: true,
   useUnifiedTopology: true,
+  family: 4
 });
 
 // Connection Instance
