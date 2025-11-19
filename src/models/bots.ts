@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
-import { IUser } from 'src/interfaces/IUser';
+import { IUser } from '@interfaces/IUser';
 import mongoosePaginate from 'mongoose-paginate';
-import { BotType, botTypes } from 'src/types/types';
+import { BotType, botTypes } from '../types/types';
 
 const BotSchema: Schema = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },

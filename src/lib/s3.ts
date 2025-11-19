@@ -1,142 +1,77 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { Storage } from '@google-cloud/storage';
 import { logger } from '@shared';
-import UserModel from '../models/User.model';
-import {Circle} from '../entities/Circles/Circle';
-import CircleModel from 'src/models/Circle.model';
 
 export class S3 {
-    public s3Client: S3Client;
-    public params: {
-        Bucket: string;
-        Key: string;
-        Body: any;
-        ContentType: any;
-    };
-    private publicUrl: string;
+    private storage: Storage;
+    private bucketName: string;
+    private fileName: string;
+    private fileBuffer: Buffer;
+    private contentType: string;
 
     /**
-     * Creates an instance of S3.
+     * Creates an instance of S3 (now using GCS).
      * @param {string} ID - Identifier for the file
      * @param {*} file
      * @param {string} folder
      * @memberof S3
      */
     constructor(public ID: string, public file: any, public folder: string) {
-        // Initialize R2 client with Cloudflare endpoint
-        this.s3Client = new S3Client({
-            region: 'auto',
-            endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-            credentials: {
-                accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
-                secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
-            },
+        // Initialize GCS client
+        const credentials = process.env.GCS_SERVICE_ACCOUNT_KEY
+            ? (process.env.GCS_SERVICE_ACCOUNT_KEY.startsWith('{')
+                ? JSON.parse(process.env.GCS_SERVICE_ACCOUNT_KEY)
+                : require(process.env.GCS_SERVICE_ACCOUNT_KEY))
+            : undefined;
+
+        this.storage = new Storage({
+            projectId: process.env.GCS_PROJECT_ID,
+            ...(credentials && { credentials }),
         });
 
-        this.publicUrl = process.env.R2_PUBLIC_URL || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+        this.fileName = ID;
+        this.fileBuffer = file.buffer;
+        this.contentType = file.mimetype;
 
+        // Map folder to bucket name
         switch (folder) {
             case 'avatars':
-                this.params = {
-                    Bucket: process.env.R2_BUCKET_AVATAR as string,
-                    Key: ID,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                };
+                this.bucketName = process.env.GCS_BUCKET_AVATAR as string;
                 break;
             case 'image':
-                this.params = {
-                    Bucket: process.env.R2_BUCKET_IMAGE as string,
-                    Key: ID,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                };
+                this.bucketName = process.env.GCS_BUCKET_IMAGE as string;
                 break;
             case 'video':
-                this.params = {
-                    Bucket: process.env.R2_BUCKET_VIDEO as string,
-                    Key: ID,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                };
+                this.bucketName = process.env.GCS_BUCKET_VIDEO as string;
                 break;
             case 'expressions':
-                this.params = {
-                    Bucket: process.env.R2_BUCKET_EXPRESSIONS as string,
-                    Key: ID,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                };
+                this.bucketName = process.env.GCS_BUCKET_EXPRESSIONS as string;
                 break;
             case 'circle-avatars':
-                this.params = {
-                    Bucket: process.env.R2_BUCKET_CIRCLE_AVATAR as string,
-                    Key: ID,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                };
+                this.bucketName = process.env.GCS_BUCKET_CIRCLE_AVATAR as string;
                 break;
             case 'circle-cover-image':
-                this.params = {
-                    Bucket: process.env.R2_BUCKET_CIRCLE_COVER_IMAGE as string,
-                    Key: ID,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                };
+                this.bucketName = process.env.GCS_BUCKET_CIRCLE_COVER_IMAGE as string;
                 break;
             default:
                 throw new Error('No folder chosen');
         }
-
     }
 
-    public async UploadAvatar() {
+    private async upload(): Promise<string> {
         try {
-            const command = new PutObjectCommand(this.params);
-            await this.s3Client.send(command);
-            return this.getPublicUrl();
-        } catch (e) {
-            logger.error(e);
-            throw new Error(e);
-        }
-    }
+            const bucket = this.storage.bucket(this.bucketName);
+            const blob = bucket.file(this.fileName);
 
-    public async UploadCircleAvatar() {
-        try {
-            const command = new PutObjectCommand(this.params);
-            await this.s3Client.send(command);
-            return this.getPublicUrl();
-        } catch (e) {
-            logger.error(e);
-            throw new Error(e);
-        }
-    }
+            await blob.save(this.fileBuffer, {
+                contentType: this.contentType,
+                metadata: {
+                    cacheControl: 'public, max-age=31536000',
+                },
+            });
 
-    public async UploadCircleCoverImage() {
-        try {
-            const command = new PutObjectCommand(this.params);
-            await this.s3Client.send(command);
-            return this.getPublicUrl();
-        } catch (e) {
-            logger.error(e);
-            throw new Error(e);
-        }
-    }
+            // Make file public (optional - remove if using signed URLs)
+            await blob.makePublic();
 
-    public async UploadImage() {
-        try {
-            const command = new PutObjectCommand(this.params);
-            await this.s3Client.send(command);
-            return this.getPublicUrl();
-        } catch (e) {
-            logger.error(e);
-            throw new Error(e);
-        }
-    }
-
-    public async UploadVideo() {
-        try {
-            const command = new PutObjectCommand(this.params);
-            await this.s3Client.send(command);
             return this.getPublicUrl();
         } catch (error) {
             logger.error(error);
@@ -144,7 +79,33 @@ export class S3 {
         }
     }
 
+    public async UploadAvatar() {
+        return this.upload();
+    }
+
+    public async UploadCircleAvatar() {
+        return this.upload();
+    }
+
+    public async UploadCircleCoverImage() {
+        return this.upload();
+    }
+
+    public async UploadImage() {
+        return this.upload();
+    }
+
+    public async UploadVideo() {
+        return this.upload();
+    }
+
     private getPublicUrl(): string {
-        return `${this.publicUrl}/${this.params.Bucket}/${this.params.Key}`;
+        // Option 1: Use custom domain if configured
+        if (process.env.GCS_PUBLIC_URL) {
+            return `${process.env.GCS_PUBLIC_URL}/${this.fileName}`;
+        }
+
+        // Option 2: Use standard GCS public URL
+        return `https://storage.googleapis.com/${this.bucketName}/${this.fileName}`;
     }
 }
