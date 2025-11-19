@@ -9,10 +9,10 @@
  * - Use .spec.ts file extension
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "@jest/globals";
 
 describe("Bots", () => {
   test("Seed Bots", () => {
 
   });
-
+});

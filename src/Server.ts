@@ -1,3 +1,10 @@
+
+import * as dotenv from 'dotenv';
+
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
+
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import {

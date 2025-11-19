@@ -42,10 +42,6 @@ export class PostsController {
    * Delete a post
    */
   deletePost = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
     const { postId } = req.params;
     await this.postsService.deletePost(postId, req.user._id.toString());
     return res.status(200).json({ message: 'Post deleted successfully' });
@@ -56,10 +52,6 @@ export class PostsController {
    * Like a post
    */
   likePost = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
     const { postId } = req.params;
     const result = await this.postsService.likePost(postId, req.user._id.toString());
     return res.status(200).json(result);
@@ -70,10 +62,6 @@ export class PostsController {
    * Unlike a post
    */
   unlikePost = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
     const { postId } = req.params;
     const result = await this.postsService.unlikePost(postId, req.user._id.toString());
     return res.status(200).json(result);
@@ -84,10 +72,6 @@ export class PostsController {
    * Get a single post
    */
   getPost = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
     const { postId } = req.params;
     const result = await this.postsService.getPost(postId, req.user._id.toString());
     return res.status(200).json(result);
@@ -98,10 +82,6 @@ export class PostsController {
    * Get user's newsfeed (paginated)
    */
   getNewsfeed = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const cursor = req.query.cursor as string | undefined;
 
@@ -114,10 +94,6 @@ export class PostsController {
    * Long polling endpoint for real-time updates
    */
   pollNewsfeed = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
     const since = parseInt(req.query.since as string) || 0;
     const timeout = Math.min(parseInt(req.query.timeout as string) || 30, 60);
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
@@ -131,7 +107,6 @@ export class PostsController {
    * Get user's posts
    */
   getUserPosts = async (req: Request, res: Response) => {
-
     const { userId: targetUserId } = req.params;
     const postType = (req.query.type as string) || 'all';
     const page = parseInt(req.query.page as string) || 1;

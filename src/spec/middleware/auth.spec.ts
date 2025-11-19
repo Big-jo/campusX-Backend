@@ -2,7 +2,7 @@
  * Auth Middleware Tests
  * Critical security layer - JWT validation
  */
-import { describe, test, expect, beforeAll, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeAll, beforeEach, jest } from "@jest/globals";
 import validation from "../../middleware/auth";
 import { generateTestToken, generateExpiredToken, generateInvalidToken } from "../utils";
 import { Response, NextFunction } from "express";
@@ -29,11 +29,11 @@ describe("Auth Middleware", () => {
     };
 
     mockRes = {
-      status: mock((code: number) => mockRes),
-      json: mock((data: any) => mockRes),
+      status: jest.fn((code: number) => mockRes),
+      json: jest.fn((data: any) => mockRes),
     };
 
-    mockNext = mock(() => {});
+    mockNext = jest.fn(() => {});
   });
 
   describe("validateToken", () => {

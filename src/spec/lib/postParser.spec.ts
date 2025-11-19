@@ -3,7 +3,7 @@
  * Tests mention and hashtag extraction from post text
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "@jest/globals";
 import { PostParser } from "../../lib/postParser";
 import { IPost } from "../../interfaces/IPost";
 

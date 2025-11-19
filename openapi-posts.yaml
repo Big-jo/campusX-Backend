@@ -1,0 +1,520 @@
+openapi: 3.0.3
+info:
+  title: CampusX Posts API
+  description: API endpoints for creating and managing posts with multipart form data
+  version: 2.0.0
+  contact:
+    name: CampusX API Support
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: http://localhost:3001
+    description: E2E test server
+  - url: https://api.campusx.com
+    description: Production server
+
+tags:
+  - name: Posts
+    description: Post creation and management endpoints
+
+paths:
+  /api/v2/posts/create:
+    post:
+      tags:
+        - Posts
+      summary: Create a new post
+      description: |
+        Create a new post with optional text, images, videos, hashtags, and mentions.
+        Supports multipart form data for file uploads.
+
+        At least one of text, image, or video must be provided.
+      operationId: createPost
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Post text content
+                  maxLength: 5000
+                  example: "This is my first post! #campuslife"
+                image:
+                  type: string
+                  format: binary
+                  description: Image file to upload (JPEG, PNG, etc.)
+                video:
+                  type: string
+                  format: binary
+                  description: Video file to upload (MP4, MOV, etc.)
+                hashTags:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of hashtags (without # symbol)
+                  example: ["campuslife", "student"]
+                mentions:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of user IDs to mention
+                  example: ["507f1f77bcf86cd799439011"]
+            encoding:
+              image:
+                contentType: image/jpeg, image/png, image/gif, image/webp
+              video:
+                contentType: video/mp4, video/quicktime, video/x-msvideo
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post created successfully"
+                  postId:
+                    type: string
+                    example: "507f1f77bcf86cd799439011"
+        '400':
+          description: Bad request - validation error or missing required content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingContent:
+                  summary: Missing content
+                  value:
+                    message: "Post must have text, image, or video"
+                    statusCode: 400
+                textTooLong:
+                  summary: Text exceeds maximum length
+                  value:
+                    message: "Text must not exceed 5000 characters"
+                    statusCode: 400
+        '401':
+          description: Unauthorized - missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "User not authenticated"
+                statusCode: 401
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Internal server error"
+                statusCode: 500
+
+  /api/v2/posts/{postId}:
+    get:
+      tags:
+        - Posts
+      summary: Get a single post
+      operationId: getPost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: ID of the post to retrieve
+          schema:
+            type: string
+            example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+        - Posts
+      summary: Delete a post
+      operationId: deletePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: ID of the post to delete
+          schema:
+            type: string
+            example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Post deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post deleted successfully"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v2/posts/{postId}/like:
+    post:
+      tags:
+        - Posts
+      summary: Like a post
+      operationId: likePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: ID of the post to like
+          schema:
+            type: string
+            example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Post liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post liked"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+        - Posts
+      summary: Unlike a post
+      operationId: unlikePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          description: ID of the post to unlike
+          schema:
+            type: string
+            example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Post unliked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post unliked"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v2/posts/newsfeed:
+    get:
+      tags:
+        - Posts
+      summary: Get user's newsfeed
+      description: Retrieve paginated newsfeed with cursor-based pagination
+      operationId: getNewsfeed
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of posts to return (max 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+            example: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (timestamp or ID from previous response)
+          schema:
+            type: string
+            example: "1234567890"
+      responses:
+        '200':
+          description: Newsfeed retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  nextCursor:
+                    type: string
+                    example: "1234567890"
+                  hasMore:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v2/posts/newsfeed/poll:
+    get:
+      tags:
+        - Posts
+      summary: Poll for new posts (long polling)
+      description: Long polling endpoint for real-time newsfeed updates
+      operationId: pollNewsfeed
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: since
+          in: query
+          description: Timestamp to poll for posts after
+          schema:
+            type: integer
+            example: 1234567890
+        - name: timeout
+          in: query
+          description: Long polling timeout in seconds (max 60)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+            default: 30
+            example: 30
+        - name: limit
+          in: query
+          description: Number of posts to return (max 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: New posts available or timeout reached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  hasNew:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v2/users/{userId}/posts:
+    get:
+      tags:
+        - Posts
+      summary: Get user's posts
+      description: Retrieve posts created by a specific user
+      operationId: getUserPosts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: string
+            example: "507f1f77bcf86cd799439011"
+        - name: type
+          in: query
+          description: Type of posts to retrieve
+          schema:
+            type: string
+            enum: [all, posts, comments]
+            default: all
+            example: "all"
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          description: Number of posts per page (max 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: User posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  total:
+                    type: integer
+                    example: 100
+                  page:
+                    type: integer
+                    example: 1
+                  totalPages:
+                    type: integer
+                    example: 5
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from authentication endpoints.
+        Format: `Authorization: Bearer <token>`
+
+  schemas:
+    Post:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        author:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: "507f1f77bcf86cd799439012"
+            name:
+              type: string
+              example: "John Doe"
+            userTag:
+              type: string
+              example: "johndoe"
+            avatar:
+              type: string
+              example: "https://example.com/avatar.jpg"
+        text:
+          type: string
+          example: "This is a post! #campuslife"
+        image:
+          type: string
+          nullable: true
+          example: "https://s3.amazonaws.com/bucket/image.jpg"
+        video:
+          type: string
+          nullable: true
+          example: "https://s3.amazonaws.com/bucket/video.mp4"
+        hashTags:
+          type: array
+          items:
+            type: string
+          example: ["campuslife", "student"]
+        mentions:
+          type: array
+          items:
+            type: string
+          example: ["507f1f77bcf86cd799439013"]
+        likes:
+          type: integer
+          example: 42
+        comments:
+          type: integer
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-19T10:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-11-19T10:30:00.000Z"
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error message"
+        statusCode:
+          type: integer
+          example: 400
+        path:
+          type: string
+          example: "/api/v2/posts/create"
+        method:
+          type: string
+          example: "POST"
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized - missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "User not authenticated"
+            statusCode: 401
+
+    ForbiddenError:
+      description: Forbidden - user doesn't have permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Forbidden"
+            statusCode: 403
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Resource not found"
+            statusCode: 404

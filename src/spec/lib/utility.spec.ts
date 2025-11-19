@@ -3,7 +3,7 @@
  * Tests helper functions and utility methods
  */
 
-import { describe, test, expect, beforeAll, mock } from "bun:test";
+import { describe, test, expect, beforeAll, jest } from "@jest/globals";
 import { Utility } from "../../lib/utility";
 import jwt from "jsonwebtoken";
 import { INTERNAL_SERVER_ERROR } from "http-status-codes";
@@ -48,8 +48,8 @@ describe("Utility", () => {
   describe("ErrResponse", () => {
     test("should send 500 error response with message", () => {
       const mockRes = {
-        status: mock((code: number) => mockRes),
-        json: mock((data: any) => mockRes),
+        status: jest.fn((code: number) => mockRes),
+        json: jest.fn((data: any) => mockRes),
       };
 
       Utility.ErrResponse(mockRes as any, new Error("Test error"));
@@ -84,13 +84,13 @@ describe("Utility", () => {
   describe("CacheExpiryTracker", () => {
     test("should add expiry timestamp to Redis sorted set", () => {
       const mockRedis = {
-        zadd: mock(() => Promise.resolve(1)),
+        zadd: jest.fn(() => Promise.resolve(1)),
       };
 
       Utility.CacheExpiryTracker("test:expiry", "test-member", 1, "hours" as any, mockRedis as any);
 
       expect(mockRedis.zadd).toHaveBeenCalled();
-      const [key, ttl, member] = mockRedis.zadd.mock.calls[0];
+      const [key, ttl, member] = (mockRedis.zadd as any).mock.calls[0];
       expect(key).toBe("test:expiry");
       expect(member).toBe("test-member");
       expect(typeof ttl).toBe("string"); // UTC timestamp

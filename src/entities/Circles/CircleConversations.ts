@@ -1,10 +1,9 @@
-import CircleConversationModel from "src/models/CircleConversation.model";
+import CircleConversationModel from "../../models/CircleConversation.model";
 import IORedis from 'ioredis';
 import { logger } from "@shared";
 import ioredis from "ioredis";
 import { EventEmitter } from "events";
 import moment from "moment";
-import ConversationModel from "src/models/Conversation.model";
 
 export interface IConversationMessage {
     name: string;

@@ -10,7 +10,7 @@ import validation from '../../middleware/auth';
 import multer from 'multer';
 import { ICircle, IComment } from '@interfaces';
 import { ICirclePost, ICircleComment } from '@interfaces';
-import { CircleConversation } from 'src/entities/Circles/CircleConversations';
+import { CircleConversation } from '../../entities/Circles/CircleConversations';
 
 /******************************************************************************
  *                                 Router Setup

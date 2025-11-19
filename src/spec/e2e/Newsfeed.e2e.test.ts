@@ -9,7 +9,7 @@
 import "./mocks";
 
 // Import dependencies
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "@jest/globals";
 import request from "supertest";
 import { server } from "../../Server";
 import { setupE2E, teardownE2E, clearE2EData } from "./setup";

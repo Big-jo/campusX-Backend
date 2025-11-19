@@ -2,7 +2,7 @@
  * Test Infrastructure Verification
  * Ensures test utilities are working correctly
  */
-import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from "@jest/globals";
 import { setupTestDB, clearTestDB, teardownTestDB } from "./test-db";
 import { setupTestRedis, clearTestRedis, teardownTestRedis } from "./test-redis";
 import { createTestUser, generateUserData } from "./factories";

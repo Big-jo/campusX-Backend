@@ -12,12 +12,12 @@ process.env.REDIS_HOST = process.env.E2E_REDIS_HOST || "localhost";
 process.env.REDIS_PORT = process.env.E2E_REDIS_PORT || "6379";
 
 // STEP 3: Import dependencies
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "@jest/globals";
 import request from "supertest";
 import { server } from "../../Server";
 import { setupE2E, teardownE2E, clearE2EData } from "./setup";
 import { createE2EUser, e2eAuthHeader, createE2EUsers } from "./helpers";
-import { test } from "bun:test";
+import { test } from "@jest/globals";
 
 const E2E_BASE_URL = `http://localhost:${process.env.E2E_PORT || 3001}`;
 
