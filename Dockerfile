@@ -10,7 +10,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 # ---- Build TypeScript ----
-RUN yarn build
+RUN yarn run build
 
 # ---- Remove devDependencies after build ----
 RUN yarn install --frozen-lockfile --production && yarn cache clean
