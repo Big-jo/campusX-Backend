@@ -1,18 +1,18 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { PostsController } from '../../controllers/v2/posts.controller';
 import { auth } from '../../middleware/auth';
-import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middleware/validation';
+import { asyncHandler } from '../../utils/asyncHandler';
 import {
   createPostSchema,
-  getPostSchema,
   deletePostSchema,
-  likePostSchema,
-  getUserPostsSchema,
   getNewsfeedSchema,
+  getPostSchema,
+  getUserPostsSchema,
+  likePostSchema,
   pollNewsfeedSchema
 } from '../../validators/v2/posts.validator';
-import multer from 'multer';
 
 const router = Router();
 const postsController = new PostsController();
@@ -36,6 +36,6 @@ router.post('/:postId/like', auth, validate(likePostSchema), asyncHandler(postsC
 router.delete('/:postId/like', auth, validate(likePostSchema), asyncHandler(postsController.unlikePost));
 
 // User posts
-router.get('/users/:userId/posts', auth, validate(getUserPostsSchema), asyncHandler(postsController.getUserPosts));
+router.get('/users/:userId', auth, validate(getUserPostsSchema), asyncHandler(postsController.getUserPosts));
 
 export default router;
