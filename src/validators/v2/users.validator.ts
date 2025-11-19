@@ -33,7 +33,7 @@ export const createUserSchema = z.object({
 
 export const saveUserInterestsSchema = z.object({
   body: z.object({
-    topicIds: z.array(z.string()).min(1, 'At least one topic is required').max(3, 'Maximum 3 topics allowed'),
+    topicIds: z.array(z.string()).min(1, 'At least one topic is required')
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
