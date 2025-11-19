@@ -104,7 +104,7 @@
     "find": "^0.3.0",
     "ioredis-mock": "^8.13.1",
     "jsonfile": "^5.0.0",
-    "mongodb-memory-server": "^10.2.3",
+    "mongodb-memory-server": "^10.3.0",
     "request": "^2.88.0",
     "socket.io-client": "^2.3.0",
     "supertest": "^4.0.2",

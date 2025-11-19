@@ -1,31 +1,34 @@
 /**
  * E2E Test Setup
- * Real services (MongoDB, Redis) via Docker Compose
+ * MongoDB Memory Server + Redis via Docker Compose
  */
 
 import mongoose from "mongoose";
 import IORedis from "ioredis";
 import { Server } from "http";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
 let redis: IORedis.Redis;
 let serverInstance: Server | null = null;
+let mongoServer: MongoMemoryServer | null = null;
 
 /**
- * Setup E2E test environment with real services
- * Must be run after Docker Compose services are up
- * Note: Server.ts already connects to MongoDB, so we just verify, setup Redis, and start HTTP server
+ * Setup E2E test environment with MongoDB Memory Server + Redis
  */
 export async function setupE2E(server: Server) {
-  // Wait for mongoose connection from Server.ts
-  let retries = 0;
-  while (mongoose.connection.readyState !== 1 && retries < 30) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    retries++;
-  }
+  // Create and start MongoDB Memory Server
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
 
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error("MongoDB connection not ready after Server.ts import");
-  }
+  // Connect mongoose to memory server
+  await mongoose.connect(mongoUri, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useCreateIndex: true,
+    useUnifiedTopology: true,
+  });
+
+  console.log('✓ MongoDB Memory Server connected');
 
   // Redis connection for test utilities
   redis = new IORedis({
@@ -65,12 +68,12 @@ export async function clearE2EData() {
  * Teardown E2E environment
  */
 export async function teardownE2E() {
-  // Clear data but keep connections (Server.ts manages them)
+  // Clear data
   await clearE2EData();
 
   // Stop HTTP server
   if (serverInstance) {
-    return new Promise<void>((resolve) => {
+    await new Promise<void>((resolve) => {
       serverInstance!.close(() => {
         serverInstance = null;
         console.log("✓ HTTP server stopped");
@@ -79,9 +82,16 @@ export async function teardownE2E() {
     });
   }
 
-  // Disconnect from Redis test client only
+  // Disconnect from Redis
   if (redis) {
     redis.disconnect();
+  }
+
+  // Disconnect mongoose and stop MongoDB Memory Server
+  await mongoose.disconnect();
+  if (mongoServer) {
+    await mongoServer.stop();
+    mongoServer = null;
   }
 
   console.log("✓ E2E environment cleaned up");

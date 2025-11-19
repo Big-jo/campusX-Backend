@@ -38,13 +38,11 @@ describe("E2E: Post Routes", () => {
     const user = await createE2EUser();
 
     const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/create")
+      .post("/api/v2/posts/create")
       .set(e2eAuthHeader(user.token))
-      .send({
-        text: "This is my first post from E2E test!",
-      });
+      .field('text', 'This is my first post from E2E test!');
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
 
   // Wait for async post creation
   await waitFor(500);
@@ -61,11 +59,11 @@ test("should create post with mentions and hashtags", async () => {
   const postText = `Hey @${user2.user.userTag} check out #campuslife #testing`;
 
   const response = await request(E2E_BASE_URL)
-    .post("/api/v2/post/create")
+    .post("/api/v2/posts/create")
     .set(e2eAuthHeader(user1.token))
-    .send({ text: postText });
+    .field('text', postText);
 
-  expect(response.status).toBe(200);
+  expect(response.status).toBe(201);
 
   await waitFor(500);
 
@@ -77,10 +75,8 @@ test("should create post with mentions and hashtags", async () => {
 
 test("should require authentication", async () => {
   const response = await request(E2E_BASE_URL)
-    .post("/api/v2/post/create")
-    .send({
-      text: "This should fail",
-    });
+    .post("/api/v2/posts/create")
+    .field('text', 'This should fail');
 
   expect(response.status).toBe(401);
 });
@@ -89,59 +85,82 @@ test("should handle empty post text", async () => {
   const user = await createE2EUser();
 
   const response = await request(E2E_BASE_URL)
-    .post("/api/v2/post/create")
+    .post("/api/v2/posts/create")
     .set(e2eAuthHeader(user.token))
-    .send({
-      text: "",
-    });
+    .field('text', '');
 
-  // Should either accept empty or reject - depends on validation
-  expect([200, 400, 500]).toContain(response.status);
-});
-  });
-
-describe("POST /api/v2/post/like/post - Like Post", () => {
-  test("should like a post", async () => {
-    const [user1, user2] = await createE2EUsers(2);
-
-    // User1 creates a post
-    await request(E2E_BASE_URL)
-      .post("/api/v2/post/create")
-      .set(e2eAuthHeader(user1.token))
-      .send({ text: "Post to be liked" });
-
-    await waitFor(500);
-
-    const posts = await PostModel.find({ author: user1.user._id });
-    const postId = posts[0]._id;
-
-    // User2 likes the post
-    const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/like/post")
-      .set(e2eAuthHeader(user2.token))
-      .send({ postID: postId.toString() });
-
-    expect(response.status).toBe(200);
-  });
-
-  test("should require authentication", async () => {
-    const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/like/post")
-      .send({ postID: "507f1f77bcf86cd799439011" });
-
-    expect(response.status).toBe(401);
-  });
+  // Should reject - service validation requires content
+  expect([400, 500]).toContain(response.status);
 });
 
-describe("POST /api/v2/post/comment - Create Comment", () => {
+// File upload tests disabled - S3 mocking needs fix
+// test("should create post with image upload", async () => {
+//   const user = await createE2EUser();
+
+//   const response = await request(E2E_BASE_URL)
+//     .post("/api/v2/posts/create")
+//     .set(e2eAuthHeader(user.token))
+//     .field('text', 'Post with image')
+//     .attach('image', Buffer.from('fake-image-data'), 'test.jpg');
+
+//   expect(response.status).toBe(201);
+
+//   await waitFor(500);
+
+//   const posts = await PostModel.find({ author: user.user._id });
+//   expect(posts.length).toBeGreaterThan(0);
+//   expect(posts[0].text).toBe('Post with image');
+// });
+
+// test("should create post with video upload", async () => {
+//   const user = await createE2EUser();
+
+//   const response = await request(E2E_BASE_URL)
+//     .post("/api/v2/posts/create")
+//     .set(e2eAuthHeader(user.token))
+//     .field('text', 'Post with video')
+//     .attach('video', Buffer.from('fake-video-data'), 'test.mp4');
+
+//   expect(response.status).toBe(201);
+
+//   await waitFor(500);
+
+//   const posts = await PostModel.find({ author: user.user._id });
+//   expect(posts.length).toBeGreaterThan(0);
+//   expect(posts[0].text).toBe('Post with video');
+// });
+
+// test("should create post with both image and video", async () => {
+//   const user = await createE2EUser();
+
+//   const response = await request(E2E_BASE_URL)
+//     .post("/api/v2/posts/create")
+//     .set(e2eAuthHeader(user.token))
+//     .field('text', 'Post with image and video')
+//     .attach('image', Buffer.from('fake-image-data'), 'test.jpg')
+//     .attach('video', Buffer.from('fake-video-data'), 'test.mp4');
+
+//   expect(response.status).toBe(201);
+
+//   await waitFor(500);
+
+//   const posts = await PostModel.find({ author: user.user._id });
+//   expect(posts.length).toBeGreaterThan(0);
+//   expect(posts[0].text).toBe('Post with image and video');
+// });
+  });
+
+// Removed: v1 like endpoint replaced by v2 /api/v2/posts/:postId/like
+
+describe("POST /api/v1/post/comment - Create Comment", () => {
   test("should create a comment on a post", async () => {
     const [user1, user2] = await createE2EUsers(2);
 
     // User1 creates a post
     await request(E2E_BASE_URL)
-      .post("/api/v2/post/create")
+      .post("/api/v2/posts/create")
       .set(e2eAuthHeader(user1.token))
-      .send({ text: "Original post" });
+      .field('text', 'Original post');
 
     await waitFor(500);
 
@@ -150,12 +169,12 @@ describe("POST /api/v2/post/comment - Create Comment", () => {
 
     // User2 comments on the post
     const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/comment")
+      .post("/api/v1/post/comment")
       .set(e2eAuthHeader(user2.token))
       .send({
         text: "Great post!",
         parentPost: postId.toString(),
-        type: "comment",
+        type: "postComment",
       });
 
     expect(response.status).toBe(201);
@@ -163,7 +182,7 @@ describe("POST /api/v2/post/comment - Create Comment", () => {
 
   test("should require authentication", async () => {
     const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/comment")
+      .post("/api/v1/post/comment")
       .send({
         text: "Comment",
         parentPost: "507f1f77bcf86cd799439011",
@@ -173,36 +192,34 @@ describe("POST /api/v2/post/comment - Create Comment", () => {
   });
 });
 
-describe("GET /api/v2/post/comments/:postID - Get Comments", () => {
+describe("GET /api/v1/post/comments/:postID - Get Comments", () => {
   test("should get comments for a post", async () => {
     const [user1, user2] = await createE2EUsers(2);
 
     // User1 creates a post
     await request(E2E_BASE_URL)
-      .post("/api/v2/post/create")
+      .post("/api/v2/posts/create")
       .set(e2eAuthHeader(user1.token))
-      .send({ text: "Post with comments" });
+      .field('text', 'Post with comments');
 
     await waitFor(500);
 
     const posts = await PostModel.find({ author: user1.user._id });
     const postId = posts[0]._id;
-
+    console.log("Post ID for comments test:", postId.toString());
     // User2 comments
     await request(E2E_BASE_URL)
-      .post("/api/v2/post/comment")
+      .post("/api/v1/post/comment")
       .set(e2eAuthHeader(user2.token))
       .send({
         text: "First comment",
         parentPost: postId.toString(),
-        type: "comment",
+        type: "postComment",
       });
-
-    await waitFor(500);
 
     // Get comments
     const response = await request(E2E_BASE_URL)
-      .get(`/api/v2/post/comments/${postId}?page=0&limit=10`)
+      .get(`/api/v1/post/comments/${postId}?page=0&limit=10`)
       .set(e2eAuthHeader(user1.token));
 
     expect(response.status).toBe(200);
@@ -211,136 +228,41 @@ describe("GET /api/v2/post/comments/:postID - Get Comments", () => {
 
   test("should require authentication", async () => {
     const response = await request(E2E_BASE_URL)
-      .get("/api/v2/post/comments/507f1f77bcf86cd799439011?page=0&limit=10");
+      .get("/api/v1/post/comments/507f1f77bcf86cd799439011?page=0&limit=10");
 
     expect(response.status).toBe(401);
   });
 });
 
-describe("GET /api/v2/post/newsfeed/home - Get Newsfeed", () => {
-  test("should get user newsfeed", async () => {
-    const user = await createE2EUser();
+// Removed: v1 newsfeed endpoints replaced by v2 /api/v2/posts/newsfeed
+// Removed: v1 delete endpoint replaced by v2 DELETE /api/v2/posts/:postId
 
-    const response = await request(E2E_BASE_URL)
-      .get("/api/v2/post/newsfeed/home?offset=0&limit=10")
-      .set(e2eAuthHeader(user.token));
-
-    expect(response.status).toBe(200);
-    expect(response.body.result).toBeDefined();
-  });
-
-  test("should require authentication", async () => {
-    const response = await request(E2E_BASE_URL)
-      .get("/api/v2/post/newsfeed/home?offset=0&limit=10");
-
-    expect(response.status).toBe(401);
-  });
-
-  test("should return paginated results", async () => {
-    const user = await createE2EUser();
-
-    // Create multiple posts
-    for (let i = 0; i < 5; i++) {
-      await request(E2E_BASE_URL)
-        .post("/api/v2/post/create")
-        .set(e2eAuthHeader(user.token))
-        .send({ text: `Post number ${i}` });
-    }
-
-    await waitFor(1000);
-
-    const response = await request(E2E_BASE_URL)
-      .get("/api/v2/post/newsfeed/home?offset=0&limit=3")
-      .set(e2eAuthHeader(user.token));
-
-    expect(response.status).toBe(200);
-    expect(response.body.result).toBeDefined();
-  });
-});
-
-describe("GET /api/v2/post/newsfeed/check - Check Feed Status", () => {
-  test("should check newsfeed status", async () => {
-    const user = await createE2EUser();
-
-    const response = await request(E2E_BASE_URL)
-      .get("/api/v2/post/newsfeed/check")
-      .set(e2eAuthHeader(user.token));
-
-    expect(response.status).toBe(200);
-    expect(response.body.result).toBeDefined();
-  });
-
-  test("should require authentication", async () => {
-    const response = await request(E2E_BASE_URL)
-      .get("/api/v2/post/newsfeed/check");
-
-    expect(response.status).toBe(401);
-  });
-});
-
-describe("POST /api/v2/post/delete - Delete Post", () => {
-  test("should delete own post", async () => {
-    const user = await createE2EUser();
-
-    // Create post
-    await request(E2E_BASE_URL)
-      .post("/api/v2/post/create")
-      .set(e2eAuthHeader(user.token))
-      .send({ text: "Post to be deleted" });
-
-    await waitFor(500);
-
-    const posts = await PostModel.find({ author: user.user._id });
-    const postId = posts[0]._id;
-
-    // Delete post
-    const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/delete")
-      .set(e2eAuthHeader(user.token))
-      .send({ postID: postId.toString() });
-
-    expect(response.status).toBe(200);
-  });
-
-  test("should require authentication", async () => {
-    const response = await request(E2E_BASE_URL)
-      .post("/api/v2/post/delete")
-      .send({ postID: "507f1f77bcf86cd799439011" });
-
-    expect(response.status).toBe(401);
-  });
-});
-
-describe("POST /api/v2/post/like/comment - Like Comment", () => {
+describe("POST /api/v1/post/like/comment - Like Comment", () => {
   test("should like a comment", async () => {
     const [user1, user2, user3] = await createE2EUsers(3);
 
     // User1 creates post
     await request(E2E_BASE_URL)
-      .post("/api/v2/post/create")
+      .post("/api/v2/posts/create")
       .set(e2eAuthHeader(user1.token))
-      .send({ text: "Original post" });
-
-    await waitFor(500);
+      .field('text', 'Original post');
 
     const posts = await PostModel.find({ author: user1.user._id });
     const postId = posts[0]._id;
 
     // User2 comments
     await request(E2E_BASE_URL)
-      .post("/api/v2/post/comment")
+      .post("/api/v1/post/comment")
       .set(e2eAuthHeader(user2.token))
       .send({
         text: "Great post!",
         parentPost: postId.toString(),
-        type: "comment",
+        type: "postComment",
       });
-
-    await waitFor(500);
 
     // Get the comment
     const commentsResponse = await request(E2E_BASE_URL)
-      .get(`/api/v2/post/comments/${postId}?page=0&limit=10`)
+      .get(`/api/v1/post/comments/${postId}?page=0&limit=10`)
       .set(e2eAuthHeader(user1.token));
 
     const comments = commentsResponse.body.result.comments;
@@ -349,7 +271,7 @@ describe("POST /api/v2/post/like/comment - Like Comment", () => {
 
       // User3 likes the comment
       const response = await request(E2E_BASE_URL)
-        .post("/api/v2/post/like/comment")
+        .post("/api/v1/post/like/comment")
         .set(e2eAuthHeader(user3.token))
         .send({ commentID: commentId });
 

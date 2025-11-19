@@ -17,11 +17,23 @@ export class PostsController {
    * Create a new post
    */
   createPost = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
+    // Extract validated body data
+    const { text, hashTags, mentions } = req.body;
 
-    const result = await this.postsService.createPost(req.body, req.user);
+    // Extract files from multipart form
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const imageFile = files?.image?.[0];
+    const videoFile = files?.video?.[0];
+
+    const postData = {
+      text,
+      hashTags,
+      mentions,
+      imageFile,
+      videoFile
+    };
+
+    const result = await this.postsService.createPost(postData, req.user);
     return res.status(201).json(result);
   };
 

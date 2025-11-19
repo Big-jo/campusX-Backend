@@ -25,16 +25,18 @@ try {
   process.exit(1);
 }
 
-// Setup MongoDB
-const URI = process.env.MONGO_URI as string;
-console.log(URI);
-mongoose.connect(URI, {
-  useNewUrlParser: true,
-  useFindAndModify: false,
-  useCreateIndex: true,
-  useUnifiedTopology: true,
-  family: 4
-});
+// Setup MongoDB (skip in test environment - handled by test setup)
+if (process.env.NODE_ENV !== 'test') {
+  const URI = process.env.MONGO_URI as string;
+  console.log(URI);
+  mongoose.connect(URI, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useCreateIndex: true,
+    useUnifiedTopology: true,
+    family: 4
+  });
+}
 
 // Connection Instance
 const Db = mongoose.connection;
@@ -59,12 +61,14 @@ Db.on('connected', async () => {
   }
 });
 
-// Drop tasks collection at every startup since it causes issues
-try {
-  Db.dropCollection('tasks');
-} catch (e) {
-  // tslint:disable-next-line:no-console
-  console.log.bind(console, 'MongoDB connected');
+// Drop tasks collection at every startup since it causes issues (skip in test env)
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    Db.dropCollection('tasks');
+  } catch (e) {
+    // tslint:disable-next-line:no-console
+    console.log.bind(console, 'MongoDB connected');
+  }
 }
 
 const app = express();

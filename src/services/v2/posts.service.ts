@@ -6,11 +6,14 @@ import { IPostModel } from '../../interfaces/IPost';
 import mongoose from 'mongoose';
 import { User } from '@entities/User';
 import { IUser } from '@interfaces';
+import { S3 } from '@lib';
 
 interface CreatePostData {
   text?: string;
   image?: string;
   video?: string;
+  imageFile?: Express.Multer.File;
+  videoFile?: Express.Multer.File;
   campus?: string;
   hashTags?: string[];
   mentions?: string[];
@@ -32,21 +35,31 @@ export class PostsService {
    */
   async createPost(postData: CreatePostData, user: IUser): Promise<any> {
     const userId = user._id.toString();
-    // Validation
-    if (!postData.text && !postData.image && !postData.video) {
-      throw new ValidationError('Post must have text, image, or video');
+
+
+    // Generate temporary post ID for file uploads
+    const tempPostId = new mongoose.Types.ObjectId().toString();
+
+    // Upload files to S3 if provided
+    let imageUrl = postData.image || null;
+    let videoUrl = postData.video || null;
+
+    if (postData.imageFile) {
+      const s3 = new S3(tempPostId + 'image', postData.imageFile, 'image');
+      imageUrl = (await s3.UploadImage()) as string;
     }
 
-    if (!user.userProfile?.university) {
-      throw new ValidationError('User profile must have university');
+    if (postData.videoFile) {
+      const s3 = new S3(tempPostId + 'video', postData.videoFile, 'video');
+      videoUrl = (await s3.UploadVideo()) as string;
     }
 
     // Create post
     const post = await this.postRepo.createPost({
       author: user._id,
       text: postData.text || '',
-      image: postData.image || null,
-      video: postData.video || null,
+      image: imageUrl,
+      video: videoUrl,
       campus: user.userProfile.university,
       hashTags: postData.hashTags || [],
       mentions: postData.mentions || [],
@@ -57,7 +70,6 @@ export class PostsService {
       createdAt: Date.now(),
       likedBy: []
     } as any);
-
     // Trigger fan-out (async - don't block response)
     this.newsfeedService.fanOutPost(post._id.toString(), userId).catch(err => {
       console.error('Fan-out failed:', err);
