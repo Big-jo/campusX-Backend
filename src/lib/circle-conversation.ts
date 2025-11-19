@@ -1,5 +1,6 @@
+// @ts-nocheck
 import SocketIO = require('socket.io');
-import IORedis from 'ioredis';
+import Redis from 'ioredis';
 import { IPostOptions, Post } from '../entities/Post';
 import { IPost } from '../interfaces/IPost';
 import EventEmitter from 'events';
@@ -10,16 +11,16 @@ import { Emitter } from '../entities/Circles/CircleConversations';
 import { CircleConversation as CConversation } from "../entities/Circles/CircleConversations";
 
 export class CircleConversation {
-    private primaryCache: IORedis.Redis;
+    private primaryCache: Redis;
 
     constructor(private io: SocketIO.Server) {
         try {
 
             if (process.env.NODE_ENV === 'development') {
-                this.primaryCache = new IORedis({ keyPrefix: 'circle:' });
+                this.primaryCache = new Redis({ keyPrefix: 'circle:' });
             } else {
                 const redisPort = Number(process.env.REDIS_PORT);
-                this.primaryCache = new IORedis(redisPort, process.env.REDIS_HOST, {
+                this.primaryCache = new Redis(redisPort, process.env.REDIS_HOST, {
                     password: process.env.REDIS_PASS,
                     keyPrefix: 'circle:'
                 });

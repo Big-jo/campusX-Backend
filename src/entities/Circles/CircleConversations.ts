@@ -1,5 +1,5 @@
 import CircleConversationModel from "../../models/CircleConversation.model";
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { logger } from "@shared";
 import ioredis from "ioredis";
 import { EventEmitter } from "events";
@@ -17,7 +17,7 @@ export const Emitter = new EventEmitter();
 export class CircleConversation {
     private timestamp: number;
 
-    constructor(private primaryCache: IORedis.Redis, private userID: string) {
+    constructor(private primaryCache: Redis, private userID: string) {
         this.timestamp = moment().valueOf();
     }
 

@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "bun run src/Start.ts",
+    "startCommand": "yarn run start",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "multiRegionConfig": {

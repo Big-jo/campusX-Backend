@@ -1,6 +1,6 @@
 import { ICampus } from '../models/Campus.model';
 import CampusModel from 'src/models/Campus.model';
-import * as IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { logger } from '@shared';
 import {AggregationQueries} from '@lib';
 import mongoose from 'mongoose';
@@ -27,7 +27,7 @@ export class Campus {
      * @param client
      * @constructor
      */
-    public static async GetList(client: IORedis.Redis) {
+    public static async GetList(client: Redis) {
         // TODO: Create a way to rank campuses
         const campuses = await client.zrange('campuses', 0, -1);
         return { campuses };
@@ -40,7 +40,7 @@ export class Campus {
      * @param userID
      * @constructor
      */
-    public static async GetPosts(client: IORedis.Redis, campus: string, userID: string) {
+    public static async GetPosts(client: Redis, campus: string, userID: string) {
         // TODO: Sort campus based on the amount of activity happening in it
 
         const posts = await client.zrange(`campusFeed:${campus}`, 0 , -1);
@@ -51,7 +51,7 @@ export class Campus {
         return { posts: aggregatedPosts };
     }
 
-    public static async GetCampusTrend(client: IORedis.Redis, campus: string) {
+    public static async GetCampusTrend(client: Redis, campus: string) {
         try {
             const trendingKeywords = await client.zrevrange(`campusesTrends:${campus}`, 0, -1);
             return { trendingKeywords };
@@ -61,7 +61,7 @@ export class Campus {
         }
     }
 
-    public static async GetCampusesAndTrends(client: IORedis.Redis) {
+    public static async GetCampusesAndTrends(client: Redis) {
         try {
             const campuses = await (await client.keys('campusesTrends:*'))
                 .map(item => item.split(':')[1]);

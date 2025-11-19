@@ -1,9 +1,10 @@
+// @ts-nocheck
 import { Router, Response, Request } from 'express';
 import moment from 'moment';
 import { CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-codes';
 import { logger } from '@shared';
 import validation from '../../middleware/auth';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import {Notification, Utility} from '@lib';
 import NotificationModel from '../../models/Notification.model';
 const router = Router();

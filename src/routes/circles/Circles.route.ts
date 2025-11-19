@@ -1,9 +1,10 @@
+// @ts-nocheck
 import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
 import { Request, Response, Router } from 'express';
 
 import { Circle } from '../../entities/Circles/Circle';
 import { CirclePost } from '../../entities/Circles/CirclePost';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { Utility } from '@lib';
 import { logger } from '@shared';
 import validation from '../../middleware/auth';

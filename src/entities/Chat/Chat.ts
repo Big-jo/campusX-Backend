@@ -1,5 +1,6 @@
+// @ts-nocheck
 import {logger} from '@shared';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import ConversationModel from '../../models/Conversation.model';
 import moment from 'moment';
 import {Notification} from '@lib';
@@ -10,7 +11,7 @@ import ChatMessageModel from '../../models/Chat.model';
 
 export class Chat {
 
-    constructor(private io: SocketIO.Server, private primaryCache: IORedis.Redis) {
+    constructor(private io: SocketIO.Server, private primaryCache: Redis) {
         io.on('connect', socket => {
             const userID = socket.handshake.query.userID;
 

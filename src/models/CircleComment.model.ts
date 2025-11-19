@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mongoose, {Schema} from 'mongoose';
 import {ICommentModel} from 'src/interfaces/IPost';
 

@@ -6,7 +6,7 @@ import { logger } from '@shared';
 import validation from '../../middleware/auth';
 import { Post } from '../../entities/Post';
 import { IComment, IPost } from '../../interfaces/IPost';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { Utility } from '../../lib/utility';
 
 // import {Newsfeed} from '../../lib/newsfeeds';

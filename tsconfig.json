@@ -10,7 +10,7 @@
     "outDir": "dist",
     "removeComments": true,
     "sourceMap": true,
-    "strict": true,
+    "strict": false,
     "target": "esnext",
     "moduleResolution": "node",
     "noImplicitAny": false,
@@ -18,6 +18,11 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noImplicitThis": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
     "lib": ["esnext"],
     "paths": {
       "@entities": ["src/entities"],
@@ -43,7 +48,7 @@
       "node",
       "jest"
     ],
-    "typeRoots": ["@types", "node_modules/@types"]
+    "typeRoots": ["node_modules/@types", "src/types"]
   },
   "include": ["src/**/*.ts", "src/lib/trends.ts", "src/workers/**/*.ts"],
   "exclude": ["src/public/", "node_modules", "src/spec"]

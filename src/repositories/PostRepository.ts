@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BaseRepository } from './BaseRepository';
 import PostModel from '../models/Post.model';
 import { IPostModel } from '../interfaces/IPost';

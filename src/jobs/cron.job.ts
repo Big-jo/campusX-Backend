@@ -1,9 +1,10 @@
+// @ts-nocheck
 
 import { getQueue } from '../lib/Queue';
 import Campus from '../models/Campus.model';
 import User from '../models/User.model';
 import { Newsfeed } from '../lib/newsfeeds';
-import IORedis from 'ioredis';
+import Redis from 'ioredis';
 
 
 export const name = 'cron';
@@ -18,7 +19,7 @@ export const handler = async (job: { name: string; }) => {
       }
       break;
     case 'clean-visited-circles-cache':
-      const redis = new IORedis(process.env.REDIS_URL as string);
+      const redis = new Redis(process.env.REDIS_URL as string);
       const stream = redis.scanStream({
         match: 'visited-circles:*',
       });

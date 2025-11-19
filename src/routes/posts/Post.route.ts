@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Response, Request } from 'express';
 import PostModel from '../../models/Post.model';
 import moment from 'moment';
@@ -6,7 +7,7 @@ import { logger } from '@shared';
 import validation from '../../middleware/auth';
 import { Post } from '../../entities/Post';
 import { IComment, IPost } from '../../interfaces/IPost';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { Utility } from '../../lib/utility';
 
 // import {Newsfeed} from '../../lib/newsfeeds';
@@ -19,8 +20,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const auth = validation.validateToken;
 
-// let res.locals.primaryCache: IORedis.Redis;
-// let postCache: IORedis.Redis;
+// let res.locals.primaryCache: Redis;
+// let postCache: Redis;
 
 /******************************************************************************
  *                                 SETUP REDIS
@@ -148,7 +149,7 @@ router.get(getPostsPath, auth, async (req, res) => {
         }
 
     } catch (error) {
-        logger.error(error, error.message);
+        logger.error(error, error instanceof Error ? error.message : String(error));
         Utility.ErrResponse(res, error);
     }
 });

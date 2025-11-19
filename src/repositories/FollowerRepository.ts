@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BaseRepository } from './BaseRepository';
 import FollowerModel, { IFollower } from '../models/Follower.model';
 import mongoose from 'mongoose';

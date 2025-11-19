@@ -2,7 +2,7 @@ import { FollowerRepository } from '../../repositories/FollowerRepository';
 import { PostRepository } from '../../repositories/PostRepository';
 import RedisClient from '../../lib/redis';
 import { NotFoundError } from '../../errors';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 
 interface FeedResponse {
   data: {
@@ -20,7 +20,7 @@ interface FeedResponse {
 export class NewsfeedService {
   private followerRepo: FollowerRepository;
   private postRepo: PostRepository;
-  private redis: IORedis.Redis;
+  private redis: Redis;
 
   constructor() {
     this.followerRepo = new FollowerRepository();

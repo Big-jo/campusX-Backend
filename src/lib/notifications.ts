@@ -1,6 +1,6 @@
 import { logger } from '@shared';
 import admin from 'firebase-admin';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import moment from 'moment';
 import NotificationModel from '../models/Notification.model';
 import mongoose from 'mongoose';

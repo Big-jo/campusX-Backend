@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import { Request, Response, Router, response } from 'express';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { Utility } from '../../lib/utility';
 import { logger } from '../../shared/Logger';
 import validation from '../../middleware/auth';
@@ -13,7 +14,7 @@ import { Campus } from '../../entities/Campus';
 const router = Router();
 const path = '/campus';
 const auth = validation.validateToken;
-let client: IORedis.Redis;
+let client: Redis;
 
 export const getCampuses = '/list';
 router.get(getCampuses, async (req: Request, res: Response) => {

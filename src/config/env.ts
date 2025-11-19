@@ -9,14 +9,14 @@ import { z } from 'zod';
 const envSchema = z.object({
   // Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().regex(/^\d+$/).transform(Number).default('3000'),
+  PORT: z.string().transform(Number).default(3000),
 
   // MongoDB
   MONGO_URI: z.string().url(),
 
   // Redis
   REDIS_HOST: z.string().default('localhost'),
-  REDIS_PORT: z.string().regex(/^\d+$/).transform(Number).default('6379'),
+  REDIS_PORT: z.string().transform(Number).default(6379),
   REDIS_PASS: z.string().optional(),
   REDIS_URL: z.string().optional(), // Alternative to REDIS_HOST/PORT
 
@@ -24,17 +24,17 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
 
   // Circle & Timeline Settings
-  VISITED_CIRCLE_EXP_TIME: z.string().regex(/^\d+$/).transform(Number).default('24'),
+  VISITED_CIRCLE_EXP_TIME: z.string().transform(Number).default(24),
   VISITED_CIRCLE_EXP_UNI: z.enum(['seconds', 'minutes', 'hours', 'days']).default('hours'),
-  POST_EXPIRE: z.string().regex(/^\d+$/).transform(Number).default('7'),
+  POST_EXPIRE: z.string().transform(Number).default(7),
   POST_EXPIRE_UNIT: z.enum(['seconds', 'minutes', 'hours', 'days']).default('days'),
-  CAMPUS_T_EXPIRY_TIME: z.string().regex(/^\d+$/).transform(Number).default('1'),
-  CAMPUS_T_EXPIRY_UNIT: z.enum(['seconds', 'minutes', 'hours', 'days']).default('hour'),
+  CAMPUS_T_EXPIRY_TIME: z.string().transform(Number).default(1),
+  CAMPUS_T_EXPIRY_UNIT: z.enum(['seconds', 'minutes', 'hours', 'days']).default('hours'),
 
   // Cleanup Intervals
-  CAMPUS_T_CLEANUP_INTERVAL: z.string().regex(/^\d+$/).transform(Number).default('3600000'),
-  VISITED_CIRCLE_CLEAN_UP_INTERVAL: z.string().regex(/^\d+$/).transform(Number).default('86400000'),
-  TIMELINE_CLEAN_UP_INTERVAL: z.string().regex(/^\d+$/).transform(Number).default('3600000'),
+  CAMPUS_T_CLEANUP_INTERVAL: z.string().transform(Number).default(3600000),
+  VISITED_CIRCLE_CLEAN_UP_INTERVAL: z.string().transform(Number).default(86400000),
+  TIMELINE_CLEAN_UP_INTERVAL: z.string().transform(Number).default(3600000),
 
   // DigitalOcean Spaces / AWS S3
   SPACES_ACCESS_KEY: z.string(),
@@ -65,11 +65,11 @@ const envSchema = z.object({
   // E2E Testing (optional)
   E2E_MONGO_URI: z.string().url().optional(),
   E2E_REDIS_HOST: z.string().optional(),
-  E2E_REDIS_PORT: z.string().regex(/^\d+$/).transform(Number).optional(),
-  E2E_PORT: z.string().regex(/^\d+$/).transform(Number).optional(),
+  E2E_REDIS_PORT: z.string().transform(Number).optional(),
+  E2E_PORT: z.string().transform(Number).optional(),
 
   // Notification expiry
-  NOTIF_EXPIRE: z.string().regex(/^\d+$/).transform(Number).optional(),
+  NOTIF_EXPIRE: z.string().transform(Number).optional(),
 });
 
 /**

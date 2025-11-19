@@ -8,7 +8,7 @@ import IORedis from "ioredis";
 import { Server } from "http";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-let redis: IORedis.Redis;
+let redis: Redis;
 let serverInstance: Server | null = null;
 let mongoServer: MongoMemoryServer | null = null;
 
@@ -100,7 +100,7 @@ export async function teardownE2E() {
 /**
  * Get Redis client for tests
  */
-export function getRedisClient(): IORedis.Redis {
+export function getRedisClient(): Redis {
   return redis;
 }
 
@@ -136,7 +136,7 @@ export async function waitForServices(maxRetries = 30, interval = 1000): Promise
     } catch (error) {
       retries++;
       if (retries >= maxRetries) {
-        throw new Error(`Services not ready after ${maxRetries} retries: ${error.message}`);
+        throw new Error(`Services not ready after ${maxRetries} retries: ${error instanceof Error ? error.message : String(error)}`);
       }
       await new Promise(resolve => setTimeout(resolve, interval));
     }

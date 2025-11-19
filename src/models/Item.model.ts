@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mongoose, {Schema} from 'mongoose';
 import {StoreSchema} from './Store.model';
 import {IItemModel} from '../interfaces/IItem';

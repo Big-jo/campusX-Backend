@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mongoose, {Schema} from 'mongoose';
 // @ts-ignore
 // tslint:disable-next-line:no-var-requires

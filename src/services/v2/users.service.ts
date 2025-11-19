@@ -52,8 +52,8 @@ export class UsersService {
         email: user.email,
         userProfile: user.userProfile,
         fcm_token: user.fcm_token,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        createdAt: (user as any).createdAt,
+        updatedAt: (user as any).updatedAt
       }
     };
   }
@@ -86,7 +86,7 @@ export class UsersService {
         userTag: updatedUser.userTag,
         email: updatedUser.email,
         userProfile: updatedUser.userProfile,
-        updatedAt: updatedUser.updatedAt
+        updatedAt: (updatedUser as any).updatedAt
       },
       message: 'Profile updated successfully'
     };
@@ -114,7 +114,7 @@ export class UsersService {
 
     return {
       data: {
-        interests: updatedUser.userProfile.interests
+        interests: (updatedUser.userProfile as any).interests
       },
       message: 'Interests saved successfully'
     };

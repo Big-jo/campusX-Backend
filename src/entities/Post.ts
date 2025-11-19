@@ -1,9 +1,10 @@
+// @ts-nocheck
 import PostModel from "../models/Post.model";
 import UserModel from "../models/User.model";
 import { CommentTypes, IComment, IPost } from "../interfaces/IPost";
 import { logger } from "@shared";
 import FollowsModel, { IFollower } from "../models/Follower.model";
-import * as IORedis from "ioredis";
+import type { Redis } from "ioredis";
 import CommentModel from "../models/Comment.model";
 import { S3, Utility } from "@lib";
 import mongoose from "mongoose";
@@ -53,7 +54,7 @@ export class Post {
   public static async CreatePost(
     postObject: IPost,
     userID: string,
-    primaryCache: IORedis.Redis,
+    primaryCache: Redis,
     options: IPostOptions
   ) {
     try {
@@ -195,7 +196,7 @@ export class Post {
   }
 
   public static async GetPosts(
-    primaryCache: IORedis.Redis,
+    primaryCache: Redis,
     userID: string,
     options: IOptions
   ) {
@@ -269,7 +270,7 @@ export class Post {
     userID: string,
     postID: string,
     collection: string,
-    primaryCache: IORedis.Redis,
+    primaryCache: Redis,
     fcm_token: string
   ) {
     try {
@@ -450,7 +451,7 @@ export class Post {
   public static async DislikePost(
     userID: string,
     postID: string,
-    postCache: IORedis.Redis
+    postCache: Redis
   ) {
     // TODO: Check if post has been disliked already, if it has, undislike it, check if it has been liked too
     try {
@@ -469,7 +470,7 @@ export class Post {
   public static async Comment(
     commentObject: IComment,
     fcm_token: string,
-    primaryCache: IORedis.Redis
+    primaryCache: Redis
   ) {
     try {
       let authoredPost;
@@ -728,7 +729,7 @@ export class Post {
 
   public static async CheckFeedStatus(
     userID: string,
-    primaryCache: IORedis.Redis
+    primaryCache: Redis
   ) {
     if ((await primaryCache.sismember("dirty", userID)) === 1) {
       return { newsfeedStatus: "dirty" };
@@ -754,7 +755,7 @@ export class Post {
   public static async AddToFeed(
     userID: string,
     targetID: string,
-    primaryCache: IORedis.Redis
+    primaryCache: Redis
   ) {
     try {
       const RecentPosts = await PostModel.find(

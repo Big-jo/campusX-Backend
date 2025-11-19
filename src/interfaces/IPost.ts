@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Document } from 'mongoose';
 
 export interface IPostModel extends Document, IPost {

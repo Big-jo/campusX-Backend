@@ -2,7 +2,7 @@ import { Post } from '../Post';
 import CircleCirclePostModel from '../../models/CirclePost.model';
 import { ICirclePost, ICircleComment } from '../../interfaces/ICirclePost';
 import { logger } from '@shared';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import CirclePostModel from '../../models/CirclePost.model';
 import { S3 } from '../../lib/s3';
 import CircleMemberModel from '../../models/CircleMember.model';
@@ -26,7 +26,7 @@ export class CirclePost extends Post {
     // constructor() {}
 
     // tslint:disable-next-line: max-line-length
-    public static async CirclePost(circlePost: ICirclePost, media: any, redis: IORedis.Redis) {
+    public static async CirclePost(circlePost: ICirclePost, media: any, redis: Redis) {
         try {
             const isMember = await CircleMemberModel.findById(circlePost.memberID).lean().exec();
             if (isMember !== null) {
@@ -65,7 +65,7 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async LikePost(userID: string, postID: string, collection: string, redis: IORedis.Redis, circleID: string) {
+    public static async LikePost(userID: string, postID: string, collection: string, redis: Redis, circleID: string) {
         try {
             // Check if member exists in circlePosts set
             redis.zincrby(`circlePost:${circleID}`, 1, postID);
@@ -77,14 +77,14 @@ export class CirclePost extends Post {
         }
     }
 
-    public static async Comment(commentObject: ICircleComment, fcm_token: string, primaryCache: IORedis.Redis) {
+    public static async Comment(commentObject: ICircleComment, fcm_token: string, primaryCache: Redis) {
         try {
             return super.Comment(commentObject, fcm_token, primaryCache);
         } catch (error) {
             
         }
     }
-    // public static async CircleComment(commentObject: ICircleComment, media: any, redis: IORedis.Redis) {
+    // public static async CircleComment(commentObject: ICircleComment, media: any, redis: Redis) {
     //     try {
     //         const comment: ICircleComment = {
     //             campus: commentObject.campus,
@@ -125,7 +125,7 @@ export class CirclePost extends Post {
     //     }
     // }
 
-    public static async TopPosts(userID: string, redis: IORedis.Redis) {
+    public static async TopPosts(userID: string, redis: Redis) {
         const lastVisitedCircles = await redis.zrevrange(`visitedCircles:${userID}`, 0, -1);
         const pipeline = redis.pipeline();
         lastVisitedCircles.forEach(circleID => {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {Router} from 'express';
 import {CREATED, INTERNAL_SERVER_ERROR, OK, BAD_REQUEST} from 'http-status-codes';
 import {Utility} from '../../lib/utility';

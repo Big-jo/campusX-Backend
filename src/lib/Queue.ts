@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import path from 'path';
 import RedisClient from './redis';
 

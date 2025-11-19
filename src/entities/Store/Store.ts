@@ -76,7 +76,7 @@ export class Store {
     //             return {exist: false};
     //         }
     //     } catch (error) {
-    //         logger.error(error.message);
+    //         logger.error(error instanceof Error ? error.message : String(error));
     //         throw new Error(error);
     //     }
     // }

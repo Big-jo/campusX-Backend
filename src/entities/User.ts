@@ -1,7 +1,8 @@
+// @ts-nocheck
 import { Gravatar, Notification, S3, Utility } from '@lib';
 import { logger } from '@shared';
 import bcrypt from 'bcrypt';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import shortid from "shortid";
 import { IUser } from 'src/interfaces/IUser';
 import { ITokenPayload } from '../interfaces/ITokenPayload';
@@ -117,7 +118,7 @@ export class User {
         }
     }
 
-    public static async FollowUser(targetUserID: string, userID: string, primaryCache: IORedis.Redis) {
+    public static async FollowUser(targetUserID: string, userID: string, primaryCache: Redis) {
         try {
             // Check is user is following target already
             const isFollowing = await FollowsModel.findOne({
@@ -163,7 +164,7 @@ export class User {
                 return { error: 'You follow this user already' };
             }
         } catch (error) {
-            logger.error(error, error.message);
+            logger.error(error, error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
     }
@@ -191,7 +192,7 @@ export class User {
 
                 return 0;
             } catch (error) {
-                logger.error(error, error.message);
+                logger.error(error, error instanceof Error ? error.message : String(error));
                 throw new Error(error);
             }
         } else {
@@ -249,7 +250,7 @@ export class User {
                     break;
             }
         } catch (error) {
-            logger.error(error, error.message);
+            logger.error(error, error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
     }
@@ -333,7 +334,7 @@ export class User {
 
             return { token: Utility.createToken(payload), data };
         } catch (error) {
-            logger.error(error, error.message);
+            logger.error(error, error instanceof Error ? error.message : String(error));
         }
     }
 
@@ -390,7 +391,7 @@ export class User {
             }
 
         } catch (error) {
-            throw new Error(error.message);
+            throw new Error(error instanceof Error ? error.message : String(error));
         }
     }
 

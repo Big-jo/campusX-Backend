@@ -6,7 +6,7 @@ import sentry from './sentry';
 import {ITokenPayload} from 'src/interfaces/ITokenPayload';
 import Moment from 'moment';
 import moment from 'moment';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 
 export class Utility {
 
@@ -39,7 +39,7 @@ export class Utility {
      * @param timeUnit
      * @param redis
      */
-    public static CacheExpiryTracker(key: string, member: string, expiryTime: number, timeUnit: Moment.unitOfTime.DurationConstructor, redis: IORedis.Redis) {
+    public static CacheExpiryTracker(key: string, member: string, expiryTime: number, timeUnit: Moment.unitOfTime.DurationConstructor, redis: Redis) {
         const ttl = moment().utc().add(expiryTime, timeUnit).valueOf().toString();
         redis.zadd(key, ttl, member );
     }

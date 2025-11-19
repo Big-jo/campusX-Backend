@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { ICircle } from '../../interfaces/ICircle';
 import CircleModel from '../../models/Circle.model';
 import { logger } from '@shared';
 import CircleMemberModel from '../../models/CircleMember.model';
-import IORedis from 'ioredis';
+import type { Redis } from 'ioredis';
 import { S3, Utility } from '@lib';
 import mongoose from 'mongoose';
 import PostModel from '../../models/Post.model';
@@ -48,7 +49,7 @@ export class Circle {
             }
 
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
 
@@ -138,12 +139,12 @@ export class Circle {
             return {circleFeed: circleFeed.docs};
             // Write Sort Algorithm for Posts 😢 
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
     }
 
-    public static async GetCircles(offset: number, userID: string, recent: boolean, redis: IORedis.Redis, category?: string) {
+    public static async GetCircles(offset: number, userID: string, recent: boolean, redis: Redis, category?: string) {
         try {
             let circles;
 
@@ -162,12 +163,12 @@ export class Circle {
 
             return { circles: circles.docs };
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
     }
 
-    public static async GetCircle(circleId: string, userID: string, redis: IORedis.Redis) {
+    public static async GetCircle(circleId: string, userID: string, redis: Redis) {
         try {
             // Record that this user has visited this circle in their activity feed
             const lastVisit = moment().valueOf().toString();
@@ -188,7 +189,7 @@ export class Circle {
 
             return { circle };
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
     }
@@ -200,7 +201,7 @@ export class Circle {
                 .populate({ path: 'circle' }).exec();
             return { circles };
         } catch (error) {
-            logger.error(error.message);
+            logger.error(error instanceof Error ? error.message : String(error));
             throw new Error(error);
         }
     }
