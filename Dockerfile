@@ -28,8 +28,9 @@ RUN yarn install --frozen-lockfile --production && \
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy any other necessary files (if needed)
-COPY --from=builder /app/package.json ./
+# Copy path resolver and tsconfig for runtime path resolution
+COPY --from=builder /app/register-paths.js ./
+COPY --from=builder /app/tsconfig.json ./
 
 # Expose port (Railway uses PORT env var)
 EXPOSE ${PORT:-3000}
@@ -37,6 +38,6 @@ EXPOSE ${PORT:-3000}
 # Set production environment
 ENV NODE_ENV=production
 
-# Start app
-CMD ["node", "-r", "dotenv/config", "dist/Start.js"]
+# Start app with path aliases
+CMD ["node", "-r", "./register-paths.js", "-r", "dotenv/config", "dist/Start.js"]
 
