@@ -1,18 +1,18 @@
 # ---- Base image ----
-FROM oven/bun:1 AS base
+FROM node:20-alpine AS base
 WORKDIR /app
 
 # ---- Install dependencies (cached) ----
-COPY bun.lock package.json ./
-RUN bun install --frozen-lockfile --production
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --production
 
 # ---- Copy application source ----
 COPY . .
 
 # ---- Security: non-root user ----
-# RUN addgroup --system --gid 1001 bungroup && \
-#   adduser --system --uid 1001 bunuser && \
-#   chown -R bunuser:bungroup /app
+# RUN addgroup --system --gid 1001 nodegroup && \
+#   adduser --system --uid 1001 nodeuser && \
+#   chown -R nodeuser:nodegroup /app
 
 # ---- Runtime settings ----
 EXPOSE 3000
