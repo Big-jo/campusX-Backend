@@ -1,12 +1,10 @@
-import { PostRepository } from '../../repositories/PostRepository';
-import { NewsfeedService } from './newsfeed.service';
-import { FollowerRepository } from '../../repositories/FollowerRepository';
-import { NotFoundError, ValidationError, BadRequestError } from '../../errors';
-import { IPostModel } from '../../interfaces/IPost';
-import mongoose from 'mongoose';
-import { User } from '@entities/User';
 import { IUser } from '@interfaces';
 import { S3 } from '@lib';
+import mongoose from 'mongoose';
+import { BadRequestError, NotFoundError } from '../../errors';
+import { FollowerRepository } from '../../repositories/FollowerRepository';
+import { PostRepository } from '../../repositories/PostRepository';
+import { NewsfeedService } from './newsfeed.service';
 
 interface CreatePostData {
   text?: string;
@@ -203,7 +201,7 @@ export class PostsService {
 
     return {
       data: {
-        posts: result.docs || [],
+        posts: result || [],
         pagination: {
           page: result.page,
           limit: result.limit,

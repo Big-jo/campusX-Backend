@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { PostsService } from '../../services/v2/posts.service';
-import { NewsfeedService } from '../../services/v2/newsfeed.service';
 import { UnauthorizedError } from '../../errors';
+import { NewsfeedService } from '../../services/v2/newsfeed.service';
+import { PostsService } from '../../services/v2/posts.service';
 
 export class PostsController {
   private postsService: PostsService;
@@ -131,9 +131,6 @@ export class PostsController {
    * Get user's posts
    */
   getUserPosts = async (req: Request, res: Response) => {
-    if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
-    }
 
     const { userId: targetUserId } = req.params;
     const postType = (req.query.type as string) || 'all';
