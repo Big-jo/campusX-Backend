@@ -27,7 +27,7 @@ router.get('/newsfeed', auth, validate(getNewsfeedSchema), asyncHandler(postsCon
 router.get('/newsfeed/poll', auth, validate(pollNewsfeedSchema), asyncHandler(postsController.pollNewsfeed));
 
 // Post CRUD routes
-router.post('/create', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), validate(createPostSchema), asyncHandler(postsController.createPost));
+router.post('/create', auth, upload.fields([{ name: 'image', maxCount: 4 }, { name: 'video', maxCount: 4 }]), validate(createPostSchema), asyncHandler(postsController.createPost));
 
 // Unified query endpoint (must be BEFORE /:postId to avoid route collision)
 router.get('/', auth, validate(getPostsSchema), asyncHandler(postsController.getPosts));
