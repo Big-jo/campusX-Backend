@@ -9,6 +9,7 @@ import {
   deletePostSchema,
   getNewsfeedSchema,
   getPostSchema,
+  getPostsSchema,
   getUserPostsSchema,
   likePostSchema,
   pollNewsfeedSchema

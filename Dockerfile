@@ -1,29 +1,42 @@
-# ---- Base image ----
-FROM node:20-alpine AS base
+# ---- Builder stage ----
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# ---- Install dependencies (all, including devDependencies for build) ----
+# Copy package files
 COPY package.json yarn.lock ./
+
+# Install all dependencies (including devDependencies for build)
 RUN yarn install --frozen-lockfile
 
-# ---- Copy application source ----
+# Copy source code
 COPY . .
 
-# ---- Build TypeScript ----
-RUN yarn run build
+# Build TypeScript
+RUN yarn build
 
-# ---- Remove devDependencies after build ----
-RUN yarn install --frozen-lockfile --production && yarn cache clean
+# ---- Production stage ----
+FROM node:20-alpine AS production
+WORKDIR /app
 
-# ---- Security: non-root user ----
-# RUN addgroup --system --gid 1001 nodegroup && \
-#   adduser --system --uid 1001 nodeuser && \
-#   chown -R nodeuser:nodegroup /app
+# Copy package files
+COPY package.json yarn.lock ./
 
-# ---- Runtime settings ----
-EXPOSE 3000
+# Install only production dependencies
+RUN yarn install --frozen-lockfile --production && \
+    yarn cache clean
+
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
+
+# Copy any other necessary files (if needed)
+COPY --from=builder /app/package.json ./
+
+# Expose port (Railway uses PORT env var)
+EXPOSE ${PORT:-3000}
+
+# Set production environment
 ENV NODE_ENV=production
 
-# ---- Start app ----
-CMD ["yarn", "run", "start"]
+# Start app
+CMD ["node", "-r", "dotenv/config", "dist/Start.js"]
 

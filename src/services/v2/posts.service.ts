@@ -71,7 +71,7 @@ export class PostsService {
       video: videoUrl,
       campus: user.userProfile.university,
       parentPost: postData.parentPost || undefined,
-      circleID: postData.circleID ? new mongoose.Types.ObjectId(postData.circleID) : undefined,
+      circleID: postData.circleID ? mongoose.Types.ObjectId(postData.circleID) : undefined,
       hashTags: postData.hashTags || [],
       mentions: postData.mentions || [],
       likes: 0,
@@ -260,8 +260,8 @@ export class PostsService {
 
     if (filters.type) query.type = filters.type;
     if (filters.parentPost) query.parentPost = filters.parentPost;
-    if (filters.circleID) query.circleID = new mongoose.Types.ObjectId(filters.circleID);
-    if (filters.userId) query.author = new mongoose.Types.ObjectId(filters.userId);
+    if (filters.circleID) query.circleID = mongoose.Types.ObjectId(filters.circleID);
+    if (filters.userId) query.author = mongoose.Types.ObjectId(filters.userId);
 
     const posts = await this.postRepo.find(query, null, {
       limit: filters.limit || 50,

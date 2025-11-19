@@ -1,5 +1,4 @@
 import { IPost } from '@interfaces';
-import { String } from 'aws-sdk/clients/appstream';
 import { logger } from '../shared';
 const extract = require('mention-hashtag');
 
