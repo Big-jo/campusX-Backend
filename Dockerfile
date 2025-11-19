@@ -19,5 +19,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # ---- Start app directly (no build step) ----
-CMD ["bun", "run", "src/Start.ts"]
+CMD ["yarn", "run", "start"]
 
