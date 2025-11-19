@@ -393,4 +393,77 @@ describe("E2E: V2 Newsfeed", () => {
       expect(duplicateResponse.status).toBe(400);
     });
   });
+
+  describe("V2 Newsfeed Type Filtering (Sequential)", () => {
+    let author: any;
+    let follower: any;
+    let post: any;
+    let comment: any;
+
+    beforeAll(async () => {
+      [author, follower] = await createE2EUsers(2);
+
+      // Setup follow relationship
+      await request(E2E_BASE_URL)
+        .post("/api/v1/users/follow")
+        .set(e2eAuthHeader(follower.token))
+        .send({ targetUserID: author.user._id });
+    });
+
+    test("Step 1: Post with type=post appears in newsfeed", async () => {
+      const postResponse = await request(E2E_BASE_URL)
+        .post("/api/v2/posts/create")
+        .set(e2eAuthHeader(author.token))
+        .send({ text: "Regular post" });
+
+      expect(postResponse.status).toBe(201);
+      post = postResponse.body.data.post;
+      await waitFor(1000);
+
+      // Verify in follower's feed
+      const feed = await request(E2E_BASE_URL)
+        .get("/api/v2/posts/newsfeed")
+        .set(e2eAuthHeader(follower.token));
+
+      expect(feed.status).toBe(200);
+      expect(feed.body.data.posts.some((p: any) => p._id === post.id)).toBe(true);
+    });
+
+    test("Step 2: Comment with type=comment does NOT appear in newsfeed", async () => {
+      const commentResponse = await request(E2E_BASE_URL)
+        .post("/api/v2/posts/create")
+        .set(e2eAuthHeader(author.token))
+        .send({
+          text: "This is a comment",
+          parentPost: post.id
+        });
+
+      expect(commentResponse.status).toBe(201);
+      comment = commentResponse.body.data.post;
+      await waitFor(1000);
+
+      // Verify NOT in follower's feed
+      const feed = await request(E2E_BASE_URL)
+        .get("/api/v2/posts/newsfeed")
+        .set(e2eAuthHeader(follower.token));
+
+      expect(feed.status).toBe(200);
+      expect(feed.body.data.posts.every((p: any) => p._id !== comment.id)).toBe(true);
+    });
+
+    test("Step 3: Newsfeed only contains type=post items", async () => {
+      const feed = await request(E2E_BASE_URL)
+        .get("/api/v2/posts/newsfeed")
+        .set(e2eAuthHeader(follower.token));
+
+      expect(feed.status).toBe(200);
+      expect(feed.body.data.posts.length).toBeGreaterThan(0);
+
+      // Verify all items in feed have type='post'
+      const allPostsType = feed.body.data.posts.every((p: any) =>
+        p.type === 'post' || !p.type  // Allow undefined for backward compat
+      );
+      expect(allPostsType).toBe(true);
+    });
+  });
 });

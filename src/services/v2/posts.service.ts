@@ -15,6 +15,8 @@ interface CreatePostData {
   campus?: string;
   hashTags?: string[];
   mentions?: string[];
+  parentPost?: string; // For comments
+  circleID?: string; // For circle posts
 }
 
 export class PostsService {
@@ -29,11 +31,19 @@ export class PostsService {
   }
 
   /**
-   * Create a new post and fan out to followers
+   * Create a new post/comment/circle post (unified endpoint)
+   * Auto-detects type based on parentPost and circleID fields
    */
   async createPost(postData: CreatePostData, user: IUser): Promise<any> {
     const userId = user._id.toString();
 
+    // Auto-detect type based on request data
+    let type: 'post' | 'comment' | 'circlePost' = 'post';
+    if (postData.parentPost) {
+      type = 'comment';
+    } else if (postData.circleID) {
+      type = 'circlePost';
+    }
 
     // Generate temporary post ID for file uploads
     const tempPostId = new mongoose.Types.ObjectId().toString();
@@ -52,13 +62,16 @@ export class PostsService {
       videoUrl = (await s3.UploadVideo()) as string;
     }
 
-    // Create post
+    // Create post with type
     const post = await this.postRepo.createPost({
       author: user._id,
+      type,
       text: postData.text || '',
       image: imageUrl,
       video: videoUrl,
       campus: user.userProfile.university,
+      parentPost: postData.parentPost || undefined,
+      circleID: postData.circleID ? new mongoose.Types.ObjectId(postData.circleID) : undefined,
       hashTags: postData.hashTags || [],
       mentions: postData.mentions || [],
       likes: 0,
@@ -68,32 +81,42 @@ export class PostsService {
       createdAt: Date.now(),
       likedBy: []
     } as any);
-    // Trigger fan-out (async - don't block response)
-    this.newsfeedService.fanOutPost(post._id.toString(), userId).catch(err => {
-      console.error('Fan-out failed:', err);
-      // TODO: Queue for retry
-    });
+
+    // Conditional actions based on type
+    if (type === 'post') {
+      // Only fan-out regular posts (not comments or circle posts)
+      this.newsfeedService.fanOutPost(post._id.toString(), userId).catch(err => {
+        console.error('Fan-out failed:', err);
+        // TODO: Queue for retry
+      });
+    } else if (type === 'comment' && postData.parentPost) {
+      // Increment parent's comment count
+      await this.postRepo.incrementCommentCount(postData.parentPost);
+    }
 
     return {
       data: {
         post: {
           id: post._id,
+          type: post.type,
           text: post.text,
           image: post.image,
           video: post.video,
           campus: post.campus,
+          parentPost: post.parentPost,
+          circleID: post.circleID,
           hashTags: post.hashTags,
           likes: post.likes,
           comments: post.comments,
           createdAt: post.createdAt
         }
       },
-      message: 'Post created successfully'
+      message: `${type.charAt(0).toUpperCase() + type.slice(1)} created successfully`
     };
   }
 
   /**
-   * Delete a post and remove from all timelines
+   * Delete a post/comment and cascade delete children
    */
   async deletePost(postId: string, userId: string): Promise<void> {
     const post = await this.postRepo.findById(postId);
@@ -107,13 +130,20 @@ export class PostsService {
       throw new BadRequestError('You can only delete your own posts');
     }
 
-    // Delete from MongoDB
-    await this.postRepo.deleteById(postId);
+    // Delete with cascade (deletes all child comments)
+    await this.postRepo.deleteWithChildren(postId);
 
-    // Remove from all timelines (async)
-    this.newsfeedService.removeFanOut(postId, userId).catch(err => {
-      console.error('Remove fan-out failed:', err);
-    });
+    // Remove from all timelines if it was a post (async)
+    if (post.type === 'post') {
+      this.newsfeedService.removeFanOut(postId, userId).catch(err => {
+        console.error('Remove fan-out failed:', err);
+      });
+    }
+
+    // Decrement parent comment count if this was a comment
+    if (post.type === 'comment' && post.parentPost) {
+      await this.postRepo.decrementCommentCount(post.parentPost);
+    }
   }
 
   /**
@@ -212,5 +242,33 @@ export class PostsService {
         }
       }
     };
+  }
+
+  /**
+   * Get posts with optional filters (unified query endpoint)
+   * Supports filtering by type, parentPost, circleID, userId
+   */
+  async getPosts(filters: {
+    type?: 'post' | 'comment' | 'circlePost';
+    parentPost?: string;
+    circleID?: string;
+    userId?: string;
+    limit?: number;
+    skip?: number;
+  }): Promise<any> {
+    const query: any = {};
+
+    if (filters.type) query.type = filters.type;
+    if (filters.parentPost) query.parentPost = filters.parentPost;
+    if (filters.circleID) query.circleID = new mongoose.Types.ObjectId(filters.circleID);
+    if (filters.userId) query.author = new mongoose.Types.ObjectId(filters.userId);
+
+    const posts = await this.postRepo.find(query, null, {
+      limit: filters.limit || 50,
+      skip: filters.skip || 0,
+      sort: { createdAt: -1 }
+    });
+
+    return posts;
   }
 }

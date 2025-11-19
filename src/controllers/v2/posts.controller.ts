@@ -14,11 +14,12 @@ export class PostsController {
 
   /**
    * POST /api/v2/posts/create
-   * Create a new post
+   * Create a new post/comment/circle post (unified endpoint)
+   * Type is auto-detected based on parentPost and circleID fields
    */
   createPost = async (req: Request, res: Response) => {
     // Extract validated body data
-    const { text, hashTags, mentions } = req.body;
+    const { text, hashTags, mentions, parentPost, circleID } = req.body;
 
     // Extract files from multipart form
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
@@ -29,6 +30,8 @@ export class PostsController {
       text,
       hashTags,
       mentions,
+      parentPost,
+      circleID,
       imageFile,
       videoFile
     };
@@ -120,5 +123,30 @@ export class PostsController {
       limit
     );
     return res.status(200).json(result);
+  };
+
+  /**
+   * GET /api/v2/posts
+   * Unified query endpoint - get posts with filters
+   * Supports filtering by type, parentPost, circleID, userId
+   */
+  getPosts = async (req: Request, res: Response) => {
+    const type = req.query.type as 'post' | 'comment' | 'circlePost' | undefined;
+    const parentPost = req.query.parentPost as string | undefined;
+    const circleID = req.query.circleID as string | undefined;
+    const userId = req.query.userId as string | undefined;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const skip = parseInt(req.query.skip as string) || 0;
+
+    const posts = await this.postsService.getPosts({
+      type,
+      parentPost,
+      circleID,
+      userId,
+      limit,
+      skip
+    });
+
+    return res.status(200).json(posts);
   };
 }

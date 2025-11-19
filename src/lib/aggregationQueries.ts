@@ -13,7 +13,10 @@ export class AggregationQueries {
 
         const aggregate = [
             {
-                $match: { _id: { $in: postIDs } },
+                $match: {
+                    _id: { $in: postIDs },
+                    type: 'post' // Only fetch posts (not comments or circle posts)
+                },
             },
             {
                 $addFields: {
@@ -37,15 +40,19 @@ export class AggregationQueries {
                 },
             },
             {
-                $lookup: {from: 'comments',
+                $lookup: {from: 'posts', // Changed from 'comments' to 'posts' (unified model)
                 let: {
-                  parentPost: "$_id"
+                  parentPost: { $toString: "$_id" } // Convert ObjectId to string for comparison
                 },
                 pipeline: [
                   {
                   "$match": {
                     $expr: {
-                      $eq: ["$parentPost", "$$parentPost"]}
+                      $and: [
+                        { $eq: ["$parentPost", "$$parentPost"] },
+                        { $eq: ["$type", "comment"] } // Filter by type=comment
+                      ]
+                    }
                   },
                   },
                   {

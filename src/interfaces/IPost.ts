@@ -23,7 +23,12 @@ export interface IPost {
     dislikes?: number;
     comments?: number;
     createdAt?: number;
-    parentPost: string;
+    // Type discriminator for unified post model
+    type?: 'post' | 'comment' | 'circlePost';
+    // If comment, contains parent post/comment ID
+    parentPost?: string;
+    // If circle post, contains circle ID
+    circleID?: string;
     hashTags?: string[];
     mentions?: string[];
 }

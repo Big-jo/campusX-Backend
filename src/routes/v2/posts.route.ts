@@ -28,6 +28,10 @@ router.get('/newsfeed/poll', auth, validate(pollNewsfeedSchema), asyncHandler(po
 
 // Post CRUD routes
 router.post('/create', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), validate(createPostSchema), asyncHandler(postsController.createPost));
+
+// Unified query endpoint (must be BEFORE /:postId to avoid route collision)
+router.get('/', auth, validate(getPostsSchema), asyncHandler(postsController.getPosts));
+
 router.get('/:postId', auth, validate(getPostSchema), asyncHandler(postsController.getPost));
 router.delete('/:postId', auth, validate(deletePostSchema), asyncHandler(postsController.deletePost));
 
