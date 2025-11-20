@@ -15,7 +15,7 @@ export class AggregationQueries {
             {
                 $match: {
                     _id: { $in: postIDs },
-                    type: 'post' // Only fetch posts (not comments or circle posts)
+                    // type: 'po // Only fetch posts (not comments or circle posts)
                 },
             },
             {
@@ -204,6 +204,11 @@ export class AggregationQueries {
                       let: { authorID: '$author' },
                       pipeline: [
                         { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                          {
+                              $addFields: {
+                                  isLiked: { $in: ['$$authorID', '$likedBy'] },
+                              },
+                          },
                         { $project: {
                             password: 0,
                             email: 0,
