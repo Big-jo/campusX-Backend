@@ -34,7 +34,19 @@ export class AggregationQueries {
                     let: { authorID: '$author' },
                     pipeline: [
                         { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                        { $project: { password: 0, email: 0 } },
+                        { $project: {
+                            password: 0,
+                            email: 0,
+                            fcm_token: 0,
+                            'userProfile.visits': 0,
+                            'userProfile.lastSeen': 0,
+                            'userProfile.phoneNumber': 0,
+                            'userProfile.interests': 0,
+                            profileComplete: 0,
+                            createdAt: 0,
+                            updatedAt: 0,
+                            __v: 0,
+                        } },
                     ],
                     as: 'author',
                 },
@@ -65,7 +77,30 @@ export class AggregationQueries {
                     }
                   },{
                     $limit: 4
-                  }
+                  },
+                  {
+                    $lookup: {
+                      from: 'users',
+                      let: { authorID: '$author' },
+                      pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                        { $project: {
+                            password: 0,
+                            email: 0,
+                            fcm_token: 0,
+                            'userProfile.visits': 0,
+                            'userProfile.lastSeen': 0,
+                            'userProfile.phoneNumber': 0,
+                            'userProfile.interests': 0,
+                            profileComplete: 0,
+                            createdAt: 0,
+                            updatedAt: 0,
+                            __v: 0,
+                        } },
+                      ],
+                      as: 'author',
+                    },
+                    },
                 ],
                 as: 'top_comments'
               }}
@@ -123,7 +158,19 @@ export class AggregationQueries {
                     let: { authorID: '$author' },
                     pipeline: [
                         { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                        { $project: { password: 0, email: 0 } },
+                        { $project: {
+                            password: 0,
+                            email: 0,
+                            fcm_token: 0,
+                            'userProfile.visits': 0,
+                            'userProfile.lastSeen': 0,
+                            'userProfile.phoneNumber': 0,
+                            'userProfile.interests': 0,
+                            profileComplete: 0,
+                            createdAt: 0,
+                            updatedAt: 0,
+                            __v: 0,
+                        } },
                     ],
                     as: 'author',
                 },
@@ -150,7 +197,30 @@ export class AggregationQueries {
                     }
                   },{
                     $limit: 4
-                  }
+                  },
+                  {
+                    $lookup: {
+                      from: 'users',
+                      let: { authorID: '$author' },
+                      pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
+                        { $project: {
+                            password: 0,
+                            email: 0,
+                            fcm_token: 0,
+                            'userProfile.visits': 0,
+                            'userProfile.lastSeen': 0,
+                            'userProfile.phoneNumber': 0,
+                            'userProfile.interests': 0,
+                            profileComplete: 0,
+                            createdAt: 0,
+                            updatedAt: 0,
+                            __v: 0,
+                        } },
+                      ],
+                      as: 'author',
+                    },
+                  },
                 ],
                 as: 'top_comments'
             }}
