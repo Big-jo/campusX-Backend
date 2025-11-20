@@ -28,33 +28,12 @@ export class S3 {
             ...(credentials && { credentials }),
         });
 
-        this.fileName = ID;
         this.fileBuffer = file.buffer;
         this.contentType = file.mimetype;
 
-        // Map folder to bucket name
-        switch (folder) {
-            case 'avatars':
-                this.bucketName = process.env.GCS_BUCKET_AVATAR as string;
-                break;
-            case 'image':
-                this.bucketName = process.env.GCS_BUCKET_IMAGE as string;
-                break;
-            case 'video':
-                this.bucketName = process.env.GCS_BUCKET_VIDEO as string;
-                break;
-            case 'expressions':
-                this.bucketName = process.env.GCS_BUCKET_EXPRESSIONS as string;
-                break;
-            case 'circle-avatars':
-                this.bucketName = process.env.GCS_BUCKET_CIRCLE_AVATAR as string;
-                break;
-            case 'circle-cover-image':
-                this.bucketName = process.env.GCS_BUCKET_CIRCLE_COVER_IMAGE as string;
-                break;
-            default:
-                throw new Error('No folder chosen');
-        }
+        // Single bucket with folder prefixes
+        this.bucketName = process.env.GCS_BUCKET as string;
+        this.fileName = `${folder}/${ID}`;
     }
 
     private async upload(): Promise<string> {

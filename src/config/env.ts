@@ -38,16 +38,9 @@ const envSchema = z.object({
 
   // Google Cloud Storage
   GCS_PROJECT_ID: z.string(),
-  GCS_BUCKET_AVATAR: z.string(),
-  GCS_BUCKET_IMAGE: z.string(),
-  GCS_BUCKET_VIDEO: z.string(),
-  GCS_BUCKET_EXPRESSIONS: z.string(),
-  GCS_BUCKET_CIRCLE_AVATAR: z.string(),
-  GCS_BUCKET_CIRCLE_COVER_IMAGE: z.string(),
-  // Optional: Use service account JSON file path or inline JSON
+  GCS_BUCKET: z.string(),
   GCS_SERVICE_ACCOUNT_KEY: z.string().optional(), // Path to JSON file or stringified JSON
-  // Optional: For custom domains
-  GCS_PUBLIC_URL: z.string().optional(),
+  GCS_PUBLIC_URL: z.string().optional(), // For custom domains
 
   // Sentry
   // DSN: z.string().url().optional(),

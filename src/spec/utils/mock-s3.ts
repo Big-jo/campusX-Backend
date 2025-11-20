@@ -1,41 +1,22 @@
 /**
- * AWS S3 Mock Utilities
- * Provides S3 client mocks for testing file uploads
+ * Google Cloud Storage Mock Utilities
+ * Provides GCS client mocks for testing file uploads
  */
-import { S3 } from "aws-sdk";
 
 /**
- * Create a mock S3 client that returns success responses
+ * Create a mock GCS Storage client
  */
-export function createMockS3Client(): Partial<S3> {
-  const mockClient = {
-    upload: (params: S3.PutObjectRequest) => ({
-      promise: async () => ({
-        Location: `https://mock-s3-bucket.s3.amazonaws.com/${params.Key}`,
-        ETag: '"mock-etag-123"',
-        Bucket: params.Bucket || "mock-bucket",
-        Key: params.Key || "mock-key",
-      }),
-    }),
-    deleteObject: (params: S3.DeleteObjectRequest) => ({
-      promise: async () => ({}),
-    }),
-    getObject: (params: S3.GetObjectRequest) => ({
-      promise: async () => ({
-        Body: Buffer.from("mock file content"),
-        ContentType: "image/jpeg",
-      }),
-    }),
-    headObject: (params: S3.HeadObjectRequest) => ({
-      promise: async () => ({
-        ContentLength: 1024,
-        ContentType: "image/jpeg",
-        ETag: '"mock-etag-123"',
-      }),
+export function createMockS3Client() {
+  const mockBucket = {
+    file: jest.fn().mockReturnValue({
+      save: jest.fn().mockResolvedValue(undefined),
+      makePublic: jest.fn().mockResolvedValue(undefined),
     }),
   };
 
-  return mockClient as Partial<S3>;
+  return {
+    bucket: jest.fn().mockReturnValue(mockBucket),
+  } as any;
 }
 
 /**
@@ -46,7 +27,7 @@ export function createMockS3Upload() {
     single: (fieldName: string) => (req: any, res: any, next: any) => {
       // Mock file upload
       if (req.file) {
-        req.file.location = `https://mock-s3-bucket.s3.amazonaws.com/${req.file.filename}`;
+        req.file.location = `https://storage.googleapis.com/mock-bucket/${req.file.filename}`;
       }
       next();
     },
@@ -55,7 +36,7 @@ export function createMockS3Upload() {
       if (req.files) {
         req.files = req.files.map((file: any) => ({
           ...file,
-          location: `https://mock-s3-bucket.s3.amazonaws.com/${file.filename}`,
+          location: `https://storage.googleapis.com/mock-bucket/${file.filename}`,
         }));
       }
       next();
