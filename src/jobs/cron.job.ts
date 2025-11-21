@@ -48,4 +48,8 @@ export const cron = () => {
   queue.add('clean-campus-timeline', null, { repeat: { cron: '0 0 * * *' } });
   queue.add('clean-visited-circles-cache', null, { repeat: { cron: '0 0 * * *' } });
   queue.add('clean-up-timelines', null, { repeat: { cron: '0 0 * * *' } });
+
+  // Bot poster: distribute scraped content to user timelines (every 30 minutes)
+  const botPosterQueue = getQueue('bot-poster');
+  botPosterQueue.add('distribute-content', null, { repeat: { cron: '*/30 * * * *' } });
 };
