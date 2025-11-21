@@ -39,7 +39,7 @@ export interface IUser extends Document {
     resetToken: string;
     accountType?: string;
     botMetadata?: {
-        botType?: string;
+    botType?: string;
         createdBy?: string;
         version?: string;
     };

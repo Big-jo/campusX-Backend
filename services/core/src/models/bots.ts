@@ -7,7 +7,6 @@ const BotSchema: Schema = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   botType: {
     type: String,
-    enum: botTypes,
     required: true
   },
   config: {

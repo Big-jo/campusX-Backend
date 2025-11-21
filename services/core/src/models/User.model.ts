@@ -34,7 +34,7 @@ const UserSchema: Schema = new Schema({
         default: 'user'
     },
     botMetadata: {
-        botType: {type: String, enum: botTypes, required: false},
+        botType: {type: String, required: false},
         createdBy: {type: String, default: 'system'},
         version: {type: String, default: '1.0'}
     },

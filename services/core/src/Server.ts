@@ -22,6 +22,7 @@ import { NOT_FOUND } from 'http-status-codes';
 import sentry from './lib/sentry';
 import { runSeeds } from './seeds';
 import { validateEnv } from './config/env';
+import { startWorker } from './worker';
 
 // Validate environment variables before starting the server
 try {
@@ -66,6 +67,9 @@ Db.on('connected', async () => {
   } else {
     await runSeeds();
   }
+
+  // Initialize worker queues and jobs
+  startWorker();
 });
 
 // Drop tasks collection at every startup since it causes issues (skip in test env)

@@ -13,15 +13,21 @@ config();
 async function seedBots() {
   try {
     // Connect to MongoDB
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/campusx';
-    await mongoose.connect(mongoUri);
+    const mongoUri = process.env.MONGO_URI;
+    await mongoose.connect(mongoUri, {
+       useNewUrlParser: true,
+       useFindAndModify: false,
+       useCreateIndex: true,
+       useUnifiedTopology: true,
+       family: 4
+     });
     console.log('Connected to MongoDB');
 
     // Clear existing bots (optional - be careful in production!)
     const deleteExisting = process.argv.includes('--fresh');
     if (deleteExisting) {
       await User.deleteMany({ accountType: 'bot' });
-      await Bot.deleteMany({});
+      await Bot.deleteMany();
       console.log('Cleared existing bots');
     }
 
@@ -43,6 +49,8 @@ async function seedBots() {
         name: botConfig.displayName,
         bio: botConfig.bio,
         email: `${botConfig.username}@campusx-bots.com`, // System email
+        userTag: `campusx_${botConfig.categoryId}_bot`,
+        password: `bot_${botConfig.categoryId}_${Date.now()}`, // Random password
         campus: 'global', // Global campus for bots
         accountType: 'bot', //TODO: Add type to interface 
         botMetadata: {
@@ -50,7 +58,8 @@ async function seedBots() {
           createdBy: 'system',
           version: '1.0'
         },
-        verified: true
+        verified: true,
+        resetToken: 'reset-token-placeholder'
       });
 
       // Create bot configuration
@@ -64,7 +73,7 @@ async function seedBots() {
           totalInteractions: 0,
           lastPostAt: null
         }
-      });
+      });;
 
       console.log(`✅ Created: ${botConfig.displayName} (${botConfig.username})`);
       created++;

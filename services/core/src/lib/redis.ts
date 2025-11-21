@@ -18,6 +18,7 @@ class RedisClient {
           family: 6,
           host: process.env.REDIS_HOST,
           port: redisPort,
+          maxRetriesPerRequest: null,
         });
 
         RedisClient.instance.on('connecting', () => {

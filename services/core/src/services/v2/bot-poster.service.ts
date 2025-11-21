@@ -5,7 +5,7 @@ import Post from '../../models/Post.model';
 import User from '../../models/User.model';
 import RedisClient from '../../lib/redis';
 import type { Redis } from 'ioredis';
-import { logger } from '../../lib/logger';
+import { logger } from '@shared';
 
 export class BotPosterService {
   private redis: Redis;
@@ -84,9 +84,13 @@ export class BotPosterService {
     const post = await this.createBotPost(content, bot.user_id);
 
     // 4. Find target users (users with matching interest)
+    // Supports partial match + wildcard (*)
     const targetUsers = await User.find({
-      interests: content.interestCategory,
-      accountType: 'user' // Exclude bots
+      $or: [
+        { "userProfile.interests": { $regex: content.interestCategory, $options: 'i' } },
+        { "userProfile.interests": '*' } // Wildcard: users who want all content
+      ],
+      accountType: 'user'
     }).select('_id');
 
     if (targetUsers.length === 0) {

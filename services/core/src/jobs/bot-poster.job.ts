@@ -1,6 +1,6 @@
 import { Job } from 'bullmq';
 import { BotPosterService } from '../services/v2/bot-poster.service';
-import { logger } from '../lib/logger';
+import { logger } from '@shared';
 
 export const name = 'bot-poster';
 

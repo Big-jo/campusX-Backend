@@ -11,12 +11,14 @@ const connection = RedisClient.getInstance() as Redis;
 
 const jobs = [sendFcmJob, cronJob, botPosterJob];
 
-registerQueue(sendFcmJob.name);
-registerQueue(cronJob.name);
-registerQueue(botPosterJob.name);
+export const startWorker = () => {
+  registerQueue(sendFcmJob.name);
+  registerQueue(cronJob.name);
+  registerQueue(botPosterJob.name);
 
-jobs.forEach(job => {
-  new Worker(job.name, job.handler, { connection });
-});
+  jobs.forEach(job => {
+    new Worker(job.name, job.handler, { connection });
+  });
 
-cronJob.cron();
+  cronJob.cron();
+};

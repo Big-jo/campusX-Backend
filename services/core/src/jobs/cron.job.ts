@@ -52,5 +52,5 @@ export const cron = () => {
 
   // Bot poster: distribute scraped content to user timelines (every 30 minutes)
   const botPosterQueue = getQueue('bot-poster');
-  botPosterQueue.add('distribute-content', null, { repeat: { cron: '*/30 * * * *' } });
+  botPosterQueue.add('distribute-content', null, { repeat: { cron: '*/3 * * * *' } });
 };
