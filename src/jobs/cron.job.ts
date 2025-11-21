@@ -45,6 +45,7 @@ export const handler = async (job: { name: string; }) => {
 
 export const cron = () => {
   const queue = getQueue(name);
+  //TODO: Maintain constants file for constants like this to be cleaner
   queue.add('clean-campus-timeline', null, { repeat: { cron: '0 0 * * *' } });
   queue.add('clean-visited-circles-cache', null, { repeat: { cron: '0 0 * * *' } });
   queue.add('clean-up-timelines', null, { repeat: { cron: '0 0 * * *' } });

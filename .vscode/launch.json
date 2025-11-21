@@ -50,6 +50,23 @@
       // Optional path mapping for remote debugging
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "subProcess": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Attach",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      }
     }
   ]
 }
