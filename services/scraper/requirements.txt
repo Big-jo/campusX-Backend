@@ -4,7 +4,7 @@ redis==5.0.1
 
 # MongoDB
 motor==3.3.2
-pymongo==4.6.1
+pymongo==4.6.3
 
 # Web Scraping
 beautifulsoup4==4.12.2
