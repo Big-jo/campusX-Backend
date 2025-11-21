@@ -1,5 +1,11 @@
 import os
+from pathlib import Path
+from typing import Optional
 from pydantic_settings import BaseSettings
+
+# Get the .env file path relative to this config file
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BASE_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -15,8 +21,8 @@ class Settings(BaseSettings):
     # Google Cloud Storage
     GCS_PROJECT_ID: str
     GCS_BUCKET: str
-    GCS_SERVICE_ACCOUNT_KEY: str | None = None  # Path to key file, or None if using default credentials
-    GCS_PUBLIC_URL: str | None = None
+    GCS_SERVICE_ACCOUNT_KEY: Optional[str] = None  # Path to key file, or None if using default credentials
+    GCS_PUBLIC_URL: Optional[str] = None
 
     # Scraper settings
     SCRAPER_USER_AGENT: str = "CampusX-Bot/1.0 (+https://campusx.com/bot)"
@@ -32,7 +38,7 @@ class Settings(BaseSettings):
     GEMINI_SEARCH_MAX_RESULTS: int = 10
 
     class Config:
-        env_file = ".env"
+        env_file = str(ENV_FILE)
         case_sensitive = True
 
 

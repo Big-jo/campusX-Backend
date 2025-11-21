@@ -4,7 +4,7 @@ from bson import ObjectId
 from celery import Task
 from src.main import app
 from src.db.mongodb import get_sync_db, COLLECTIONS
-from src.search.gemini_searcher import get_searcher
+from src.search.content_source import get_content_source, DEFAULT_SOURCE, SourceType
 from src.scraper.scraper import get_scraper
 from src.scraper.processor import get_processor
 from src.config import settings
@@ -42,6 +42,7 @@ def scrape_by_interest(self, bot_id: str, interest_category: str):
         db = get_sync_db()
 
         # 1. Get bot config
+        # TODO: We alredy got this in first connection (optimise)
         bot = db[COLLECTIONS["bots"]].find_one({"user_id": ObjectId(bot_id)})
         if not bot:
             logger.error(f"Bot not found: {bot_id}")
@@ -54,9 +55,9 @@ def scrape_by_interest(self, bot_id: str, interest_category: str):
 
         logger.info(f"Bot config: keywords={keywords}")
 
-        # 2. Search for URLs
-        searcher = get_searcher()
-        search_results = searcher.search(
+        # 2. Search for URLs (using configured source: RSS, Gemini, etc.)
+        source = get_content_source(SourceType.RSS)
+        search_results = source.search(
             interest_category=interest_category,
             keywords=keywords,
             limit=settings.GEMINI_SEARCH_MAX_RESULTS,
@@ -66,7 +67,7 @@ def scrape_by_interest(self, bot_id: str, interest_category: str):
             logger.warning(f"No search results for {interest_category}")
             return {"status": "success", "scraped": 0, "message": "No search results"}
 
-        logger.info(f"Found {len(search_results)} URLs to scrape")
+        logger.info(f"Found {len(search_results)} URLs (source: {DEFAULT_SOURCE})")
 
         # 3. Scrape and process each URL
         scraper = get_scraper()
@@ -116,12 +117,12 @@ def scrape_by_interest(self, bot_id: str, interest_category: str):
                 if domain.startswith("www."):
                     domain = domain[4:]
 
-                # 5. Write to MongoDB
+                # 5. Write to MongoDB (save scraped data with raw image URLs)
                 scraped_content_doc = {
                     "url": processed["url"],
                     "title": processed["title"],
                     "content": processed["content"],
-                    "images": processed["images"],
+                    "images": scraped_data.get("images", []),  # Raw image URLs (not GCS)
                     "keywords": processed["keywords"],
                     "sourceDomain": domain,
                     "interestCategory": interest_category,

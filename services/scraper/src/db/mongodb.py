@@ -1,13 +1,14 @@
+from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 from src.config import settings
 
 # Async client (for async tasks)
-async_client: AsyncIOMotorClient | None = None
+async_client: Optional[AsyncIOMotorClient] = None
 async_db = None
 
 # Sync client (for Celery tasks)
-sync_client: MongoClient | None = None
+sync_client: Optional[MongoClient] = None
 sync_db = None
 
 
@@ -16,7 +17,7 @@ def get_sync_db():
     global sync_client, sync_db
     if sync_db is None:
         sync_client = MongoClient(settings.MONGO_URI)
-        sync_db = sync_client.get_database()
+        sync_db = sync_client.get_database("test")
     return sync_db
 
 

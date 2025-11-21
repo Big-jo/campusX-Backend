@@ -10,4 +10,5 @@
     "mochaExplorer.require": "ts-node/register",
     "mochaExplorer.files": "src/spec/**/*ts",
     "editor.quickSuggestions.comments": true,
+    "python.defaultInterpreterPath": "${workspaceFolder}/services/scraper/venv/bin/python"
 }

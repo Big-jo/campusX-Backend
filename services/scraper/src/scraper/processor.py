@@ -90,7 +90,7 @@ class ContentProcessor:
                 "url": scraped_data["url"],
                 "title": scraped_data["title"],
                 "content": markdown,
-                "images": gcs_image_urls,
+                # "images": gcs_image_urls,
                 "keywords": keywords,
                 "qualityScore": quality_score,
                 "metadata": {

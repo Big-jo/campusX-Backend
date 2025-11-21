@@ -67,6 +67,60 @@
         "host": "localhost",
         "port": 5678
       }
+    },
+    {
+      "name": "Python: Scraper Worker (Celery)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "src.main",
+        "worker",
+        "--loglevel=debug",
+        "--concurrency=1",
+        "--pool=solo"
+      ],
+      "cwd": "${workspaceFolder}/services/scraper",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/services/scraper"
+      },
+      "envFile": "${workspaceFolder}/services/scraper/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "subProcess": true
+    },
+    {
+      "name": "Python: Scraper Beat (Scheduler)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "src.main",
+        "beat",
+        "--loglevel=debug"
+      ],
+      "cwd": "${workspaceFolder}/services/scraper",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/services/scraper"
+      },
+      "envFile": "${workspaceFolder}/services/scraper/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Manual Scrape Test",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/services/scraper/test_scrape.py",
+      "cwd": "${workspaceFolder}/services/scraper",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/services/scraper"
+      },
+      "envFile": "${workspaceFolder}/services/scraper/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false
     }
   ]
 }

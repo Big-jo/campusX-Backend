@@ -3,6 +3,7 @@ from typing import List, Dict
 from urllib.parse import urlparse
 import logging
 from src.config import settings
+from src.search.content_source import ContentSource
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,14 @@ def is_blocked_domain(url: str) -> bool:
     return domain in BLOCKED_DOMAINS
 
 
-class GeminiSearcher:
+class GeminiSearcher(ContentSource):
     """
     Use Gemini API to search for quality content sources
     based on interest categories and keywords
     """
 
     def __init__(self):
-        self.model = genai.GenerativeModel("gemini-pro")
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
     def search(
         self, interest_category: str, keywords: List[str], limit: int = 10
@@ -95,19 +96,29 @@ class GeminiSearcher:
         """Build prompt for Gemini to find quality sources"""
         keywords_str = ", ".join(keywords[:5])  # Use top 5 keywords
 
-        prompt = f"""You are a content discovery assistant. Find {limit} high-quality, scrapable web sources about "{interest_category}".
+        prompt = f"""You are a content discovery assistant specializing in Nigerian content. Find {limit} REAL, CURRENTLY ACCESSIBLE, LEGALLY SCRAPABLE URLs with actual content about "{interest_category}" from Nigerian or Africa-focused sources.
 
 Focus on these topics: {keywords_str}
 
-Requirements:
-- Return ONLY direct URLs (one per line)
-- Prioritize: blogs, news sites, educational sites, official sources
-- EXCLUDE: social media (Facebook, Twitter, Instagram, TikTok, LinkedIn, Reddit)
-- EXCLUDE: paywalled sites (NYTimes, WSJ, Financial Times)
-- EXCLUDE: video sites (YouTube)
-- Prefer well-structured HTML content (not heavy JavaScript SPAs)
-- Each URL should be from a different domain
-- URLs should be recent articles/posts (within last 6 months if possible)
+CRITICAL Requirements:
+- URLs MUST be real, existing pages that are currently accessible (not 404s)
+- URLs MUST contain actual readable article/blog content (not just homepages or category pages)
+- URLs MUST be direct links to specific articles/posts with substantial text content
+- URLs MUST be from sites that allow web scraping (check robots.txt policies)
+- URLs MUST be legally scrapable - public content without terms prohibiting scraping
+- Verify URLs are from established, active websites with real content
+- PRIORITIZE Nigerian sources: Nigerian news sites, blogs, tech platforms, educational institutions, startups, local publications
+- Also include: Pan-African content platforms, African tech blogs, regional news sites
+- Examples of good sources: TechCabal, Techpoint Africa, Nairametrics, BusinessDay NG, The Cable, Premium Times, local university sites, Nigerian startup blogs
+- EXCLUDE: social media (Facebook, Twitter, Instagram, TikTok, LinkedIn, Reddit, Pinterest)
+- EXCLUDE: paywalled sites (NYTimes, WSJ, Financial Times, Medium member-only)
+- EXCLUDE: video-only sites (YouTube, Vimeo)
+- EXCLUDE: sites with strict anti-scraping policies or legal restrictions
+- EXCLUDE: dead links, archived pages, or sites that frequently go offline
+- Prefer well-structured HTML content (not heavy JavaScript SPAs or dynamic sites)
+- Each URL must be from a different domain
+- Prefer recent content (within last year) from actively maintained sites
+- Focus on content relevant to Nigerian/African audience and context
 
 Format your response EXACTLY as:
 URL: https://example.com/article-1
@@ -117,7 +128,7 @@ URL: https://example.com/article-2
 Title: Article Title
 ---
 
-Do not include any other text or explanations."""
+Do not include any other text or explanations. Only provide URLs you are confident exist, contain scrapable content, and are legally accessible for scraping."""
 
         return prompt
 

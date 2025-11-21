@@ -7,7 +7,7 @@ services:
   # Python Celery Worker (scrapes content)
   scraper-worker:
     build:
-      context: ./services/scraper
+      context: ../../services/scraper
       dockerfile: Dockerfile
     container_name: campusx-scraper-worker
     command: celery -A src.main worker --loglevel=info --concurrency=2
@@ -20,8 +20,7 @@ services:
       - GCS_SERVICE_ACCOUNT_KEY=${GCS_SERVICE_ACCOUNT_KEY}
       - GCS_PUBLIC_URL=${GCS_PUBLIC_URL}
     volumes:
-      - ./services/scraper:/app
-      - ${GCS_SERVICE_ACCOUNT_KEY}:${GCS_SERVICE_ACCOUNT_KEY}:ro
+      - ../../services/scraper:/app
     depends_on:
       - mongo
       - redis
@@ -32,7 +31,7 @@ services:
   # Python Celery Beat (scheduler)
   scraper-beat:
     build:
-      context: ./services/scraper
+      context: ../../services/scraper
       dockerfile: Dockerfile
     container_name: campusx-scraper-beat
     command: celery -A src.main beat --loglevel=info
@@ -41,7 +40,7 @@ services:
       - REDIS_URL=redis://redis:6379/1
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
-      - ./services/scraper:/app
+      - ../../services/scraper:/app
     depends_on:
       - mongo
       - redis

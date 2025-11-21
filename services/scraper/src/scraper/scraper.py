@@ -21,7 +21,23 @@ class ContentScraper:
 
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": settings.SCRAPER_USER_AGENT})
+        # Use realistic browser headers to avoid bot detection
+        self.session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0",
+        })
+        # Add cookies to appear more legitimate
+        self.session.cookies.set("lang", "en")
 
     def scrape(self, url: str, use_playwright: bool = False) -> Optional[Dict]:
         """
@@ -53,7 +69,27 @@ class ContentScraper:
     def _scrape_with_requests(self, url: str) -> Optional[Dict]:
         """Scrape using requests + BeautifulSoup (for static sites)"""
         try:
-            response = self.session.get(url, timeout=settings.SCRAPER_TIMEOUT)
+            # Add Referer header to appear as natural browsing
+            headers = {}
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            headers["Referer"] = f"{parsed.scheme}://{parsed.netloc}/"
+
+            response = self.session.get(
+                url,
+                timeout=settings.SCRAPER_TIMEOUT,
+                allow_redirects=True,
+                headers=headers
+            )
+
+            # Handle bot protection / rate limiting
+            if response.status_code == 403:
+                logger.warning(f"403 Forbidden for {url}, trying Playwright")
+                return self._scrape_with_playwright(url)
+            elif response.status_code == 429:
+                logger.warning(f"429 Rate Limited for {url}, skipping")
+                return None
+
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "lxml")
@@ -69,34 +105,83 @@ class ContentScraper:
 
         except requests.RequestException as e:
             logger.error(f"Requests scraping failed for {url}: {e}")
-            # Fallback to Playwright
+            # Fallback to Playwright for network errors
             return self._scrape_with_playwright(url)
 
     def _scrape_with_playwright(self, url: str) -> Optional[Dict]:
         """Scrape using Playwright (for JavaScript-heavy sites)"""
+        browser = None
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--disable-blink-features=AutomationControlled',
+                        '--disable-dev-shm-usage',
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-web-security',
+                    ]
+                )
+
+                context = browser.new_context(
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    viewport={'width': 1920, 'height': 1080},
+                    locale='en-US',
+                    timezone_id='America/New_York',
+                    permissions=['geolocation'],
+                    extra_http_headers={
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    }
+                )
+
+                # Inject script to remove webdriver property
+                context.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => undefined
+                    });
+                """)
+
+                page = context.new_page()
 
                 # Navigate with timeout
-                page.goto(url, wait_until="networkidle", timeout=settings.SCRAPER_TIMEOUT * 1000)
-
-                # Wait for content to load
                 try:
-                    page.wait_for_selector("article, main, .content, #content", timeout=5000)
+                    page.goto(url, wait_until="domcontentloaded", timeout=settings.SCRAPER_TIMEOUT * 1000)
+                    # Give JS time to render (if needed)
+                    page.wait_for_timeout(2000)
+                except PlaywrightTimeout:
+                    logger.warning(f"Timeout loading {url}, attempting to extract anyway")
+                except Exception as e:
+                    logger.error(f"Navigation error for {url}: {e}")
+                    raise
+
+                # Wait for content to load (optional)
+                try:
+                    page.wait_for_selector("article, main, .content, #content, body", timeout=5000)
                 except PlaywrightTimeout:
                     pass  # Continue anyway
 
-                # Get HTML
+                # Get HTML before closing anything
                 html = page.content()
+
+                # Parse while browser still open
+                soup = BeautifulSoup(html, "lxml")
+                result = self._extract_content(soup, url)
+
+                # Clean up
+                page.close()
+                context.close()
                 browser.close()
 
-                soup = BeautifulSoup(html, "lxml")
-                return self._extract_content(soup, url)
+                return result
 
         except Exception as e:
             logger.error(f"Playwright scraping failed for {url}: {e}")
+            if browser:
+                try:
+                    browser.close()
+                except:
+                    pass
             return None
 
     def _extract_content(self, soup: BeautifulSoup, base_url: str) -> Optional[Dict]:

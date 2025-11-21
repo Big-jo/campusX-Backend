@@ -26,3 +26,4 @@ requests==2.31.0
 
 # NLP / Quality
 nltk==3.8.1
+feedparser==6.0.11
