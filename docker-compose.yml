@@ -32,8 +32,8 @@ services:
   # Core Service (Node.js/TypeScript)
   core:
     build:
-      context: ./services/core
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/core/Dockerfile
     container_name: campusx-core
     restart: unless-stopped
     ports:
@@ -56,8 +56,8 @@ services:
   # Scraper Service (Python/Celery)
   scraper:
     build:
-      context: ./services/scraper
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/scraper/Dockerfile
     container_name: campusx-scraper
     restart: unless-stopped
     environment:

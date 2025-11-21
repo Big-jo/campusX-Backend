@@ -2,17 +2,17 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
-COPY package.json yarn.lock ./
+# Copy package files from service directory
+COPY services/core/package.json services/core/yarn.lock ./
 
 # Install all dependencies (including devDependencies for build)
 RUN yarn install --frozen-lockfile
 
-# Copy source code and config
-COPY src ./src
-COPY tsconfig.json ./
-COPY tsconfig.prod.json ./
-COPY register-paths.js ./
+# Copy source code and config from service directory
+COPY services/core/src ./src
+COPY services/core/tsconfig.json ./
+COPY services/core/tsconfig.prod.json ./
+COPY services/core/register-paths.js ./
 
 # Build TypeScript using production config
 RUN yarn tsc -p tsconfig.prod.json
@@ -21,8 +21,8 @@ RUN yarn tsc -p tsconfig.prod.json
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Copy package files
-COPY package.json yarn.lock ./
+# Copy package files from service directory
+COPY services/core/package.json services/core/yarn.lock ./
 
 # Install only production dependencies
 RUN yarn install --frozen-lockfile --production && \

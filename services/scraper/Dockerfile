@@ -28,8 +28,8 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy requirements from service directory
+COPY services/scraper/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -37,8 +37,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Playwright browsers
 RUN playwright install chromium
 
-# Copy source code
-COPY . .
+# Copy source code from service directory
+COPY services/scraper/ .
 
 # Set environment variables
 ENV PYTHONPATH=/app
