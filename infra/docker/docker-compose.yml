@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # Core TypeScript API
+  core-api:
+    build:
+      context: ../../services/core
+      dockerfile: Dockerfile
+    container_name: campusx-core-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=redis://redis:6379/0
+      - PORT=3000
+    env_file:
+      - ../../services/core/.env
+    volumes:
+      - ../../services/core:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - campusx-network
+
+  # Core TypeScript Worker (BullMQ)
+  core-worker:
+    build:
+      context: ../../services/core
+      dockerfile: Dockerfile
+    container_name: campusx-core-worker
+    command: node -r dotenv/config dist/worker.js
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - ../../services/core/.env
+    volumes:
+      - ../../services/core:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - campusx-network
+
+  # Python Scraper Worker (Celery)
+  scraper-worker:
+    build:
+      context: ../../services/scraper
+      dockerfile: Dockerfile
+    container_name: campusx-scraper-worker
+    command: celery -A src.main worker --loglevel=info --concurrency=2
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=redis://redis:6379/1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GCS_PROJECT_ID=${GCS_PROJECT_ID}
+      - GCS_BUCKET=${GCS_BUCKET}
+      - GCS_SERVICE_ACCOUNT_KEY=${GCS_SERVICE_ACCOUNT_KEY}
+      - GCS_PUBLIC_URL=${GCS_PUBLIC_URL}
+    volumes:
+      - ../../services/scraper:/app
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - campusx-network
+
+  # Python Scraper Beat (Celery Scheduler)
+  scraper-beat:
+    build:
+      context: ../../services/scraper
+      dockerfile: Dockerfile
+    container_name: campusx-scraper-beat
+    command: celery -A src.main beat --loglevel=info
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=redis://redis:6379/1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ../../services/scraper:/app
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    networks:
+      - campusx-network
+
+  # MongoDB
+  mongo:
+    image: mongo:5.0
+    container_name: campusx-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=campusx
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - campusx-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: campusx-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - campusx-network
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  campusx-network:
+    driver: bridge
