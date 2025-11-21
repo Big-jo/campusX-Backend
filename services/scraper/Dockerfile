@@ -40,7 +40,13 @@ RUN playwright install chromium
 # Copy source code
 COPY . .
 
-# Set PYTHONPATH
+# Set environment variables
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-CMD ["celery", "-A", "src.main", "worker", "--loglevel=info"]
+# Expose port (Railway uses PORT env var)
+EXPOSE ${PORT:-8000}
+
+# Start Celery worker
+CMD ["celery", "-A", "src.main", "worker", "--loglevel=info", "--concurrency=2"]

@@ -1,4 +1,4 @@
-import {Document, PaginateModel} from 'mongoose';
+import mongoose, {Document, PaginateModel} from 'mongoose';
 
 export interface IUserProfile {
     avatar?: string; // If Male, set avatar to a male placeholder image
@@ -28,6 +28,7 @@ export interface IUserProfile {
 // }
 
 export interface IUser extends Document {
+    _id: mongoose.Types.ObjectId;
     name: string;
     userID?: string;
     userTag: string;

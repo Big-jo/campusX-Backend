@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import ScrapedContent, { IScrapedContent } from '../../models/ScrapedContent.model';
-import Bot from '../../models/bots';
+import Bot, { IBot } from '../../models/bots';
 import Post from '../../models/Post.model';
 import User from '../../models/User.model';
 import RedisClient from '../../lib/redis';
@@ -54,7 +54,7 @@ export class BotPosterService {
    */
   private async distributeContent(content: IScrapedContent): Promise<void> {
     // 1. Find bot for this interest category
-    const bot = await Bot.findOne({ botType: content.interestCategory, status: 'active' });
+    const bot = await Bot.findOne({ botType: content.interestCategory, status: 'active' }) as IBot | null;
 
     if (!bot) {
       logger.warn(`No active bot found for category: ${content.interestCategory}`);

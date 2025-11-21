@@ -1,7 +1,28 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from '@interfaces/IUser';
 import mongoosePaginate from 'mongoose-paginate';
 import { BotType, botTypes } from '../types/types';
+
+export interface IBot extends Document {
+  user_id: mongoose.Types.ObjectId;
+  botType: string;
+  config: {
+    postingFrequency: 'hourly' | 'daily' | 'weekly';
+    maxPostsPerDay: number;
+    autoPostEnabled: boolean;
+    dataSources: string[];
+    keywords: string[];
+    hashtags: string[];
+  };
+  status: 'active' | 'paused';
+  stats: {
+    totalPosts: number;
+    totalInteractions: number;
+    lastPostAt?: Date;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const BotSchema: Schema = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
@@ -46,4 +67,4 @@ const BotSchema: Schema = new Schema({
 });
 BotSchema.plugin(mongoosePaginate);
 
-export default mongoose.model('Bot', BotSchema);
+export default mongoose.model<IBot>('Bot', BotSchema);

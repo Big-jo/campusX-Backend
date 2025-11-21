@@ -25,7 +25,7 @@ export class UsersController {
       throw new UnauthorizedError('User not authenticated');
     }
 
-    const result = await this.usersService.getCurrentUser(userId);
+    const result = await this.usersService.getCurrentUser(userId.toString());
     return res.status(200).json(result);
   };
 
@@ -36,7 +36,7 @@ export class UsersController {
   updateProfile = async (req: Request, res: Response) => {
     const userId = req.user?._id;
 
-    const result = await this.usersService.updateProfile(userId, req.body);
+    const result = await this.usersService.updateProfile(userId.toString(), req.body);
     return res.status(200).json(result);
   };
 
@@ -46,7 +46,7 @@ export class UsersController {
    */
   saveInterests = async (req: Request, res: Response) => {
     const { topicIds } = req.body;
-    const result = await this.usersService.saveInterests(req.user._id, topicIds);
+    const result = await this.usersService.saveInterests(req.user._id.toString(), topicIds);
     return res.status(200).json(result);
   };
 }

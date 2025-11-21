@@ -14,10 +14,11 @@
     "build:all": "yarn workspaces run build",
     "seed:bots": "yarn workspace @campusx/core seed:bots",
     "seed:bots:fresh": "yarn workspace @campusx/core seed:bots:fresh",
-    "docker:up": "docker-compose -f infra/docker/docker-compose.yml up -d",
-    "docker:down": "docker-compose -f infra/docker/docker-compose.yml down",
-    "docker:logs": "docker-compose -f infra/docker/docker-compose.yml logs -f",
-    "docker:scraper": "docker-compose -f infra/docker/docker-compose.scraper.yml up -d"
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:core": "docker-compose up core -d",
+    "docker:scraper": "docker-compose up scraper -d"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

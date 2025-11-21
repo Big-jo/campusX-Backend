@@ -8,11 +8,14 @@ COPY package.json yarn.lock ./
 # Install all dependencies (including devDependencies for build)
 RUN yarn install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy source code and config
+COPY src ./src
+COPY tsconfig.json ./
+COPY tsconfig.prod.json ./
+COPY register-paths.js ./
 
-# Build TypeScript
-RUN yarn build
+# Build TypeScript using production config
+RUN yarn tsc -p tsconfig.prod.json
 
 # ---- Production stage ----
 FROM node:20-alpine AS production
