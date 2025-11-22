@@ -246,7 +246,7 @@ export class PostRepository extends BaseRepository<IPostModel> {
       $text: { $search: query },
       campus,
       type: 'post'
-    }).limit(limit).sort({ score: { $meta: 'textScore' } });
+    }, { score: { $meta: 'textScore' } }, { limit, sort: { score: -1 } });
   }
 
   /**

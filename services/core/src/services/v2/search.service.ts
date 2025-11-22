@@ -11,8 +11,9 @@
 import { IUser } from '@interfaces';
 import { natsClient } from '../../lib/nats';
 import { PostRepository } from '../../repositories/PostRepository';
-import { getRedisClient } from '../../lib/redis';
+import RedisClient, { getRedisClient } from '../../lib/redis';
 import crypto from 'crypto';
+import Redis from 'ioredis';
 
 interface SearchOptions {
   query: string;
@@ -33,11 +34,11 @@ interface SearchResult {
 
 export class SearchService {
   private postRepo: PostRepository;
-  private redis: ReturnType<typeof getRedisClient>;
+  private redis: Redis;
 
   constructor() {
     this.postRepo = new PostRepository();
-    this.redis = getRedisClient();
+    this.redis = RedisClient.getInstance();
   }
 
   /**
