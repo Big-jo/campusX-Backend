@@ -9,23 +9,23 @@ ENV_FILE = BASE_DIR / ".env"
 
 
 class Settings(BaseSettings):
-    # MongoDB
-    MONGO_URI: str = "mongodb://localhost:27017/campusx"
+    # MongoDB - required, must be set via env
+    MONGO_URI: str
 
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/1"
+    # Redis - required, must be set via env
+    REDIS_URL: str
 
-    # Gemini API
+    # Gemini API - required, must be set via env
     GEMINI_API_KEY: str
 
-    # Google Cloud Storage
+    # Google Cloud Storage - required, must be set via env
     GCS_PROJECT_ID: str
     GCS_BUCKET: str
     GCS_SERVICE_ACCOUNT_KEY: Optional[str] = None  # Path to key file, or None if using default credentials
     GCS_PUBLIC_URL: Optional[str] = None
 
-    # Scraper settings
-    SCRAPER_USER_AGENT: str = "CampusX-Bot/1.0 (+https://campusx.com/bot)"
+    # Scraper settings - optional with defaults
+    SCRAPER_USER_AGENT: str
     SCRAPER_RATE_LIMIT_DELAY: float = 5.0  # Seconds between requests to same domain
     SCRAPER_MAX_RETRIES: int = 3
     SCRAPER_TIMEOUT: int = 30  # Seconds
