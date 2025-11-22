@@ -12,6 +12,7 @@ export class Utility {
 
     public static createToken(payload: ITokenPayload) {
         const secret = process.env.JWT_SECRET as string;
+        console.log("Creating token with secret:", secret); // Debugging line to check the secret value
         return jwt.sign(payload, secret);
     }
 

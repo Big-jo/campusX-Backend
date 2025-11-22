@@ -15,6 +15,8 @@ const validation = {
       const token = authorizationHeader.split(' ')[1];
       try {
         const secret = process.env.JWT_SECRET as string;
+        console.log("Secret:", secret); // Debugging line to check the secret value
+        console.log("Token:", token);   // Debugging line to check the token value
         const decoded = jwt.verify(token, secret) as { userID: string };
 
         const user = await UserModel.findById(decoded.userID)
