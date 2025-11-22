@@ -16,6 +16,8 @@ tags:
     description: Post creation and management endpoints
   - name: Newsfeed
     description: Endpoints for fetching and polling the user's newsfeed
+  - name: Users
+    description: User profile and follower suggestion endpoints
 
 components:
   securitySchemes:
@@ -97,6 +99,95 @@ components:
         method:
           type: string
           example: "POST"
+
+    UserProfile:
+      type: object
+      properties:
+        avatar:
+          type: string
+          example: "https://example.com/avatar.jpg"
+        university:
+          type: string
+          example: "Stanford University"
+        rep_points:
+          type: integer
+          example: 150
+        followers:
+          type: integer
+          example: 42
+        bio:
+          type: string
+          example: "Computer Science student"
+
+    SuggestedUser:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: "507f1f77bcf86cd799439012"
+            name:
+              type: string
+              example: "Jane Doe"
+            userTag:
+              type: string
+              example: "janedoe"
+            userProfile:
+              $ref: '#/components/schemas/UserProfile'
+        score:
+          type: number
+          format: float
+          description: "Composite recommendation score (0.0-1.0)"
+          example: 0.85
+        mutualFollowers:
+          type: integer
+          description: "Number of mutual connections"
+          example: 5
+        reasons:
+          type: array
+          items:
+            type: string
+          description: "Reasons for suggestion (e.g., mutual_followers, same_campus)"
+          example: ["mutual_followers", "same_campus"]
+        activityScore:
+          type: number
+          format: float
+          description: "Activity and reputation score component"
+          example: 0.72
+
+    SuggestionsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuggestedUser'
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 20
+            limit:
+              type: integer
+              example: 20
+            offset:
+              type: integer
+              example: 0
+            computedAt:
+              type: string
+              format: date-time
+              example: "2025-11-22T10:30:00.000Z"
+            source:
+              type: string
+              enum: [cache, db]
+              description: "Data source (cache=Redis, db=MongoDB)"
+              example: "cache"
 
   responses:
     UnauthorizedError:
@@ -686,3 +777,138 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+
+  /users/suggestions:
+    get:
+      tags:
+        - Users
+      summary: Get follower suggestions
+      description: |
+        Retrieve personalized follower suggestions using a Friends-of-Friends (FoF) recommendation algorithm.
+
+        **Algorithm Overview**:
+        The suggestions are computed using a multi-factor scoring system:
+
+        1. **Friends-of-Friends (40% weight)**
+           - Analyzes mutual connections to find users followed by people you follow
+           - Higher mutual connection count = higher FoF score
+           - Normalized against maximum mutual connections
+
+        2. **Campus Affinity (30% weight)**
+           - Prioritizes users from the same university
+           - Same campus: 1.0 score
+           - Different campus: 0.5 score
+
+        3. **Activity × Reputation (30% weight)**
+           - Combines recent activity (lastSeen) with reputation points (rep_points)
+           - Recency score decays over 30-day period: 1 / (1 + days/30)
+           - Activity score = (recencyScore × repPoints) / maxRepPoints
+
+        **Final Score** = 0.4×FoF + 0.3×Campus + 0.3×Activity
+
+        **Caching Strategy**:
+        - Top 20 suggestions cached in Redis (15 min TTL)
+        - Top 50 suggestions persisted in MongoDB (15 day TTL)
+        - Use `refresh=true` to force recomputation
+
+        **Performance**:
+        - First request (offset=0): Checks Redis cache, falls back to MongoDB
+        - Subsequent pages: Fetched from MongoDB
+        - If no suggestions exist, automatically computes on first request
+      operationId: getFollowerSuggestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of suggestions to return (max 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+            example: 20
+        - name: offset
+          in: query
+          description: Number of suggestions to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            example: 0
+        - name: refresh
+          in: query
+          description: Force recomputation of suggestions (ignores cache)
+          schema:
+            type: boolean
+            default: false
+            example: false
+      responses:
+        '200':
+          description: Suggestions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionsResponse'
+              examples:
+                withSuggestions:
+                  summary: Successful response with suggestions
+                  value:
+                    success: true
+                    data:
+                      - user:
+                          _id: "507f1f77bcf86cd799439012"
+                          name: "Jane Doe"
+                          userTag: "janedoe"
+                          userProfile:
+                            avatar: "https://example.com/avatar.jpg"
+                            university: "Stanford University"
+                            rep_points: 150
+                            followers: 42
+                            bio: "CS student"
+                        score: 0.85
+                        mutualFollowers: 5
+                        reasons: ["mutual_followers", "same_campus"]
+                        activityScore: 0.72
+                      - user:
+                          _id: "507f1f77bcf86cd799439013"
+                          name: "John Smith"
+                          userTag: "johnsmith"
+                          userProfile:
+                            avatar: "https://example.com/avatar2.jpg"
+                            university: "MIT"
+                            rep_points: 200
+                            followers: 68
+                            bio: "AI researcher"
+                        score: 0.78
+                        mutualFollowers: 3
+                        reasons: ["mutual_followers", "connected_campus"]
+                        activityScore: 0.85
+                    meta:
+                      total: 20
+                      limit: 20
+                      offset: 0
+                      computedAt: "2025-11-22T10:30:00.000Z"
+                      source: "cache"
+                emptyResponse:
+                  summary: No suggestions available (new user)
+                  value:
+                    success: true
+                    data: []
+                    meta:
+                      total: 0
+                      limit: 20
+                      offset: 0
+                      computedAt: "2025-11-22T10:30:00.000Z"
+                      source: "db"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Failed to compute suggestions"
+                statusCode: 500
