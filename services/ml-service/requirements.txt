@@ -27,3 +27,22 @@ requests==2.31.0
 # NLP / Quality
 nltk==3.8.1
 feedparser==6.0.11
+
+# NATS Messaging
+nats-py==2.9.0
+
+# Vector Database
+qdrant-client==1.11.3
+
+# ML & Embeddings
+sentence-transformers==2.7.0
+torch==2.3.1
+transformers==4.41.2
+
+# Sentiment Analysis
+vaderSentiment==3.3.2
+
+# Data Science
+scikit-learn==1.5.1
+numpy==1.26.4
+scipy==1.13.1

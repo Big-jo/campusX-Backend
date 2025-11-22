@@ -10,6 +10,7 @@ import { getQueue } from '../../lib/Queue';
 import type { OneSignalJobData } from '../../jobs/send-onesignal.job';
 import { UsersService } from './users.service';
 import { User } from '../../entities/User';
+import { natsClient } from '../../lib/nats';
 
 interface CreatePostData {
   text?: string;
@@ -93,8 +94,8 @@ export class PostsService {
       campus: user.userProfile.university,
       parentPost: postData.parentPost || undefined,
       circleID: postData.circleID ? mongoose.Types.ObjectId(postData.circleID) : undefined,
-      hashTags: postData.hashTags || [],
-      mentions: postData.mentions || [],
+      hashTags: postData.text ? postData.text.match(/#(\w+)/g)?.map(tag => tag.substring(1)) : [],
+      mentions: postData.text ? postData.text.match(/@(\w+)/g)?.map(mention => mention.substring(1)) : [],
       likes: 0,
       comments: 0,
       dislikes: 0,
@@ -112,6 +113,21 @@ export class PostsService {
         console.error('Fan-out failed:', err);
         // TODO: Queue for retry
       });
+
+      // Publish to NATS for ML embeddings (fire-and-forget)
+      if (natsClient.isConnected()) {
+        natsClient.publishPostCreated({
+          post_id: post._id.toString(),
+          text: post.text || '',
+          campus: post.campus || '',
+          author_id: user._id.toString(),
+          created_at: post.createdAt, // Convert to unix timestamp
+          hashtags: post.hashTags || []
+        }).catch(err => {
+          console.error('Failed to publish post.created event to NATS:', err);
+          // Non-critical - embeddings can be backfilled later
+        });
+      }
     } else if (type === 'comment') {
       await this.karmaService.awardCommentCreation(userId);
       if (postData.parentPost) {
@@ -138,9 +154,9 @@ export class PostsService {
       }
     }
 
-    const mentions = post.text?.match(/@(\w+)/g) || [];
+    const mentions = post.mentions
     for (const mention of mentions) {
-      const userTag = mention.substring(1); // Remove '@'
+      const userTag = mention;
       const mentionedUser = await this.userService.findUsersByTag(userTag);
 
       if (mentionedUser && mentionedUser._id.toString() !== userId) {

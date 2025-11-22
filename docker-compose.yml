@@ -45,31 +45,84 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      NATS_URL: nats://nats:4222
     env_file:
       - .env
     depends_on:
       - mongodb
       - redis
+      - nats
     networks:
       - campusx-network
 
-  # Scraper Service (Python/Celery)
-  scraper:
+  # NATS JetStream (Message Broker)
+  nats:
+    image: nats:2.10-alpine
+    container_name: campusx-nats
+    restart: unless-stopped
+    ports:
+      - "${NATS_PORT:-4222}:4222"  # Client connections
+      - "8222:8222"                 # HTTP monitoring
+    command:
+      - "--jetstream"
+      - "--store_dir=/data"
+      - "--http_port=8222"
+      - "-m=8222"
+    volumes:
+      - nats_data:/data
+    networks:
+      - campusx-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:v1.11.3
+    container_name: campusx-qdrant
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"  # REST API
+      - "6334:6334"                   # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+      QDRANT__LOG_LEVEL: INFO
+    networks:
+      - campusx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ML Service (Python/Celery/NATS)
+  ml-service:
     build:
-      context: .
-      dockerfile: services/scraper/Dockerfile
-    container_name: campusx-scraper
+      context: ./services/ml-service
+      dockerfile: Dockerfile
+    container_name: campusx-ml-service
     restart: unless-stopped
     environment:
       PYTHONUNBUFFERED: 1
-      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
-      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/1
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-password}@redis:6379/1
       MONGODB_URI: mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-campusx}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/2
+      NATS_URL: nats://nats:4222
+      QDRANT_URL: http://qdrant:6333
+      ML_MODEL: ${ML_MODEL:-all-MiniLM-L6-v2}
+      ML_BATCH_SIZE: ${ML_BATCH_SIZE:-32}
     env_file:
       - .env
     depends_on:
       - mongodb
       - redis
+      - nats
+      - qdrant
     networks:
       - campusx-network
 
@@ -77,6 +130,10 @@ volumes:
   mongodb_data:
     driver: local
   redis_data:
+    driver: local
+  nats_data:
+    driver: local
+  qdrant_storage:
     driver: local
 
 networks:

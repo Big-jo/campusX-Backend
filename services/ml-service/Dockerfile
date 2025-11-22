@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements from service directory
-COPY services/scraper/requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -38,15 +38,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN playwright install chromium
 
 # Copy source code from service directory
-COPY services/scraper/ .
+COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# Make startup script executable
+RUN chmod +x /app/start.sh
+
 # Expose port (Railway uses PORT env var)
 EXPOSE ${PORT:-8000}
 
-# Start Celery worker with beat scheduler
-CMD ["celery", "-A", "src.celery_app", "worker", "--beat", "--loglevel=info", "--concurrency=2", "-Q", "scraper"]
+# Start both Celery (scraping) and NATS ML service
+CMD ["/app/start.sh"]

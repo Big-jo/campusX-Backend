@@ -37,9 +37,28 @@ class Settings(BaseSettings):
     # Gemini Search
     GEMINI_SEARCH_MAX_RESULTS: int = 10
 
+    # NATS Configuration
+    NATS_URL: str = os.getenv("NATS_URL", "nats://localhost:4222")
+
+    # Qdrant Configuration
+    QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+
+    # ML Model Configuration
+    ML_MODEL: str = os.getenv("ML_MODEL", "all-MiniLM-L6-v2")
+    ML_BATCH_SIZE: int = int(os.getenv("ML_BATCH_SIZE", "32"))
+
+    # Cache TTLs (seconds)
+    ML_CACHE_TTL_SEARCH: int = int(os.getenv("ML_CACHE_TTL_SEARCH", "300"))
+    ML_CACHE_TTL_TRENDING: int = int(os.getenv("ML_CACHE_TTL_TRENDING", "900"))
+    ML_CACHE_TTL_SUGGESTIONS: int = int(os.getenv("ML_CACHE_TTL_SUGGESTIONS", "3600"))
+
+    # Redis for ML caching
+    REDIS_ML_DB: int = int(os.getenv("REDIS_ML_DB", "2"))
+
     class Config:
         env_file = str(ENV_FILE)
         case_sensitive = True
 
 
 settings = Settings()
+config = settings  # Alias for backwards compatibility
