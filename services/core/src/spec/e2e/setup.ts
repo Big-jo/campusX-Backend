@@ -8,7 +8,7 @@ import IORedis from "ioredis";
 import { Server } from "http";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-let redis: Redis;
+let redis: IORedis;
 let serverInstance: Server | null = null;
 let mongoServer: MongoMemoryServer | null = null;
 
@@ -17,9 +17,8 @@ let mongoServer: MongoMemoryServer | null = null;
  */
 export async function setupE2E(server: Server) {
   // Create and start MongoDB Memory Server
-  mongoServer = await MongoMemoryServer.create();
+  mongoServer = await MongoMemoryServer.create({dispose: {enabled: false}, });
   const mongoUri = mongoServer.getUri();
-
   // Connect mongoose to memory server
   await mongoose.connect(mongoUri, {
     useNewUrlParser: true,
@@ -28,7 +27,7 @@ export async function setupE2E(server: Server) {
     useUnifiedTopology: true,
   });
 
-  console.log('✓ MongoDB Memory Server connected');
+  console.log('✓ MongoDB Memory Server connected at', mongoUri);
 
   // Redis connection for test utilities
   redis = new IORedis({
@@ -55,7 +54,7 @@ export async function clearE2EData() {
   // Clear all MongoDB collections
   const collections = mongoose.connection.collections;
   for (const key in collections) {
-    await collections[key].deleteMany({});
+    await (collections[key] as any).deleteMany({});
   }
 
   // Clear Redis
@@ -100,7 +99,7 @@ export async function teardownE2E() {
 /**
  * Get Redis client for tests
  */
-export function getRedisClient(): Redis {
+export function getRedisClient(): IORedis {
   return redis;
 }
 

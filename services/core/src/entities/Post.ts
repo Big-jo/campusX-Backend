@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 import moment from "moment";
 import CirclePostModel from "../models/CirclePost.model";
 import { AggregationQueries } from "@lib";
-import { Notification } from "../lib/notifications";
+import { OneSignalNotification } from "../lib/onesignal";
 import { IUser } from "../interfaces/IUser";
 import EventEmitter from "events";
 import { Newsfeed } from "../lib/newsfeeds";
@@ -159,8 +159,8 @@ export class Post {
           .exec();
 
         users.forEach((user: IUser) => {
-          new Notification(
-            user.fcm_token,
+          new OneSignalNotification(
+            user.onesignal_player_id,
             {
               body: `${post.text}`,
               title: `${author.userTag} mentioned you`,
@@ -169,7 +169,7 @@ export class Post {
             user.userProfile.avatar,
             "mention",
             author._id,
-          ).SendPushNotification();
+          ).sendPushNotification();
         });
       }
 
@@ -314,24 +314,23 @@ export class Post {
             )
               .lean()
               .exec();
-            userFcmToken = (
+            const playerIdResult = (
               await UserModel.findById(post.author, {
-                fcm_token: 1,
+                onesignal_player_id: 1,
                 _id: 0,
               })
                 .lean()
                 .exec()
-            ).fcm_token;
+            ).onesignal_player_id;
             author = await UserModel.findByIdAndUpdate(
               post.author,
               updateUserQuery
             ).exec();
-            new Notification(
-              userFcmToken,
+            new OneSignalNotification(
+              playerIdResult,
               {
                 body: post.text !== undefined ? post.text : "Media",
                 title: `${actor.userTag} liked your post`,
-                sound: "default",
                 data: post._id,
               },
               author.id,
@@ -339,7 +338,7 @@ export class Post {
               "like",
               actor._id,
 
-            ).SendPushNotification();
+            ).sendPushNotification();
 
             return { result: "liked" };
 
@@ -359,19 +358,26 @@ export class Post {
               )
                 .lean()
                 .exec();
-              new Notification(
-                fcm_token,
+              const commentPlayerId = (
+                await UserModel.findById(comment.author, {
+                  onesignal_player_id: 1,
+                  _id: 0,
+                })
+                  .lean()
+                  .exec()
+              ).onesignal_player_id;
+              new OneSignalNotification(
+                commentPlayerId,
                 {
                   body: comment.text !== undefined ? comment.text : "Media",
                   title: `${actor.userTag} liked your comment`,
-                  sound: "default",
                   data: comment._id,
                 },
                 author.id,
                 actor.userProfile.avatar,
                 "like",
                 actor._id,
-              ).SendPushNotification();
+              ).sendPushNotification();
               return { result: "liked" };
             }
 

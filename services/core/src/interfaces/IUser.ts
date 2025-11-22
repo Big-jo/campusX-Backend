@@ -5,9 +5,9 @@ export interface IUserProfile {
     university: string;
     department: string;
     gender: string;
-    rep_points?: string;
+    rep_points?: number;
     bio: string;
-    // TODO: Test lastseen feature 
+    // TODO: Test lastseen feature
     lastSeen: Date;
 }
 
@@ -39,6 +39,7 @@ export interface IUser extends Document {
     fcm_token: string;
     resetToken: string;
     accountType?: string;
+    onesignal_player_id?: string;
     botMetadata?: {
     botType?: string;
         createdBy?: string;

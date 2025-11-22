@@ -9,7 +9,6 @@ import searchRouter from './search/search.route';
 import NotificationRouter from './notifcations/notifications.route';
 import { noConflict } from 'lodash';
 
-import FcmRouter from './fcm/fcm.route';
 import v2Router from './v2';
 
 // Init router and path
@@ -17,7 +16,6 @@ const router = Router();
 const path = '/api/v1';
 
 // Add sub-routes
-router.use('/fcm', FcmRouter);
 router.use(UserRouter.path, UserRouter.router);
 router.use(PostRouter.path, PostRouter.router);
 router.use(searchRouter.path, searchRouter.router);

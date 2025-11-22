@@ -7,6 +7,7 @@ import { asyncHandler } from '../../utils/asyncHandler';
 import {
   createPostSchema,
   deletePostSchema,
+  downvotePostSchema,
   getNewsfeedSchema,
   getPostSchema,
   getPostsSchema,
@@ -39,6 +40,8 @@ router.delete('/:postId', auth, validate(deletePostSchema), asyncHandler(postsCo
 // Post interactions
 router.post('/:postId/like', auth, validate(likePostSchema), asyncHandler(postsController.likePost));
 router.delete('/:postId/like', auth, validate(likePostSchema), asyncHandler(postsController.unlikePost));
+router.post('/:postId/downvote', auth, validate(downvotePostSchema), asyncHandler(postsController.downvotePost));
+router.delete('/:postId/downvote', auth, validate(downvotePostSchema), asyncHandler(postsController.removeDownvote));
 
 // User posts
 router.get('/users/:userId', auth, validate(getUserPostsSchema), asyncHandler(postsController.getUserPosts));

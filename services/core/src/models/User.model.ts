@@ -27,7 +27,7 @@ const UserSchema: Schema = new Schema({
         interests: {type: [String], default: []},
     },
     profileComplete: {type: Boolean, default: false},
-    fcm_token: {type: String, default: null},
+    onesignal_player_id: {type: String, default: null},
     accountType: {
         type: String,
         enum: ['user', 'bot'],

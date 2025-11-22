@@ -22,6 +22,7 @@ const PostSchema: Schema = new Schema({
     // If this is a circle post, this would be populated
     circleID: {type: Schema.Types.ObjectId, ref: 'Circle'},
     likedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    dislikedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     hashTags: [{type: String}],
     mentions:[{type: String}],
     // deleted: {type: Boolean}

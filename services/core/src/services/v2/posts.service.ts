@@ -5,6 +5,9 @@ import { BadRequestError, NotFoundError } from '../../errors';
 import { FollowerRepository } from '../../repositories/FollowerRepository';
 import { PostRepository } from '../../repositories/PostRepository';
 import { NewsfeedService } from './newsfeed.service';
+import { KarmaService } from './karma.service';
+import { getQueue } from '../../lib/Queue';
+import type { OneSignalJobData } from '../../jobs/send-onesignal.job';
 
 interface CreatePostData {
   text?: string;
@@ -23,11 +26,13 @@ export class PostsService {
   private postRepo: PostRepository;
   private newsfeedService: NewsfeedService;
   private followerRepo: FollowerRepository;
+  private karmaService: KarmaService;
 
   constructor() {
     this.postRepo = new PostRepository();
     this.newsfeedService = new NewsfeedService();
     this.followerRepo = new FollowerRepository();
+    this.karmaService = new KarmaService();
   }
 
   /**
@@ -82,16 +87,38 @@ export class PostsService {
       likedBy: []
     } as any);
 
-    // Conditional actions based on type
+    // Award karma for content creation
     if (type === 'post') {
+      await this.karmaService.awardPostCreation(userId);
       // Only fan-out regular posts (not comments or circle posts)
       this.newsfeedService.fanOutPost(post._id.toString(), userId).catch(err => {
         console.error('Fan-out failed:', err);
         // TODO: Queue for retry
       });
-    } else if (type === 'comment' && postData.parentPost) {
-      // Increment parent's comment count
-      await this.postRepo.incrementCommentCount(postData.parentPost);
+    } else if (type === 'comment') {
+      await this.karmaService.awardCommentCreation(userId);
+      if (postData.parentPost) {
+        // Increment parent's comment count
+        await this.postRepo.incrementCommentCount(postData.parentPost);
+
+        // Queue comment notification
+        try {
+          const parentPost = await this.postRepo.findById(postData.parentPost);
+          if (parentPost && parentPost.author.toString() !== userId) {
+            const notificationQueue = getQueue('send-onesignal');
+            await notificationQueue.add('comment-notification', {
+              recipientId: parentPost.author.toString(),
+              actorId: userId,
+              category: 'comment',
+              title: 'New comment on your post',
+              body: postData.text || 'Media',
+              data: { postId: parentPost._id.toString(), commentId: post._id.toString() }
+            } as OneSignalJobData);
+          }
+        } catch (error) {
+          console.error('Failed to queue comment notification:', error);
+        }
+      }
     }
 
     return {
@@ -164,6 +191,24 @@ export class PostsService {
       throw new NotFoundError('Post not found');
     }
 
+    // Award karma to post author
+    await this.karmaService.awardLikeReceived(post.author);
+
+    // Queue OneSignal notification
+    try {
+      const notificationQueue = getQueue('send-onesignal');
+      await notificationQueue.add('like-notification', {
+        recipientId: post.author.toString(),
+        actorId: userId,
+        category: 'like',
+        title: 'New like on your post',
+        body: post.text || 'Media',
+        data: { postId: post._id.toString() }
+      } as OneSignalJobData);
+    } catch (error) {
+      console.error('Failed to queue like notification:', error);
+    }
+
     return {
       data: {
         postId: post._id,
@@ -191,12 +236,75 @@ export class PostsService {
       throw new NotFoundError('Post not found');
     }
 
+    // Remove karma from post author
+    await this.karmaService.removeLikeReceived(post.author);
+
     return {
       data: {
         postId: post._id,
         likes: post.likes
       },
       message: 'Post unliked successfully'
+    };
+  }
+
+  /**
+   * Downvote a post
+   */
+  async downvotePost(postId: string, userId: string): Promise<any> {
+    // Check if already downvoted
+    const hasDisliked = await this.postRepo.hasDisliked(postId, userId);
+
+    if (hasDisliked) {
+      throw new BadRequestError('Post already downvoted');
+    }
+
+    // Add downvote
+    const post = await this.postRepo.addDislike(postId, userId);
+
+    if (!post) {
+      throw new NotFoundError('Post not found');
+    }
+
+    // Deduct karma from post author
+    await this.karmaService.awardDownvote(post.author);
+
+    return {
+      data: {
+        postId: post._id,
+        dislikes: post.dislikes
+      },
+      message: 'Post downvoted successfully'
+    };
+  }
+
+  /**
+   * Remove downvote from a post
+   */
+  async removeDownvote(postId: string, userId: string): Promise<any> {
+    // Check if downvoted
+    const hasDisliked = await this.postRepo.hasDisliked(postId, userId);
+
+    if (!hasDisliked) {
+      throw new BadRequestError('Post not downvoted');
+    }
+
+    // Remove downvote
+    const post = await this.postRepo.removeDislike(postId, userId);
+
+    if (!post) {
+      throw new NotFoundError('Post not found');
+    }
+
+    // Restore karma to post author
+    await this.karmaService.removeDownvote(post.author);
+
+    return {
+      data: {
+        postId: post._id,
+        dislikes: post.dislikes
+      },
+      message: 'Downvote removed successfully'
     };
   }
 

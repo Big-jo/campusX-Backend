@@ -39,6 +39,14 @@ export const likePostSchema = z.object({
   body: z.object({}).optional(),
 });
 
+export const downvotePostSchema = z.object({
+  params: z.object({
+    postId: z.string().min(1, 'Post ID is required'),
+  }),
+  query: z.object({}).optional(),
+  body: z.object({}).optional(),
+});
+
 export const getUserPostsSchema = z.object({
   params: z.object({
     userId: z.string().min(1, 'User ID is required'),
@@ -87,6 +95,7 @@ export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type GetPostInput = z.infer<typeof getPostSchema>;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;
 export type LikePostInput = z.infer<typeof likePostSchema>;
+export type DownvotePostInput = z.infer<typeof downvotePostSchema>;
 export type GetUserPostsInput = z.infer<typeof getUserPostsSchema>;
 export type GetNewsfeedInput = z.infer<typeof getNewsfeedSchema>;
 export type PollNewsfeedInput = z.infer<typeof pollNewsfeedSchema>;

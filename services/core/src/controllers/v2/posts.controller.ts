@@ -71,6 +71,26 @@ export class PostsController {
   };
 
   /**
+   * POST /api/v2/posts/:postId/downvote
+   * Downvote a post
+   */
+  downvotePost = async (req: Request, res: Response) => {
+    const { postId } = req.params;
+    const result = await this.postsService.downvotePost(postId, req.user._id.toString());
+    return res.status(200).json(result);
+  };
+
+  /**
+   * DELETE /api/v2/posts/:postId/downvote
+   * Remove downvote from a post
+   */
+  removeDownvote = async (req: Request, res: Response) => {
+    const { postId } = req.params;
+    const result = await this.postsService.removeDownvote(postId, req.user._id.toString());
+    return res.status(200).json(result);
+  };
+
+  /**
    * GET /api/v2/posts/:postId
    * Get a single post
    */

@@ -97,6 +97,47 @@ export class PostRepository extends BaseRepository<IPostModel> {
   }
 
   /**
+   * Add user to post's dislikedBy array
+   * @param postId - Post ID
+   * @param userId - User ID
+   * @returns Updated post
+   */
+  async addDislike(postId: string, userId: string): Promise<IPostModel | null> {
+    return this.updateById(postId, {
+      $addToSet: { dislikedBy: new mongoose.Types.ObjectId(userId) },
+      $inc: { dislikes: 1 }
+    });
+  }
+
+  /**
+   * Remove user from post's dislikedBy array
+   * @param postId - Post ID
+   * @param userId - User ID
+   * @returns Updated post
+   */
+  async removeDislike(postId: string, userId: string): Promise<IPostModel | null> {
+    return this.updateById(postId, {
+      $pull: { dislikedBy: new mongoose.Types.ObjectId(userId) } as any,
+      $inc: { dislikes: -1 }
+    });
+  }
+
+  /**
+   * Check if user has disliked a post
+   * @param postId - Post ID
+   * @param userId - User ID
+   * @returns True if disliked, false otherwise
+   */
+  async hasDisliked(postId: string, userId: string): Promise<boolean> {
+    const post = await this.findById(postId, { dislikedBy: 1 });
+    if (!post) return false;
+
+    return post.dislikedBy.some(
+      (id: mongoose.Types.ObjectId) => id.toString() === userId
+    );
+  }
+
+  /**
    * Increment comment count for a post
    * @param postId - Post ID
    * @returns Updated post
