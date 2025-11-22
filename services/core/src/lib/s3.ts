@@ -1,5 +1,6 @@
 import { Storage } from '@google-cloud/storage';
 import { logger } from '@shared';
+import GCSClient from './gcs-client';
 
 export class S3 {
     private storage: Storage;
@@ -10,23 +11,15 @@ export class S3 {
 
     /**
      * Creates an instance of S3 (now using GCS).
+     * Uses singleton GCS client for connection pooling.
      * @param {string} ID - Identifier for the file
      * @param {*} file
      * @param {string} folder
      * @memberof S3
      */
     constructor(public ID: string, public file: any, public folder: string) {
-        // Initialize GCS client
-        const credentials = process.env.GCS_SERVICE_ACCOUNT_KEY
-            ? (process.env.GCS_SERVICE_ACCOUNT_KEY.startsWith('{')
-                ? JSON.parse(process.env.GCS_SERVICE_ACCOUNT_KEY)
-                : require(process.env.GCS_SERVICE_ACCOUNT_KEY))
-            : undefined;
-
-        this.storage = new Storage({
-            projectId: process.env.GCS_PROJECT_ID,
-            ...(credentials && { credentials }),
-        });
+        // Reuse singleton GCS client
+        this.storage = GCSClient.getInstance();
 
         this.fileBuffer = file.buffer;
         this.contentType = file.mimetype;
@@ -48,9 +41,7 @@ export class S3 {
                 },
             });
 
-            // Make file public (optional - remove if using signed URLs)
-            await blob.makePublic();
-
+            // Bucket has uniform bucket-level access - configure public access via IAM instead
             return this.getPublicUrl();
         } catch (error) {
             logger.error(error);

@@ -7,8 +7,10 @@ const PostSchema: Schema = new Schema({
     author: {type: Schema.Types.ObjectId, ref: 'User'},
     postID: {type: String},
     text: { type: String },
-    video: { type: String, default: null },
-    image: { type: String, default: null },
+    videos: [{ type: String }],
+    images: [{ type: String }],
+    video: { type: String, default: null }, // Legacy - deprecated
+    image: { type: String, default: null }, // Legacy - deprecated
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
     comments: {type: Number, default: 0},

@@ -17,8 +17,10 @@ export interface IPost {
     postID?: string;
     author?: string;
     text?: string;
-    video?: any;
-    image?: any;
+    videos?: string[];
+    images?: string[];
+    video?: any; // Legacy
+    image?: any; // Legacy
     campus: string;
     likes?: number;
     dislikes?: number;

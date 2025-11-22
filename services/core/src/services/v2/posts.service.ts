@@ -11,10 +11,12 @@ import type { OneSignalJobData } from '../../jobs/send-onesignal.job';
 
 interface CreatePostData {
   text?: string;
-  image?: string;
-  video?: string;
+  image?: string; // Legacy single image URL
+  video?: string; // Legacy single video URL
   imageFile?: Express.Multer.File;
   videoFile?: Express.Multer.File;
+  imageFiles?: Express.Multer.File[]; // Multiple images
+  videoFiles?: Express.Multer.File[]; // Multiple videos
   campus?: string;
   hashTags?: string[];
   mentions?: string[];
@@ -53,27 +55,36 @@ export class PostsService {
     // Generate temporary post ID for file uploads
     const tempPostId = new mongoose.Types.ObjectId().toString();
 
-    // Upload files to S3 if provided
-    let imageUrl = postData.image || null;
-    let videoUrl = postData.video || null;
+    // Build parallel upload tasks
+    const uploads: Promise<string>[] = [];
 
-    if (postData.imageFile) {
-      const s3 = new S3(tempPostId + 'image', postData.imageFile, 'image');
-      imageUrl = (await s3.UploadImage()) as string;
-    }
+    // Multiple images
+    const imageFiles = postData.imageFiles || (postData.imageFile ? [postData.imageFile] : []);
+    imageFiles.forEach((file, idx) => {
+      uploads.push(new S3(`${tempPostId}_img_${idx}`, file, 'image').UploadImage() as Promise<string>);
+    });
 
-    if (postData.videoFile) {
-      const s3 = new S3(tempPostId + 'video', postData.videoFile, 'video');
-      videoUrl = (await s3.UploadVideo()) as string;
-    }
+    // Multiple videos
+    const videoFiles = postData.videoFiles || (postData.videoFile ? [postData.videoFile] : []);
+    videoFiles.forEach((file, idx) => {
+      uploads.push(new S3(`${tempPostId}_vid_${idx}`, file, 'video').UploadVideo() as Promise<string>);
+    });
+
+    // Execute all uploads in parallel
+    const uploadedUrls = uploads.length ? await Promise.all(uploads) : [];
+
+    const imageUrls = uploadedUrls.slice(0, imageFiles.length);
+    const videoUrls = uploadedUrls.slice(imageFiles.length);
 
     // Create post with type
     const post = await this.postRepo.createPost({
       author: user._id,
       type,
       text: postData.text || '',
-      image: imageUrl,
-      video: videoUrl,
+      images: imageUrls,
+      videos: videoUrls,
+      image: imageUrls[0] || postData.image || null, // Legacy
+      video: videoUrls[0] || postData.video || null, // Legacy
       campus: user.userProfile.university,
       parentPost: postData.parentPost || undefined,
       circleID: postData.circleID ? mongoose.Types.ObjectId(postData.circleID) : undefined,
@@ -128,8 +139,10 @@ export class PostsService {
           id: post._id,
           type: post.type,
           text: post.text,
-          image: post.image,
-          video: post.video,
+          images: post.images,
+          videos: post.videos,
+          image: post.image, // Legacy
+          video: post.video, // Legacy
           campus: post.campus,
           parentPost: post.parentPost,
           circleID: post.circleID,
