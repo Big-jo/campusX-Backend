@@ -4,6 +4,58 @@
 
 ---
 
+## Implementation Progress
+
+### ✅ Phase 1: Infrastructure (Complete)
+- NATS JetStream deployed in Docker
+- Qdrant vector database deployed
+- ML service structure created (renamed from scraper)
+- Environment configuration added
+- TypeScript + Python NATS client infrastructure
+
+### ✅ Phase 2: Post Embeddings Pipeline (Complete)
+- Python NATS subscriber (main.py entry point)
+- Event handlers for `ml.post.created` subject
+- TypeScript event publishing on post creation
+- Automatic embedding generation (Sentence Transformers)
+- Qdrant storage with UUID5 conversion
+- Backfill script for existing posts
+
+### ✅ Phase 3: Semantic Search API (Complete)
+- SearchService with NATS integration
+- Redis caching layer (5min TTL)
+- MongoDB text search fallback
+- Zod validation schemas
+- Controller/route implementation (v2 pattern)
+- OpenAPI documentation updated
+- PostRepository extensions (`searchByText`, `populateAuthor`)
+
+### ✅ Phase 4: Trending Posts (Complete)
+- TF-IDF topic extraction (sklearn TfidfVectorizer)
+- Engagement scoring algorithm (`velocity × decay × campus_boost`)
+- MongoDB integration (posts collection query)
+- Qdrant semantic grouping (topic → related posts)
+- Celery background job (pre-computation every 15min)
+- Redis caching (15min TTL, 99% cache hits)
+- `/api/v2/trending` endpoint (controller/service/route/validator)
+- OpenAPI documentation updated
+- Returns trending topics with full post objects + hashtags
+
+### ⏳ Phase 5: Enhanced User Suggestions (Pending)
+- User taste profile building (Qdrant user_profiles)
+- Engagement pattern similarity
+- Interest overlap (Jaccard)
+- Hybrid FOF + ML merge (70/30 split)
+- Parallel execution optimization
+
+### ⏳ Phase 6: Optimization & Monitoring (Pending)
+- Performance tuning (cache TTLs, HNSW parameters)
+- Load testing (1K concurrent users)
+- Monitoring dashboards (NATS + Qdrant metrics)
+- Integration test suite
+
+---
+
 ## Executive Summary
 
 **Goal:** Implement ML-powered search and recommendations using event-driven architecture.

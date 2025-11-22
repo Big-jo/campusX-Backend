@@ -3,6 +3,7 @@ from celery.schedules import crontab
 from src.celery_app import app
 from src.db.mongodb import get_sync_db, COLLECTIONS
 from src.tasks.scraper_task import scrape_by_interest
+from src.tasks.trending_task import precompute_trending_posts
 
 print("🔧 scheduler.py imported")
 
@@ -84,6 +85,14 @@ def setup_periodic_tasks(sender, **kwargs):
             print("⚠️  No periodic tasks scheduled. Check MongoDB for active bots with autoPostEnabled=true")
         else:
             print(f"✅ Successfully scheduled {task_count} periodic scraping tasks")
+
+        # Schedule trending posts pre-computation (every 15 minutes)
+        sender.add_periodic_task(
+            crontab(minute='*/15'),
+            precompute_trending_posts.s('all'),
+            name='precompute-trending-all',
+        )
+        print("✅ Scheduled trending posts pre-computation (every 15 minutes)")
 
     except Exception as e:
         print(f"❌ Failed to setup periodic tasks: {e}")

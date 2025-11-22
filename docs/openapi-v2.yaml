@@ -18,6 +18,10 @@ tags:
     description: Endpoints for fetching and polling the user's newsfeed
   - name: Users
     description: User profile and follower suggestion endpoints
+  - name: Search
+    description: ML-powered semantic search endpoints
+  - name: Trending
+    description: ML-powered trending posts endpoints
 
 components:
   securitySchemes:
@@ -911,4 +915,429 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 message: "Failed to compute suggestions"
+                statusCode: 500
+
+  /search:
+    get:
+      tags:
+        - Search
+      summary: Semantic search for posts
+      description: |
+        Search posts using ML-powered semantic search with vector embeddings.
+
+        **How It Works**:
+        1. Query is converted to a 384-dimensional embedding using Sentence Transformers
+        2. Vector similarity search performed in Qdrant vector database
+        3. Results ranked by semantic relevance (cosine similarity)
+        4. Posts enriched with author details from MongoDB
+
+        **Features**:
+        - Semantic understanding (finds related content, not just keyword matches)
+        - Campus filtering
+        - Interest-based filtering
+        - Time window filtering (e.g., posts from last 24 hours)
+        - Redis caching (5-minute TTL) for performance
+        - Automatic fallback to MongoDB text search if ML service unavailable
+
+        **Performance**:
+        - ML search: ~80-100ms
+        - Cached results: <5ms
+        - Fallback (text search): ~80ms
+
+        **Examples**:
+        - "machine learning" will find posts about AI, neural networks, deep learning
+        - "exam stress" will find posts about finals anxiety, test preparation
+        - "campus events" will find posts about activities, gatherings, socials
+      operationId: semanticSearch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query (minimum 2 characters)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 200
+            example: "machine learning courses"
+        - name: campus
+          in: query
+          description: Filter by campus (defaults to user's campus)
+          schema:
+            type: string
+            example: "UNILAG"
+        - name: limit
+          in: query
+          description: Number of results to return (max 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: interests
+          in: query
+          description: Comma-separated list of interests to filter by
+          schema:
+            type: string
+            example: "Technology,Education,Sports"
+        - name: hours
+          in: query
+          description: Time window in hours (only show posts from last N hours)
+          schema:
+            type: integer
+            minimum: 1
+            example: 24
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      posts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Post'
+                      total:
+                        type: integer
+                        description: Number of results found
+                        example: 15
+                      source:
+                        type: string
+                        enum: [ml, cache, fallback]
+                        description: |
+                          Data source:
+                          - ml: Vector search from ML service
+                          - cache: Cached results from Redis
+                          - fallback: MongoDB text search (ML service unavailable)
+                        example: "ml"
+                      latency_ms:
+                        type: integer
+                        description: Search latency in milliseconds
+                        example: 87
+              examples:
+                mlSearch:
+                  summary: ML-powered search results
+                  value:
+                    success: true
+                    data:
+                      posts:
+                        - _id: "507f1f77bcf86cd799439011"
+                          text: "Introduction to machine learning algorithms #AI #ML"
+                          author:
+                            _id: "507f1f77bcf86cd799439012"
+                            name: "Jane Doe"
+                            userTag: "janedoe"
+                          campus: "UNILAG"
+                          likes: 25
+                          comments: 8
+                          createdAt: "2025-11-22T10:30:00.000Z"
+                          hashTags: ["AI", "ML"]
+                      total: 15
+                      source: "ml"
+                      latency_ms: 87
+                cachedResults:
+                  summary: Cached search results (fast response)
+                  value:
+                    success: true
+                    data:
+                      posts: []
+                      total: 10
+                      source: "cache"
+                      latency_ms: 3
+                fallbackSearch:
+                  summary: Fallback text search (ML service down)
+                  value:
+                    success: true
+                    data:
+                      posts: []
+                      total: 8
+                      source: "fallback"
+                      latency_ms: 82
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingQuery:
+                  summary: Missing query parameter
+                  value:
+                    message: "Query parameter 'q' is required"
+                    statusCode: 400
+                queryTooShort:
+                  summary: Query too short
+                  value:
+                    message: "Query must be at least 2 characters"
+                    statusCode: 400
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Search failed"
+                statusCode: 500
+
+  /search/invalidate:
+    post:
+      tags:
+        - Search
+      summary: Invalidate search cache
+      description: |
+        Clear search cache for a specific campus. Useful for ensuring fresh results
+        after significant content changes.
+
+        **Note**: This is a utility endpoint, typically used by admins or automated processes.
+      operationId: invalidateSearchCache
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - campus
+              properties:
+                campus:
+                  type: string
+                  description: Campus identifier to invalidate cache for
+                  example: "UNILAG"
+      responses:
+        '200':
+          description: Cache invalidated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cache invalidated for UNILAG"
+        '400':
+          description: Bad request - missing campus parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Campus is required"
+                statusCode: 400
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Cache invalidation failed"
+                statusCode: 500
+
+  /trending:
+    get:
+      tags:
+        - Trending
+      summary: Get trending posts
+      description: |
+        Retrieve trending posts for a campus using ML-powered topic extraction and engagement scoring.
+
+        **How it works**:
+        1. **TF-IDF Topic Extraction**: Analyzes recent posts to identify trending keywords/phrases
+        2. **Engagement Scoring**: Posts ranked by formula: `velocity × decay × campus_boost`
+           - Velocity = interactions per hour
+           - Decay = exponential time decay (24hr half-life)
+           - Campus boost = 2x for local trends
+        3. **Semantic Grouping**: Groups posts by trending topics using vector similarity
+        4. **Pre-computation**: Results pre-computed every 15 minutes via background job
+        5. **Caching**: Cached in Redis with 15-minute TTL for <5ms latency
+
+        **Engagement Formula**:
+        ```
+        interactions = likes - dislikes + (comments × 2)
+        velocity = interactions / age_hours
+        decay = exp(-age_hours / 24)
+        score = velocity × decay × campus_multiplier
+        ```
+
+        **Performance**:
+        - Cached requests: <5ms latency (99% of requests)
+        - Cache miss: ~150ms (rare, only if pre-computation pending)
+
+        **Source field**:
+        - `cache`: Served from Redis cache (pre-computed)
+        - `ml`: Freshly computed from ML service
+        - `error`: Fallback response on error
+      operationId: getTrending
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campus
+          in: query
+          description: Campus identifier (defaults to user's campus if not provided)
+          schema:
+            type: string
+            example: "UNILAG"
+        - name: timeWindow
+          in: query
+          description: Time window for trending calculation
+          schema:
+            type: string
+            enum: ["6h", "24h", "7d"]
+            default: "6h"
+            example: "6h"
+        - name: limit
+          in: query
+          description: Maximum number of trending topics to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: Trending posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      topics:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            topic:
+                              type: string
+                              description: Trending keyword or phrase
+                              example: "exam preparation"
+                            score:
+                              type: number
+                              description: TF-IDF relevance score
+                              example: 0.87
+                            posts:
+                              type: array
+                              description: Full post objects (with author data)
+                              items:
+                                $ref: '#/components/schemas/Post'
+                            hashtags:
+                              type: array
+                              description: Top 3 hashtags for this topic
+                              items:
+                                type: string
+                              example: ["#exams", "#studytips", "#finals"]
+                      total:
+                        type: integer
+                        description: Total number of posts across all topics
+                        example: 25
+                      source:
+                        type: string
+                        description: Data source
+                        enum: ["cache", "ml", "error"]
+                        example: "cache"
+                      computed_at:
+                        type: integer
+                        description: Unix timestamp when trending was computed
+                        example: 1732204800
+                      latency_ms:
+                        type: integer
+                        description: Request latency in milliseconds
+                        example: 3
+              examples:
+                cachedResults:
+                  summary: Cached trending posts (typical response)
+                  value:
+                    success: true
+                    data:
+                      topics:
+                        - topic: "exam preparation"
+                          score: 0.87
+                          posts:
+                            - _id: "507f1f77bcf86cd799439011"
+                              author:
+                                _id: "507f1f77bcf86cd799439012"
+                                name: "John Doe"
+                                userTag: "johndoe"
+                                avatar: "https://example.com/avatar.jpg"
+                              text: "Best exam tips for finals! #exams #studytips"
+                              likes: 42
+                              comments: 8
+                              createdAt: "2025-11-22T10:30:00.000Z"
+                          hashtags: ["#exams", "#studytips", "#finals"]
+                        - topic: "campus events"
+                          score: 0.76
+                          posts:
+                            - _id: "507f1f77bcf86cd799439013"
+                              author:
+                                _id: "507f1f77bcf86cd799439014"
+                                name: "Jane Smith"
+                                userTag: "janesmith"
+                              text: "Epic concert tonight! Who's coming? #campuslife"
+                              likes: 35
+                              comments: 12
+                              createdAt: "2025-11-22T09:15:00.000Z"
+                          hashtags: ["#campuslife", "#concert", "#events"]
+                      total: 25
+                      source: "cache"
+                      computed_at: 1732204800
+                      latency_ms: 3
+                freshComputation:
+                  summary: Freshly computed trending (cache miss)
+                  value:
+                    success: true
+                    data:
+                      topics:
+                        - topic: "midterm stress"
+                          score: 0.92
+                          posts: []
+                          hashtags: ["#midterms", "#stress"]
+                      total: 5
+                      source: "ml"
+                      computed_at: 1732204900
+                      latency_ms: 147
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Invalid timeWindow. Must be one of: 6h, 24h, 7d"
+                statusCode: 400
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Failed to retrieve trending posts"
                 statusCode: 500

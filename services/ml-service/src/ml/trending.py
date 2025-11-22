@@ -143,8 +143,6 @@ class TrendingService:
         """
         Get trending posts for a campus.
 
-        This is a stub implementation that needs MongoDB integration.
-
         Args:
             campus: Campus identifier
             time_window: Time window ('6h', '24h', '7d')
@@ -154,16 +152,98 @@ class TrendingService:
             List of trending topics with top posts
         """
         try:
+            from src.db.mongodb import get_async_db, COLLECTIONS
+
             # Parse time window
             hours = {"6h": 6, "24h": 24, "7d": 168}[time_window]
             cutoff_time = int(time.time()) - (hours * 3600)
 
-            # TODO: Fetch recent posts from MongoDB
-            # For now, return empty (will be implemented in Phase 4)
+            # Fetch recent posts from MongoDB
+            db = await get_async_db()
+            posts_col = db[COLLECTIONS["posts"]]
 
-            logger.warning("get_trending_posts is a stub - MongoDB integration needed")
+            # Query: campus filter, type=post, recent, sort by engagement
+            query = {
+                "type": "post",
+                "createdAt": {"$gte": cutoff_time}
+            }
 
-            return []
+            if campus != "all":
+                query["campus"] = campus
+
+            # Fetch posts with engagement data
+            posts = await posts_col.find(query).to_list(length=1000)
+
+            if not posts:
+                return []
+
+            # Calculate engagement scores for all posts
+            for post in posts:
+                post["engagement_score"] = self.calculate_engagement_score(
+                    likes=post.get("likes", 0),
+                    dislikes=post.get("dislikes", 0),
+                    comments=post.get("comments", 0),
+                    created_at=post.get("createdAt", cutoff_time),
+                    is_local_trend=(campus != "all")
+                )
+
+            # Sort by engagement score
+            posts.sort(key=lambda p: p["engagement_score"], reverse=True)
+
+            # Take top posts for topic extraction
+            top_posts = posts[:100]
+
+            # Extract trending keywords using TF-IDF
+            trending_topics = self.extract_trending_keywords(top_posts, top_n=limit)
+
+            if not trending_topics:
+                # If no topics found, return top posts by engagement
+                return [
+                    {
+                        "topic": "trending posts",
+                        "score": 1.0,
+                        "post_ids": [str(p["_id"]) for p in posts[:limit]],
+                        "hashtags": []
+                    }
+                ]
+
+            # For each topic, find related posts using semantic similarity
+            result = []
+            for topic_data in trending_topics:
+                topic = topic_data["topic"]
+
+                # Encode topic to vector
+                topic_vector = self.embeddings.encode(topic)
+
+                # Search Qdrant for posts similar to this topic
+                search_results = await self.qdrant.search_posts(
+                    query_vector=topic_vector,
+                    campus=campus,
+                    limit=5,
+                    filters={"created_at": {"gte": cutoff_time}}
+                )
+
+                # Extract post IDs and hashtags
+                post_ids = [r["post_id"] for r in search_results if "post_id" in r]
+
+                # Collect hashtags from matched posts
+                hashtags = []
+                for post in posts:
+                    if str(post["_id"]) in post_ids:
+                        hashtags.extend(post.get("hashTags", []))
+
+                # Count hashtag frequency
+                hashtag_counts = Counter(hashtags)
+                top_hashtags = [tag for tag, _ in hashtag_counts.most_common(3)]
+
+                result.append({
+                    "topic": topic,
+                    "score": topic_data["score"],
+                    "post_ids": post_ids,
+                    "hashtags": top_hashtags
+                })
+
+            return result
 
         except Exception as e:
             logger.error(f"Failed to get trending posts: {e}")

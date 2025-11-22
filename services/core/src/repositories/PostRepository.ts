@@ -233,4 +233,31 @@ export class PostRepository extends BaseRepository<IPostModel> {
     // Delete the post itself
     return this.deleteById(postId);
   }
+
+  /**
+   * Search posts by text query (MongoDB full-text search)
+   * @param query - Search query
+   * @param campus - Campus filter
+   * @param limit - Max results
+   * @returns Array of posts
+   */
+  async searchByText(query: string, campus: string, limit: number = 20): Promise<IPostModel[]> {
+    return this.find({
+      $text: { $search: query },
+      campus,
+      type: 'post'
+    }).limit(limit).sort({ score: { $meta: 'textScore' } });
+  }
+
+  /**
+   * Populate author details for posts
+   * @param posts - Array of posts
+   * @returns Posts with populated author
+   */
+  async populateAuthor(posts: IPostModel[]): Promise<any[]> {
+    return PostModel.populate(posts, {
+      path: 'author',
+      select: 'name userTag userProfile.avatar userProfile.university'
+    });
+  }
 }
