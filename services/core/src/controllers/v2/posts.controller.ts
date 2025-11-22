@@ -33,7 +33,8 @@ export class PostsController {
       parentPost,
       circleID,
       imageFile,
-      videoFile
+      videoFile,
+      imageFiles: [files?.image || []].flat(),
     };
 
     const result = await this.postsService.createPost(postData, req.user);

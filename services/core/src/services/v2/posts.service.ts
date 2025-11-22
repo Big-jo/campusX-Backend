@@ -64,6 +64,7 @@ export class PostsService {
 
     // Multiple images
     const imageFiles = postData.imageFiles || (postData.imageFile ? [postData.imageFile] : []);
+
     imageFiles.forEach((file, idx) => {
       uploads.push(new S3(`${tempPostId}_img_${idx}`, file, 'image').UploadImage() as Promise<string>);
     });
