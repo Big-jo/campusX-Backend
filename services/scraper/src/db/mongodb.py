@@ -18,6 +18,7 @@ def get_sync_db():
     if sync_db is None:
         sync_client = MongoClient(settings.MONGO_URI)
         sync_db = sync_client.get_database("test")
+        print(sync_db)
     return sync_db
 
 

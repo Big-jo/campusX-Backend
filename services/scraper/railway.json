@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "celery -A src.main worker --loglevel=info --concurrency=2",
+    "startCommand": "celery -A src.celery_app worker --beat --loglevel=info --concurrency=2 -Q scraper",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "restartPolicyType": "ON_FAILURE",

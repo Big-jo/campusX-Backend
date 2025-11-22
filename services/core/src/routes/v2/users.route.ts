@@ -19,5 +19,6 @@ router.get('/interests', validate(getUserInterestsSchema), asyncHandler(usersCon
 router.get('/me', auth, asyncHandler(usersController.getCurrentUser));
 router.put('/profile', auth, validate(updateUserProfileSchema), asyncHandler(usersController.updateProfile));
 router.put('/interests', auth, validate(saveUserInterestsSchema), asyncHandler(usersController.saveInterests));
+router.get('/suggestions', auth, asyncHandler(usersController.getSuggestions));
 
 export default router;

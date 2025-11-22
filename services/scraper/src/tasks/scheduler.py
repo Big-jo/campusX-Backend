@@ -1,11 +1,10 @@
-import logging
 from celery import signals
 from celery.schedules import crontab
-from src.main import app
+from src.celery_app import app
 from src.db.mongodb import get_sync_db, COLLECTIONS
 from src.tasks.scraper_task import scrape_by_interest
 
-logger = logging.getLogger(__name__)
+print("🔧 scheduler.py imported")
 
 
 def get_cron_schedule(frequency: str):
@@ -35,18 +34,21 @@ def setup_periodic_tasks(sender, **kwargs):
 
     This runs after Celery app finalization (recommended for embedded beat)
     """
-    logger.info("🔧 Setting up periodic scraping tasks...")
+    print("🔧 Setting up periodic scraping tasks...")
 
     try:
         db = get_sync_db()
-        logger.info(f"✅ MongoDB connected: {db.name}")
+        # print(db)
+        print(f"✅ MongoDB connected: {db.name}")
 
         # Find all active bots with auto-posting enabled
         bots = list(db[COLLECTIONS["bots"]].find(
             {"status": "active", "config.autoPostEnabled": True}
         ))
 
-        logger.info(f"📊 Found {len(bots)} active bots with auto-posting enabled")
+        print(bots)
+
+        print(f"📊 Found {len(bots)} active bots with auto-posting enabled")
 
         task_count = 0
 
@@ -68,23 +70,23 @@ def setup_periodic_tasks(sender, **kwargs):
                     name=task_name,
                 )
 
-                logger.info(
+                print(
                     f"✅ Scheduled {task_name}: {frequency} scraping for {interest_category}"
                 )
 
                 task_count += 1
 
             except Exception as e:
-                logger.error(f"❌ Failed to schedule task for bot {bot.get('_id')}: {e}", exc_info=True)
+                print(f"❌ Failed to schedule task for bot {bot.get('_id')}: {e}")
                 continue
 
         if task_count == 0:
-            logger.warning("⚠️  No periodic tasks scheduled. Check MongoDB for active bots with autoPostEnabled=true")
+            print("⚠️  No periodic tasks scheduled. Check MongoDB for active bots with autoPostEnabled=true")
         else:
-            logger.info(f"✅ Successfully scheduled {task_count} periodic scraping tasks")
+            print(f"✅ Successfully scheduled {task_count} periodic scraping tasks")
 
     except Exception as e:
-        logger.error(f"❌ Failed to setup periodic tasks: {e}", exc_info=True)
+        print(f"❌ Failed to setup periodic tasks: {e}")
 
 
 # Manual trigger function (for testing/admin)
@@ -99,6 +101,6 @@ def trigger_scrape_now(bot_id: str, interest_category: str):
     Returns:
         Task result
     """
-    logger.info(f"Manually triggering scrape for {interest_category}")
+    print(f"Manually triggering scrape for {interest_category}")
     task = scrape_by_interest.delay(bot_id, interest_category)
     return task.id

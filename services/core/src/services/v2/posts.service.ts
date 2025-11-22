@@ -8,6 +8,8 @@ import { NewsfeedService } from './newsfeed.service';
 import { KarmaService } from './karma.service';
 import { getQueue } from '../../lib/Queue';
 import type { OneSignalJobData } from '../../jobs/send-onesignal.job';
+import { UsersService } from './users.service';
+import { User } from '../../entities/User';
 
 interface CreatePostData {
   text?: string;
@@ -29,12 +31,14 @@ export class PostsService {
   private newsfeedService: NewsfeedService;
   private followerRepo: FollowerRepository;
   private karmaService: KarmaService;
+  private userService: UsersService;
 
   constructor() {
     this.postRepo = new PostRepository();
     this.newsfeedService = new NewsfeedService();
     this.followerRepo = new FollowerRepository();
     this.karmaService = new KarmaService();
+    this.userService = new UsersService();
   }
 
   /**
@@ -129,6 +133,29 @@ export class PostsService {
           }
         } catch (error) {
           console.error('Failed to queue comment notification:', error);
+        }
+      }
+    }
+
+    const mentions = post.text?.match(/@(\w+)/g) || [];
+    for (const mention of mentions) {
+      const userTag = mention.substring(1); // Remove '@'
+      const mentionedUser = await this.userService.findUsersByTag(userTag);
+
+      if (mentionedUser && mentionedUser._id.toString() !== userId) {
+        // Queue mention notification
+        try {
+          const notificationQueue = getQueue('send-onesignal');
+          await notificationQueue.add('mention-notification', {
+            recipientId: mentionedUser._id.toString(),
+            actorId: userId,
+            category: 'mention',
+            title: `@${user.userTag} mentioned you`,
+            body: post.text || 'Media', //Try and show media preview if possible
+            data: { postId: post._id.toString() }
+          } as OneSignalJobData);
+        } catch (error) {
+          console.error('Failed to queue mention notification:', error);
         }
       }
     }

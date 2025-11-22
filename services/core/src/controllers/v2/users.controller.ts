@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import { UsersService } from '../../services/v2/users.service';
+import { FollowerSuggestionsService } from '../../services/v2/follower-suggestions.service';
 import { UnauthorizedError } from '../../errors';
 
 export class UsersController {
   private usersService: UsersService;
+  private suggestionsService: FollowerSuggestionsService;
 
   constructor() {
     this.usersService = new UsersService();
+    this.suggestionsService = new FollowerSuggestionsService();
   }
 
   getInterests = async (req: Request, res: Response) => {
@@ -47,6 +50,31 @@ export class UsersController {
   saveInterests = async (req: Request, res: Response) => {
     const { topicIds } = req.body;
     const result = await this.usersService.saveInterests(req.user._id.toString(), topicIds);
+    return res.status(200).json(result);
+  };
+
+  /**
+   * GET /api/v2/users/suggestions
+   * Get follower suggestions
+   */
+  getSuggestions = async (req: Request, res: Response) => {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      throw new UnauthorizedError('User not authenticated');
+    }
+
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = parseInt(req.query.offset as string) || 0;
+    const refresh = req.query.refresh === 'true';
+
+    const result = await this.suggestionsService.getUserSuggestions(
+      userId.toString(),
+      Math.min(limit, 50), // Cap at 50
+      Math.max(offset, 0),
+      refresh
+    );
+
     return res.status(200).json(result);
   };
 }

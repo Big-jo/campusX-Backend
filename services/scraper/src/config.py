@@ -10,7 +10,7 @@ ENV_FILE = BASE_DIR / ".env"
 
 class Settings(BaseSettings):
     # MongoDB - set via env (Railway) or .env (local)
-    MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017/campusx")
+    MONGO_URI: str = os.getenv("MONGO_URI", "")
 
     # Redis - set via env (Railway) or .env (local)
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/1")

@@ -5,18 +5,20 @@ import * as sendOneSignalJob from './jobs/send-onesignal.job';
 import * as cronJob from './jobs/cron.job';
 import * as botPosterJob from './jobs/bot-poster.job';
 import * as feedReminderJob from './jobs/feed-reminder.job';
+import * as followerSuggestionsJob from './jobs/follower-suggestions.job';
 import { registerQueue, getQueue } from './lib/Queue';
 import RedisClient from './lib/redis';
 
 const connection = RedisClient.getInstance() as Redis;
 
-const jobs = [sendOneSignalJob, cronJob, botPosterJob, feedReminderJob];
+const jobs = [sendOneSignalJob, cronJob, botPosterJob, feedReminderJob, followerSuggestionsJob];
 
 export const startWorker = () => {
   registerQueue(sendOneSignalJob.name);
   registerQueue(cronJob.name);
   registerQueue(botPosterJob.name);
   registerQueue(feedReminderJob.name);
+  registerQueue(followerSuggestionsJob.name);
 
   jobs.forEach(job => {
     new Worker(job.name, job.handler, { connection });
@@ -28,5 +30,11 @@ export const startWorker = () => {
   const feedReminderQueue = getQueue(feedReminderJob.name);
   feedReminderQueue.add('check-feed-saturation', null, {
     repeat: { pattern: '0 * * * *' } // Every hour at :00
+  });
+
+  // Schedule follower-suggestions job every 15 minutes
+  const suggestionsQueue = getQueue(followerSuggestionsJob.name);
+  suggestionsQueue.add('compute-suggestions', null, {
+    repeat: { pattern: '*/15 * * * *' } // Every 15 minutes
   });
 };

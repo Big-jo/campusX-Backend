@@ -49,4 +49,4 @@ ENV PYTHONDONTWRITEBYTECODE=1
 EXPOSE ${PORT:-8000}
 
 # Start Celery worker with beat scheduler
-CMD ["celery", "-A", "src.main", "worker", "--beat", "--loglevel=info", "--concurrency=2"]
+CMD ["celery", "-A", "src.celery_app", "worker", "--beat", "--loglevel=info", "--concurrency=2", "-Q", "scraper"]

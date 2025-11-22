@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from bson import ObjectId
 from celery import Task
-from src.main import app
+from src.celery_app import app
 from src.db.mongodb import get_sync_db, COLLECTIONS
 from src.search.content_source import get_content_source, DEFAULT_SOURCE, SourceType
 from src.scraper.scraper import get_scraper

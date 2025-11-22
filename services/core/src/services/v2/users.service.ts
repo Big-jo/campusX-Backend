@@ -120,6 +120,14 @@ export class UsersService {
     };
   }
 
+  async findUsersByTag(userTags: string) {
+    const user = await this.userRepository.findByUserTag(userTags);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    return user;
+  }
+
   /**
    * Seed bot accounts at startup
    */

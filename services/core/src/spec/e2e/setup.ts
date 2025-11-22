@@ -81,9 +81,20 @@ export async function teardownE2E() {
     });
   }
 
-  // Disconnect from Redis
+  // Disconnect from Redis (test client)
   if (redis) {
     redis.disconnect();
+  }
+
+  // Close Redis singleton from services
+  try {
+    const RedisClient = require('../../lib/redis').default;
+    const redisInstance = RedisClient.getInstance();
+    if (redisInstance) {
+      redisInstance.disconnect();
+    }
+  } catch (err) {
+    // Redis singleton may not exist, ignore
   }
 
   // Disconnect mongoose and stop MongoDB Memory Server
