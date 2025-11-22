@@ -431,6 +431,7 @@ export class PostsService {
 
     const posts = await this.postRepo.find(
       query,
+      null,
       {
         limit: filters.limit || 50,
         skip: filters.skip || 0,
