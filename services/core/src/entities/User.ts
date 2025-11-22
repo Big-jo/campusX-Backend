@@ -1,5 +1,5 @@
 
-import { Gravatar, Notification, S3, Utility } from '@lib';
+import { Gravatar, S3, Utility } from '@lib';
 import { logger } from '@shared';
 import bcrypt from 'bcrypt';
 import type { Redis } from 'ioredis';
@@ -51,7 +51,7 @@ export class User {
                         email: userObject.email.toLowerCase(),
                         password: userObject.password,
                     });
-                    user.userID = user._id;
+                    user.userID = user._id as unknown as string;
 
                     if (!user.userProfile.avatar) {
                         user.userProfile.avatar = Gravatar.generate(user.email, 500, 'identicon');
@@ -65,7 +65,7 @@ export class User {
                     user.resetToken = await bcrypt.hash(user.userTag, rounds);
 
                     let savedUser = await user.save();
-                    savedUser = savedUser.toObject();
+                    savedUser = savedUser.toObject() as IUser;
                     delete savedUser.password;
 
                     const payload: ITokenPayload = {
@@ -96,7 +96,7 @@ export class User {
 
                 if (result) {
                     const payload: ITokenPayload = {
-                        userID: user._id,
+                        userID: user._id as unknown as string,
                         userTag: user.userTag,
                         campus: user.userProfile.university,
                         name: user.name,
@@ -288,7 +288,7 @@ export class User {
             const payload: ITokenPayload = {
                 avatar: updated.userProfile.avatar,
                 campus: updated.userProfile.university,
-                name: updated.userProfile.name,
+                name: updated.name ,
                 userID,
                 userTag: updated.userTag,
                 fcm_token: updated.fcm_token,
@@ -314,7 +314,7 @@ export class User {
                 avatar: user.userProfile.avatar,
                 campus: update.university,
                 name: user.name,
-                userID: user._id,
+                userID: user._id as unknown as string,
                 userTag: user.userTag,
                 fcm_token: user.fcm_token,
             };
