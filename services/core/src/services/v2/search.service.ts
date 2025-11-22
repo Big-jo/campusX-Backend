@@ -11,7 +11,7 @@
 import { IUser } from '@interfaces';
 import { natsClient } from '../../lib/nats';
 import { PostRepository } from '../../repositories/PostRepository';
-import RedisClient, { getRedisClient } from '../../lib/redis';
+import RedisClient from '../../lib/redis';
 import crypto from 'crypto';
 import Redis from 'ioredis';
 
