@@ -9,26 +9,26 @@ ENV_FILE = BASE_DIR / ".env"
 
 
 class Settings(BaseSettings):
-    # MongoDB - required, must be set via env
-    MONGO_URI: str
+    # MongoDB - set via env (Railway) or .env (local)
+    MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017/campusx")
 
-    # Redis - required, must be set via env
-    REDIS_URL: str
+    # Redis - set via env (Railway) or .env (local)
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 
     # Gemini API - required, must be set via env
-    GEMINI_API_KEY: str
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
-    # Google Cloud Storage - required, must be set via env
-    GCS_PROJECT_ID: str
-    GCS_BUCKET: str
-    GCS_SERVICE_ACCOUNT_KEY: Optional[str] = None  # Path to key file, or None if using default credentials
+    # Google Cloud Storage - set via env (Railway) or .env (local)
+    GCS_PROJECT_ID: str = os.getenv("GCS_PROJECT_ID", "")
+    GCS_BUCKET: str = os.getenv("GCS_BUCKET", "")
+    GCS_SERVICE_ACCOUNT_KEY: Optional[str] = None
     GCS_PUBLIC_URL: Optional[str] = None
 
     # Scraper settings - optional with defaults
-    SCRAPER_USER_AGENT: str
-    SCRAPER_RATE_LIMIT_DELAY: float = 5.0  # Seconds between requests to same domain
+    SCRAPER_USER_AGENT: str = "CampusX-Bot/1.0 (+https://campusx.com/bot)"
+    SCRAPER_RATE_LIMIT_DELAY: float = 5.0
     SCRAPER_MAX_RETRIES: int = 3
-    SCRAPER_TIMEOUT: int = 30  # Seconds
+    SCRAPER_TIMEOUT: int = 30
 
     # Content quality thresholds
     MIN_WORD_COUNT: int = 100
