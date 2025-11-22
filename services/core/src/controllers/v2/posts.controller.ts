@@ -98,7 +98,7 @@ export class PostsController {
   getPost = async (req: Request, res: Response) => {
     const { postId } = req.params;
     const result = await this.postsService.getPost(postId, req.user._id.toString());
-    return res.status(200).json(result);
+    return res.status(200).json({result});
   };
 
   /**
