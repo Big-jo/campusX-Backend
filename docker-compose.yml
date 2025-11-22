@@ -102,8 +102,8 @@ services:
   # ML Service (Python/Celery/NATS)
   ml-service:
     build:
-      context: ./services/ml-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/ml-service/Dockerfile
     container_name: campusx-ml-service
     restart: unless-stopped
     environment:
