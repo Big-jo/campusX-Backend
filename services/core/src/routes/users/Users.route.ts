@@ -83,8 +83,8 @@ export const followErrorMessage = 'Oops, something went wrong';
 
 router.post(followUser, auth, async (req: Request, res: Response) => {
     try {
-        const result = await User.FollowUser(req.body.targetUserID, req.token.userID, res.locals.primaryCache);
-        result === 0 ? res.status(OK).send() : res.status(BAD_REQUEST).json({ error: result.error });
+        const result = await User.FollowUser(req.body.targetUserID, req.token.userID);
+        res.status(OK).json({});
     } catch (e) {
         Utility.ErrResponse(res, e);
     }
@@ -178,8 +178,7 @@ router.post(uploadAvatarPath, auth, upload.single('avatar'), async (req: Request
 export const availableUserTag = '/userTag/:tag';
 router.get(availableUserTag, async (req: Request, res: Response) => {
     try {
-        const userTag = await User.AvailableUserTag(req.params.tag);
-        userTag === 0 ? res.status(OK).json({ available: true }) : res.status(OK).json({ available: false });
+        res.status(OK).json({ available: await User.AvailableUserTag(req.params.tag) })
     } catch (e) {
         Utility.ErrResponse(res, e);
     }

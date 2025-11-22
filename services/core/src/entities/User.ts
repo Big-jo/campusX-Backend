@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { Gravatar, Notification, S3, Utility } from '@lib';
 import { logger } from '@shared';
 import bcrypt from 'bcrypt';
@@ -16,14 +16,17 @@ import { Post } from './Post';
 // import * as Notifications from '../lib/notifications';
 // import Notifications from '../lib/notifications';
 // tslint:disable-next-line:no-var-requires
-const  ObjectId = require('mongoose').Types.ObjectId;
+const ObjectId = require('mongoose').Types.ObjectId;
+import { getQueue } from '@lib/Queue';
+import RedisClient from '../lib/redis';
+import { OneSignalJobData } from '../jobs/send-onesignal.job';
+
 
 export class User {
-
     public static async CreateUser(userObject: IUser) {
         const foundUser = await UserModel.findOne({ email: userObject.email.toLowerCase() }).exec();
         if (foundUser) {
-            return {exists: true, err_message: 'This email is already registered. Please sign in or use a different email.'};
+            return { exists: true, err_message: 'This email is already registered. Please sign in or use a different email.' };
         } else {
             try {
                 // check if userTag is available
@@ -108,17 +111,17 @@ export class User {
                         user,
                     };
                 } else {
-                    return { message: 'Invalid credentials. Please try again.'};
+                    return { message: 'Invalid credentials. Please try again.' };
                 }
             } else {
-                return { status: 401,  message: 'Invalid email or password. Please try again.' };
+                return { status: 401, message: 'Invalid email or password. Please try again.' };
             }
         } catch (error) {
             throw new Error(error);
         }
     }
 
-    public static async FollowUser(targetUserID: string, userID: string, primaryCache: Redis) {
+    public static async FollowUser(targetUserID: string, userID: string) {
         try {
             // Check is user is following target already
             const isFollowing = await FollowsModel.findOne({
@@ -132,34 +135,41 @@ export class User {
                 /**
                  * Contains documents of everyone the user follows
                  */
-                const follow = await new FollowsModel({
+                FollowsModel.create({
                     target: targetUserID,
                     follower: userID,
                 });
 
-                /**
-                 * Contains documents of everyone that follows a user
-                 */
-                const following = await new FollowingsModel({
+                const [
+                    follows,
+                    followings
+                ] = await Promise.all([FollowsModel.create({
+                    target: targetUserID,
+                    follower: userID,
+                }), FollowingsModel.create({
                     follower: userID,
                     target: targetUserID,
-                });
+                })]);
 
-                following.save();
-                follow.save();
-                const follower = await UserModel.findByIdAndUpdate({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec();
-                const user = await UserModel.findByIdAndUpdate({ _id: targetUserID }, { $inc: { 'userProfile.followers': 1 } }).exec();
+                const [
+                    follower,
+                    user
+                ] = await Promise.all([
+                    UserModel.findByIdAndUpdate({ _id: userID }, { $inc: { 'userProfile.followings': 1 } }).exec(),
+                    UserModel.findByIdAndUpdate({ _id: targetUserID }, { $inc: { 'userProfile.followers': 1 } }).exec()
+                ]);
 
-                const deviceToken = user.fcm_token;
-                new Notification(deviceToken, {
-                    title: 'New Follower',
-                    body: `${follower.userTag} followed you`,
-                    sound: 'default',
-                }, targetUserID, follower.userProfile.avatar, 'follower', follower._id).SendPushNotification();
+                const notificationQueue = getQueue('send-onesignal');
+                await notificationQueue.add('follower-notification', {
+                    recipientId: follower.toString(),
+                    actorId: user._id.toString(),
+                    category: 'follower',
+                    title: `${follower.name} started following you`,
+                    data: {},
+                } as OneSignalJobData);
 
                 // Add target user's recent post to user's feed 
-                Post.AddToFeed(userID, targetUserID, primaryCache);
-                return 0;
+                Post.AddToFeed(userID, targetUserID, RedisClient.getInstance());
             } else {
                 return { error: 'You follow this user already' };
             }
@@ -259,7 +269,6 @@ export class User {
      * @static
      * @memberof User
      */
-
     public static async UpdateUser(userID: string, updates: { [x: string]: string }) {
         try {
             const update: { [x: string]: string } = {};
@@ -268,7 +277,7 @@ export class User {
                     update[key] = updates[key];
                 }
             }
-            
+
             if (update.password !== undefined) {
                 const rounds = await bcrypt.genSalt(10);
                 // Hash Password
@@ -310,7 +319,7 @@ export class User {
                 fcm_token: user.fcm_token,
             };
 
-            return { token: Utility.createToken(payload), user: {userID} };
+            return { token: Utility.createToken(payload), user: { userID } };
 
         } catch (error) {
             logger.error(error.error);
@@ -338,7 +347,7 @@ export class User {
         }
     }
 
-    public static async GetUserPosts(userID: string, type: string ,page: number, limit: number) {
+    public static async GetUserPosts(userID: string, type: string, page: number, limit: number) {
         try {
             const posts = await AggregationQueries.GetUserPostsAggreg(userID, type, { page, limit });
 
@@ -351,29 +360,22 @@ export class User {
     }
 
     public static async AvailableUserTag(userTag: string) {
-        const available = await UserModel.findOne({ userTag: { $regex: userTag, $options: 'i' } }).limit(20);
-        if (available) {
-            // Return 0 if the userTag exists
-            return 0;
-        } else {
-            // Return 1 is the userTag doesnt exist
-            return 1;
-        }
+        return UserModel.exists({ userTag: { $regex: userTag, $options: 'i' } });
     }
 
-    public static async ConnectUser(userID: string, filter: string , campus: string, offset: number) {
+    public static async ConnectUser(userID: string, filter: string, campus: string, offset: number) {
         // variable declarations
         // let users;
         let connectUsers;
 
         if (filter === 'sameCampus') {
-            connectUsers = await UserModel.find({ 'userProfile.university': campus, _id: {$ne: ObjectId(userID)} }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
+            connectUsers = await UserModel.find({ 'userProfile.university': campus, _id: { $ne: ObjectId(userID) } }, { name: 1, userProfile: 1, userTag: 1 }).lean().exec();
         } else {
-            connectUsers = await UserModel.find({ 'userProfile.university': {$ne: campus} }, {name: 1, userProfile: 1, userTag: 1}).lean().exec();
+            connectUsers = await UserModel.find({ 'userProfile.university': { $ne: campus } }, { name: 1, userProfile: 1, userTag: 1 }).lean().exec();
         };
 
 
-        return {connectUsers};
+        return { connectUsers };
     }
 
     public static async ResetPassword(email: string, token: string, newPassword: string) {
@@ -382,9 +384,9 @@ export class User {
 
             if (!!user) {
                 const rounds = await bcrypt.genSalt(10);
-                    // Hash Password
-                    const updatedPasswordHash = await bcrypt.hash(newPassword, rounds);
-                    await UserModel.update({ resetToken: token }, {$set: {password: updatedPasswordHash}}).exec();
+                // Hash Password
+                const updatedPasswordHash = await bcrypt.hash(newPassword, rounds);
+                await UserModel.update({ resetToken: token }, { $set: { password: updatedPasswordHash } }).exec();
 
             } else {
                 throw new Error('Wrong Token')
@@ -403,7 +405,7 @@ export class User {
             if (!!user) {
                 const sid = shortid.generate();
 
-                UserModel.update({email}, {$set: {resetToken: sid}}).exec();
+                UserModel.update({ email }, { $set: { resetToken: sid } }).exec();
 
                 const body = `Hi ${user.name}, we heard you forgot your password, here is your unique key: ${sid}`
 
