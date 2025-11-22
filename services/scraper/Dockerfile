@@ -48,5 +48,5 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Expose port (Railway uses PORT env var)
 EXPOSE ${PORT:-8000}
 
-# Start Celery worker
-CMD ["celery", "-A", "src.main", "worker", "--loglevel=info", "--concurrency=2"]
+# Start Celery worker with beat scheduler
+CMD ["celery", "-A", "src.main", "worker", "--beat", "--loglevel=info", "--concurrency=2"]
