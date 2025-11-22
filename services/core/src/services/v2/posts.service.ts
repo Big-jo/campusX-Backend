@@ -88,6 +88,7 @@ export class PostsService {
     } as any);
 
     // Award karma for content creation
+    //TODO: Send notification for mentions
     if (type === 'post') {
       await this.karmaService.awardPostCreation(userId);
       // Only fan-out regular posts (not comments or circle posts)
