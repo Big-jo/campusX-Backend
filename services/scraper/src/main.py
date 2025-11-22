@@ -12,7 +12,7 @@ app.config_from_object("celeryconfig")
 app.autodiscover_tasks(["src.tasks"])
 
 # Import scheduler to register beat signals
-from src.tasks import scheduler
+# from src.tasks import scheduler
 
 
 @worker_shutdown.connect
