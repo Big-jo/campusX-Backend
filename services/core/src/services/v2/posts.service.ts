@@ -429,11 +429,18 @@ export class PostsService {
     if (filters.circleID) query.circleID = mongoose.Types.ObjectId(filters.circleID);
     if (filters.userId) query.author = mongoose.Types.ObjectId(filters.userId);
 
-    const posts = await this.postRepo.find(query, null, {
-      limit: filters.limit || 50,
-      skip: filters.skip || 0,
-      sort: { createdAt: -1 }
-    });
+    const posts = await this.postRepo.find(
+      query,
+      {
+        limit: filters.limit || 50,
+        skip: filters.skip || 0,
+        sort: { createdAt: -1 },
+        populate: {
+          path: 'author',
+          select: 'firstName lastName userTag userProfile.avatar userProfile.university -password -resetPasswordToken -resetPasswordExpires -tokens'
+        }
+      }
+    );
 
     return posts;
   }
