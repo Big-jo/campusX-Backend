@@ -24,8 +24,8 @@ WORKDIR /app
 # Copy package files from service directory
 COPY services/core/package.json services/core/yarn.lock ./
 
-# Install only production dependencies
-RUN yarn install --frozen-lockfile --production && \
+# Install dependencies
+RUN yarn install --frozen-lockfile && \
     yarn cache clean
 
 # Copy built application from builder
