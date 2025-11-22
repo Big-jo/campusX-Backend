@@ -11,7 +11,7 @@ class GCSClient {
   public static getInstance(): Storage {
     if (!GCSClient.instance) {
       const credentials = process.env.GCS_SERVICE_ACCOUNT_KEY
-        ? (process.env.GCS_SERVICE_ACCOUNT_KEY.startsWith('{')
+        ? (process.env.GCS_SERVICE_ACCOUNT_KEY.startsWith("{")
             ? JSON.parse(process.env.GCS_SERVICE_ACCOUNT_KEY)
             : require(process.env.GCS_SERVICE_ACCOUNT_KEY))
         : undefined;
