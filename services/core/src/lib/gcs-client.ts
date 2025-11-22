@@ -1,4 +1,5 @@
 import { Storage } from '@google-cloud/storage';
+import { logger } from '../shared';
 
 /**
  * GCS singleton - reuses connection pool across all uploads
@@ -16,12 +17,16 @@ class GCSClient {
             : require(process.env.GCS_SERVICE_ACCOUNT_KEY))
         : undefined;
 
+        logger.info("credentials", credentials);
+
       GCSClient.instance = new Storage({
         projectId: process.env.GCS_PROJECT_ID,
         ...(credentials && { credentials }),
       });
-    }
 
+      logger.info('Initialized new GCS client instance');
+    }
+    logger.info('Reusing existing GCS client instance');
     return GCSClient.instance;
   }
 }
