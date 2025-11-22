@@ -27,23 +27,26 @@ def get_cron_schedule(frequency: str):
     return schedules.get(frequency, crontab(hour=8, minute=0))  # Default to daily
 
 
-@signals.beat_init.connect
+@app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     """
     Dynamic scheduler: Load active bots from MongoDB
     and schedule scraping tasks based on their config
 
-    This runs once when Celery Beat starts
+    This runs after Celery app finalization (recommended for embedded beat)
     """
-    logger.info("Setting up periodic scraping tasks...")
+    logger.info("🔧 Setting up periodic scraping tasks...")
 
     try:
         db = get_sync_db()
+        logger.info(f"✅ MongoDB connected: {db.name}")
 
         # Find all active bots with auto-posting enabled
-        bots = db[COLLECTIONS["bots"]].find(
+        bots = list(db[COLLECTIONS["bots"]].find(
             {"status": "active", "config.autoPostEnabled": True}
-        )
+        ))
+
+        logger.info(f"📊 Found {len(bots)} active bots with auto-posting enabled")
 
         task_count = 0
 
@@ -57,7 +60,7 @@ def setup_periodic_tasks(sender, **kwargs):
                 schedule = get_cron_schedule(frequency)
 
                 # Add periodic task
-                task_name = f"scrape-{interest_category.lower().replace(' ', '-')}"
+                task_name = f"scrape-{interest_category.lower().replace(' ', '-')}-{bot_id}"
 
                 sender.add_periodic_task(
                     schedule,
@@ -66,19 +69,22 @@ def setup_periodic_tasks(sender, **kwargs):
                 )
 
                 logger.info(
-                    f"Scheduled {task_name}: {frequency} scraping for {interest_category}"
+                    f"✅ Scheduled {task_name}: {frequency} scraping for {interest_category}"
                 )
 
                 task_count += 1
 
             except Exception as e:
-                logger.error(f"Failed to schedule task for bot {bot.get('_id')}: {e}")
+                logger.error(f"❌ Failed to schedule task for bot {bot.get('_id')}: {e}", exc_info=True)
                 continue
 
-        logger.info(f"✅ Scheduled {task_count} periodic scraping tasks")
+        if task_count == 0:
+            logger.warning("⚠️  No periodic tasks scheduled. Check MongoDB for active bots with autoPostEnabled=true")
+        else:
+            logger.info(f"✅ Successfully scheduled {task_count} periodic scraping tasks")
 
     except Exception as e:
-        logger.error(f"Failed to setup periodic tasks: {e}")
+        logger.error(f"❌ Failed to setup periodic tasks: {e}", exc_info=True)
 
 
 # Manual trigger function (for testing/admin)
