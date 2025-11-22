@@ -21,11 +21,13 @@ export class AggregationQueries {
             {
                 $addFields: {
                     isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
+                    isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
                 },
             },
             {
                 $project: {
                     likedBy: 0,
+                    dislikedBy: 0,
                 },
             },
             {
@@ -79,6 +81,18 @@ export class AggregationQueries {
                     $limit: 4
                   },
                   {
+                    $addFields: {
+                      isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
+                      isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
+                    }
+                  },
+                  {
+                    $project: {
+                      likedBy: 0,
+                      dislikedBy: 0,
+                    }
+                  },
+                  {
                     $lookup: {
                       from: 'users',
                       let: { authorID: '$author' },
@@ -110,7 +124,12 @@ export class AggregationQueries {
             }
         ];
 
-        return (await PostModel.aggregate(aggregate).exec());
+        try {
+          return PostModel.aggregate(aggregate).exec()
+        } catch (error) {
+          console.error('NewsFeed Aggregation error');
+          return [];
+        }
     }
 
     public static async GetUserPostsAggreg(userID: string, postType: string, options: { page: number , limit: number } = {page: 1, limit: 50}) {
@@ -145,11 +164,13 @@ export class AggregationQueries {
             {
                 $addFields: {
                     isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
+                    isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
                 },
             },
             {
                 $project: {
                     likedBy: 0,
+                    dislikedBy: 0,
                 },
             },
             {
@@ -199,16 +220,23 @@ export class AggregationQueries {
                     $limit: 4
                   },
                   {
+                    $addFields: {
+                      isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
+                      isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
+                    }
+                  },
+                  {
+                    $project: {
+                      likedBy: 0,
+                      dislikedBy: 0,
+                    }
+                  },
+                  {
                     $lookup: {
                       from: 'users',
                       let: { authorID: '$author' },
                       pipeline: [
                         { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                          {
-                              $addFields: {
-                                  isLiked: { $in: ['$$authorID', '$likedBy'] },
-                              },
-                          },
                         { $project: {
                             password: 0,
                             email: 0,
@@ -293,11 +321,13 @@ export class AggregationQueries {
             {
                 $addFields: {
                     isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
+                    isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
                 },
             },
             {
                 $project: {
                     likedBy: 0,
+                    dislikedBy: 0,
                 },
             },
             {
