@@ -438,7 +438,7 @@ export class PostsService {
         sort: { createdAt: -1 },
         populate: {
           path: 'author',
-          select: 'firstName lastName userTag userProfile.avatar userProfile.university -password -resetPasswordToken -resetPasswordExpires -tokens'
+          select: 'firstName lastName userTag userProfile.avatar userProfile.university'
         }
       }
     );
