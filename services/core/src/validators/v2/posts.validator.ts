@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createPostSchema = z.object({
   body: z.object({
-    text: z.string().min(1, "Post cannot be empty").max(5000).optional(),
+    text: z.string().max(5000).optional(),
     hashTags: z.array(z.string()).optional(),
     mentions: z.array(z.string()).optional(),
     parentPost: z.string().optional(), // For comments
