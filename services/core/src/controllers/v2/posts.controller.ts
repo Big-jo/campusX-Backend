@@ -38,6 +38,10 @@ export class PostsController {
       imageFiles: [files?.image || []].flat(),
     };
 
+    if ((postData.text === '' || postData.text === null) && postData.imageFiles.length === 0 && !postData.videoFile) {
+      throw new UnauthorizedError('Post cannot be empty');
+    }
+
     const result = await this.postsService.createPost(postData, req.user);
     return res.status(201).json(result);
   };
