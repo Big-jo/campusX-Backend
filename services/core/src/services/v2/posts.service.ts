@@ -413,6 +413,8 @@ export class PostsService {
   /**
    * Get posts with optional filters (unified query endpoint)
    * Supports filtering by type, parentPost, circleID, userId
+   * Returns raw aggregate results with isLiked/isDisliked
+   * Controller should convert to DTO using createPostDTO()
    */
   async getPosts(filters: {
     type?: 'post' | 'comment' | 'circlePost';
@@ -421,7 +423,8 @@ export class PostsService {
     userId?: string;
     limit?: number;
     skip?: number;
-  }): Promise<any> {
+    currentUserId?: string; // User making the request (for isLiked/isDisliked)
+  }): Promise<any[]> {
     const query: any = {};
 
     if (filters.type) query.type = filters.type;
@@ -429,20 +432,13 @@ export class PostsService {
     if (filters.circleID) query.circleID = mongoose.Types.ObjectId(filters.circleID);
     if (filters.userId) query.author = mongoose.Types.ObjectId(filters.userId);
 
-    const posts = await this.postRepo.find(
+    return await this.postRepo.findPostsAggregate(
       query,
-      null,
+      filters.currentUserId || null,
       {
-        limit: filters.limit || 50,
-        skip: filters.skip || 0,
-        sort: { createdAt: -1 },
-        populate: {
-          path: 'author',
-          select: 'firstName lastName userTag userProfile.avatar userProfile.university'
-        }
+        limit: filters.limit,
+        skip: filters.skip
       }
     );
-
-    return posts;
   }
 }

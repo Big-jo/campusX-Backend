@@ -172,20 +172,33 @@ test("should require authentication", async () => {
       expect(testReply.text).toBe('Reply to comment');
     });
 
-    test("Step 4: Fetch comments via query params", async () => {
+    test("Step 4: Fetch comments via query params and verify DTO", async () => {
       const response = await request(E2E_BASE_URL)
         .get(`/api/v2/posts`)
         .query({ parentPost: testPost._id.toString() })
         .set(e2eAuthHeader(testUser.token));
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0].type).toBe('comment');
-      expect(response.body[0].parentPost).toBe(testPost._id.toString());
+      expect(response.body.result).toBeDefined();
+      expect(Array.isArray(response.body.result)).toBe(true);
+      expect(response.body.result.length).toBeGreaterThan(0);
+
+      const comment = response.body.result[0];
+
+      // Verify DTO properties
+      expect(comment.type).toBe('comment');
+      expect(comment.parentPost).toBe(testPost._id.toString());
+      expect(typeof comment.isLiked).toBe('boolean');
+      expect(typeof comment.isDisliked).toBe('boolean');
+      expect(comment.author._id).toBeDefined();
+      expect(comment.author.userTag).toBeDefined();
+
+      // Verify sensitive fields removed
+      expect(comment.likedBy).toBeUndefined();
+      expect(comment.dislikedBy).toBeUndefined();
     });
 
-    test("Step 5: Like comment via unified like endpoint", async () => {
+    test("Step 5: Like comment and verify isLiked flag", async () => {
       const response = await request(E2E_BASE_URL)
         .post(`/api/v2/posts/${testComment._id}/like`)
         .set(e2eAuthHeader(testUser.token));
@@ -195,6 +208,17 @@ test("should require authentication", async () => {
       // Verify like count incremented
       const likedComment = await PostModel.findById(testComment._id);
       expect(likedComment?.likes).toBe(1);
+
+      // Fetch comment via API and verify isLiked=true
+      const fetchResponse = await request(E2E_BASE_URL)
+        .get(`/api/v2/posts`)
+        .query({ parentPost: testPost._id.toString() })
+        .set(e2eAuthHeader(testUser.token));
+
+      expect(fetchResponse.status).toBe(200);
+      const likedCommentDTO = fetchResponse.body.result.find((c: any) => c._id === testComment._id.toString());
+      expect(likedCommentDTO.isLiked).toBe(true);
+      expect(likedCommentDTO.isDisliked).toBe(false);
     });
 
     test("Step 6: Delete comment and cascade to replies", async () => {

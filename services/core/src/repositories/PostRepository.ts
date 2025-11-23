@@ -3,6 +3,7 @@ import { BaseRepository } from './BaseRepository';
 import PostModel from '../models/Post.model';
 import { IPostModel } from '../interfaces/IPost';
 import { AggregationQueries } from '../lib/aggregationQueries';
+import { AggregationPipelines } from '../lib/aggregationPipelines';
 import mongoose from 'mongoose';
 
 export class PostRepository extends BaseRepository<IPostModel> {
@@ -259,5 +260,27 @@ export class PostRepository extends BaseRepository<IPostModel> {
       path: 'author',
       select: 'name userTag userProfile.avatar userProfile.university'
     });
+  }
+
+  /**
+   * Get posts with filters using aggregation
+   * @param query - Match query
+   * @param currentUserId - User ID for isLiked/isDisliked
+   * @param options - Pagination options
+   */
+  async findPostsAggregate(
+    query: any,
+    currentUserId: string | null,
+    options: { limit?: number; skip?: number } = {}
+  ): Promise<any[]> {
+    const aggregate = [
+      { $match: query },
+      { $sort: { createdAt: -1 } },
+      { $skip: options.skip || 0 },
+      { $limit: options.limit || 50 },
+      ...AggregationPipelines.postPipeline(currentUserId)
+    ];
+
+    return this.aggregate(aggregate);
   }
 }

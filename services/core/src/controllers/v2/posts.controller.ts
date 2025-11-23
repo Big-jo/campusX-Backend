@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UnauthorizedError } from '../../errors';
 import { NewsfeedService } from '../../services/v2/newsfeed.service';
 import { PostsService } from '../../services/v2/posts.service';
+import { createPostDTO } from '../../dtos/post.dto';
 
 export class PostsController {
   private postsService: PostsService;
@@ -159,14 +160,18 @@ export class PostsController {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const skip = parseInt(req.query.skip as string) || 0;
 
-    const posts = await this.postsService.getPosts({
+    const rawPosts = await this.postsService.getPosts({
       type,
       parentPost,
       circleID,
       userId,
       limit,
-      skip
+      skip,
+      currentUserId: req.user._id.toString()
     });
+
+    // Convert to DTOs
+    const posts = rawPosts.map(p => createPostDTO(p));
 
     return res.status(200).json({result: posts});
   };

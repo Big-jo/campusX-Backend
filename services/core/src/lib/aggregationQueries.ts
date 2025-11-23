@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import PostModel from '../models/Post.model';
 import CirclePostModel from '../models/CirclePost.model';
+import { AggregationPipelines } from './aggregationPipelines';
 
 export class AggregationQueries {
 
@@ -10,118 +11,10 @@ export class AggregationQueries {
      * @param postIDs
      */
     public static async NewsfeedPostAggreg(userID: string, postIDs: mongoose.Types.ObjectId[]) {
-
         const aggregate = [
-            {
-                $match: {
-                    _id: { $in: postIDs },
-                    // type: 'po // Only fetch posts (not comments or circle posts)
-                },
-            },
-            {
-                $addFields: {
-                    isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
-                    isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
-                },
-            },
-            {
-                $project: {
-                    likedBy: 0,
-                    dislikedBy: 0,
-                },
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    let: { authorID: '$author' },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                        { $project: {
-                            password: 0,
-                            email: 0,
-                            fcm_token: 0,
-                            'userProfile.visits': 0,
-                            'userProfile.lastSeen': 0,
-                            'userProfile.phoneNumber': 0,
-                            'userProfile.interests': 0,
-                            profileComplete: 0,
-                            createdAt: 0,
-                            updatedAt: 0,
-                            __v: 0,
-                        } },
-                    ],
-                    as: 'author',
-                },
-            },
-            {
-                $lookup: {from: 'posts', // Changed from 'comments' to 'posts' (unified model)
-                let: {
-                  parentPost: { $toString: "$_id" } // Convert ObjectId to string for comparison
-                },
-                pipeline: [
-                  {
-                  "$match": {
-                    $expr: {
-                      $and: [
-                        { $eq: ["$parentPost", "$$parentPost"] },
-                        { $eq: ["$type", "comment"] } // Filter by type=comment
-                      ]
-                    }
-                  },
-                  },
-                  {
-                    $addFields: {
-                      score: {$add: [{$multiply: [2, "$likes"]}, {$multiply: [4.7, "$comments"]}]}
-                    }
-                  },{
-                    $sort: {
-                      score: -1
-                    }
-                  },{
-                    $limit: 4
-                  },
-                  {
-                    $addFields: {
-                      isLiked: { $in: [mongoose.Types.ObjectId(userID), '$likedBy'] },
-                      isDisliked: { $in: [mongoose.Types.ObjectId(userID), '$dislikedBy'] },
-                    }
-                  },
-                  {
-                    $project: {
-                      likedBy: 0,
-                      dislikedBy: 0,
-                    }
-                  },
-                  {
-                    $lookup: {
-                      from: 'users',
-                      let: { authorID: '$author' },
-                      pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
-                        { $project: {
-                            password: 0,
-                            email: 0,
-                            fcm_token: 0,
-                            'userProfile.visits': 0,
-                            'userProfile.lastSeen': 0,
-                            'userProfile.phoneNumber': 0,
-                            'userProfile.interests': 0,
-                            profileComplete: 0,
-                            createdAt: 0,
-                            updatedAt: 0,
-                            __v: 0,
-                        } },
-                      ],
-                      as: 'author',
-                    },
-                    },
-                ],
-                as: 'top_comments'
-              }}
-            ,
-             {
-                $sort: { createdAt: -1 }
-            }
+            { $match: { _id: { $in: postIDs } } },
+            ...AggregationPipelines.postPipeline(userID, { includeTopComments: true, topCommentsLimit: 4 }),
+            { $sort: { createdAt: -1 } }
         ];
 
         try {

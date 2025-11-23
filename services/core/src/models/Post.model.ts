@@ -39,6 +39,24 @@ PostSchema.index({type: 1}); // Index for filtering by type
 PostSchema.index({parentPost: 1, type: 1}); // Index for finding comments
 PostSchema.index({circleID: 1, type: 1}); // Index for finding circle posts
 
+// Instance method to convert document to DTO
+PostSchema.methods.toDto = function(currentUserId?: string) {
+    const { createPostDTO } = require('../dtos/post.dto');
+
+    const obj: any = this.toObject();
+
+    // Add isLiked/isDisliked if currentUserId provided
+    if (currentUserId) {
+        obj.isLiked = (this as any).likedBy?.some((id: any) => id.toString() === currentUserId) || false;
+        obj.isDisliked = (this as any).dislikedBy?.some((id: any) => id.toString() === currentUserId) || false;
+    } else {
+        obj.isLiked = false;
+        obj.isDisliked = false;
+    }
+
+    return createPostDTO(obj);
+}
+
 // Transform _id to id and remove __v on JSON serialization
 PostSchema.set('toJSON', {
     transform: (doc, ret) => {
