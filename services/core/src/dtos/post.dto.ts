@@ -1,7 +1,6 @@
 export class AuthorDTO {
   _id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   userTag: string;
   userProfile: {
     avatar?: string;
@@ -11,8 +10,7 @@ export class AuthorDTO {
   constructor(data: any) {
     const author = Array.isArray(data) ? data[0] : data;
     this._id = author._id?.toString();
-    this.firstName = author.firstName;
-    this.lastName = author.lastName;
+    this.name = author.name;
     this.userTag = author.userTag;
     this.userProfile = {
       avatar: author.userProfile?.avatar,

@@ -16,8 +16,9 @@ export class AggregationPipelines {
           { $match: { $expr: { $eq: ['$_id', '$$authorID'] } } },
           {
             $project: {
-              firstName: 1,
-              lastName: 1,
+              // firstName: 1,
+              // lastName: 1,
+              name: 1,
               userTag: 1,
               'userProfile.avatar': 1,
               'userProfile.university': 1
