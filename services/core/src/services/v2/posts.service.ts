@@ -377,9 +377,7 @@ export class PostsService {
     }
 
     return {
-      data: {
-        post: posts[0]
-      }
+      post: posts[0]
     };
   }
 
