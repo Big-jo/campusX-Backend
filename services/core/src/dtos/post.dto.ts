@@ -44,7 +44,7 @@ export abstract class BasePostDTO {
     this._id = data._id?.toString();
     this.type = data.type;
     this.text = data.text;
-    this.images = data.images;
+    this.images = data.images.length ? data.images : [data.image];
     this.videos = data.videos;
     this.image = data.image;
     this.video = data.video;

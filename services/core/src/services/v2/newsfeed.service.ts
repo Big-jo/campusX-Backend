@@ -187,6 +187,7 @@ export class NewsfeedService {
       this.redis.zremrangebyrank(`v2:newsfeed:timeline:${recipientId}`, 0, -501)
     );
 
+    //IMPLEMENT TIMELINE CLEAN UP AFTER TIMELINE EXPIRY
     await Promise.all(trimPromises);
   }
 
