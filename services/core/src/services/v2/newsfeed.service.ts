@@ -3,6 +3,7 @@ import { PostRepository } from '../../repositories/PostRepository';
 import RedisClient from '../../lib/redis';
 import { NotFoundError } from '../../errors';
 import type { Redis } from 'ioredis';
+import { createPostDTO } from '../../dtos/post.dto';
 
 interface FeedResponse {
   data: {
@@ -77,7 +78,7 @@ export class NewsfeedService {
 
     return {
       data: {
-        posts,
+        posts: posts.map(post => createPostDTO(post)),
         hasMore,
         nextCursor,
         lastTimestamp
