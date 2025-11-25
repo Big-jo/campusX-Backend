@@ -27,7 +27,7 @@ async def get_async_db():
     global async_client, async_db
     if async_db is None:
         async_client = AsyncIOMotorClient(settings.MONGO_URI)
-        async_db = async_client.get_database()
+        async_db = async_client.get_database("test")
     return async_db
 
 

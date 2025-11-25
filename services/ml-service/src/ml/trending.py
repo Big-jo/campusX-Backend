@@ -161,6 +161,7 @@ class TrendingService:
             # Fetch recent posts from MongoDB
             db = await get_async_db()
             posts_col = db[COLLECTIONS["posts"]]
+            print(posts_col)
 
             # Query: campus filter, type=post, recent, sort by engagement
             query = {
@@ -172,7 +173,9 @@ class TrendingService:
                 query["campus"] = campus
 
             # Fetch posts with engagement data
-            posts = await posts_col.find(query).to_list(length=1000)
+            cursor = posts_col.find(query)
+            posts = await cursor.to_list(length=1000)
+            print(f"Fetched {len(posts)} posts")
 
             if not posts:
                 return []
@@ -216,7 +219,7 @@ class TrendingService:
                 topic_vector = self.embeddings.encode(topic)
 
                 # Search Qdrant for posts similar to this topic
-                search_results = await self.qdrant.search_posts(
+                search_results = self.qdrant.search_posts(
                     query_vector=topic_vector,
                     campus=campus,
                     limit=5,

@@ -21,7 +21,7 @@ from typing import List, Dict, Any
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.db.qdrant_client import get_qdrant_client
-from src.db.mongodb import get_database
+from src.db.mongodb import get_async_db
 from src.ml.embeddings import create_embeddings_service
 from src.config import config
 import logging
@@ -44,7 +44,7 @@ async def fetch_posts(limit: int = None) -> List[Dict[str, Any]]:
         List of post documents
     """
     try:
-        db = await get_database()
+        db = await get_async_db()
         posts_collection = db['posts']
 
         # Build query

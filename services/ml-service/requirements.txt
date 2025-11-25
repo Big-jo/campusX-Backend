@@ -46,3 +46,7 @@ vaderSentiment==3.3.2
 scikit-learn==1.5.1
 numpy==1.26.4
 scipy==1.13.1
+
+trafilatura==1.6.0
+markdown==3.6   # required for trafilatura speed + parser reliability
+charset-normalizer==3.3.2 

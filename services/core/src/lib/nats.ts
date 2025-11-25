@@ -208,7 +208,7 @@ class NATSClient {
       const response = await this.nc.request(
         'ml.trending.request',
         codec.encode(request),
-        { timeout: 500 }
+        { timeout: 1000 }
       );
 
       const data = codec.decode(response.data) as TrendingResponse;
