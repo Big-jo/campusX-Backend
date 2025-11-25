@@ -3,6 +3,7 @@
  *
  * Endpoints:
  * - GET /api/v2/trending - Get trending posts
+ * - GET /api/v2/trending/topics - Get trending topics
  */
 
 import { Router } from 'express';
@@ -16,6 +17,9 @@ const router = Router();
 const trendingController = new TrendingController();
 
 // All routes require authentication
+
+// Get trending topics
+router.get('/topics', auth, validate(trendingSchema), asyncHandler(trendingController.getTrendingTopics));
 
 // Get trending posts
 router.get('/', auth, validate(trendingSchema), asyncHandler(trendingController.getTrending));

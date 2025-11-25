@@ -44,4 +44,31 @@ export class TrendingController {
       data: result
     });
   };
+
+  /**
+   * Get trending topics for a campus (without posts)
+   * GET /api/v2/trending/topics
+   */
+  getTrendingTopics = async (req: AuthRequest, res: Response): Promise<void> => {
+    const { campus, timeWindow, limit } = req.query;
+    const user = req.user;
+
+    // Parse limit
+    const parsedLimit = limit ? parseInt(limit as string) : undefined;
+
+    // Get trending topics
+    const result = await this.trendingService.getTrendingTopics(
+      {
+        campus: campus as string,
+        timeWindow: timeWindow as '6h' | '24h' | '7d' | undefined,
+        limit: parsedLimit
+      },
+      user
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  };
 }
