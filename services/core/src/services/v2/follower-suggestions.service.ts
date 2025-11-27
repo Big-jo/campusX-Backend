@@ -5,6 +5,7 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { ISuggestionItem } from '../../models/FollowerSuggestion.model';
 import RedisClient from '../../lib/redis';
 import { NotFoundError } from '../../errors';
+import { IUser } from '../../interfaces';
 
 export class FollowerSuggestionsService {
   private followerRepo: FollowerRepository;
@@ -23,14 +24,15 @@ export class FollowerSuggestionsService {
    * Get suggestions for a user
    */
   async getUserSuggestions(
-    userId: string,
+    user?: IUser,
     limit: number = 20,
     offset: number = 0,
-    refresh: boolean = false
+    refresh: boolean = false,
   ) {
+    const userId = user?._id.toString();
     // Force refresh if requested
     if (refresh) {
-      await this.computeSuggestionsForUser(userId);
+      await this.computeSuggestionsForUser(user);
     }
 
     // Try Redis cache first (only for offset 0)
@@ -60,10 +62,46 @@ export class FollowerSuggestionsService {
     );
 
     // If no suggestions exist, compute them
-    if (suggestions.length === 0 && offset === 0) {
-      await this.computeSuggestionsForUser(userId);
-      const { suggestions: newSuggestions, total: newTotal, computedAt: newComputedAt } =
+    if (suggestions.length === 0) {
+      await this.computeSuggestionsForUser(user);
+      let { suggestions: newSuggestions, total: newTotal, computedAt: newComputedAt } =
         await this.suggestionsRepo.getSuggestions(userId, limit, offset);
+
+      if (newSuggestions.length === 0) {
+        // Get users in same campus as fallback
+        const campus = user.userProfile?.university || null;
+        const users = await this.userRepo.find(
+          {
+            _id: { $ne: mongoose.Types.ObjectId(userId) },
+            accountType: 'user',
+            // 'userProfile.university': campus,
+          },
+          {
+            _id: 1,
+            name: 1,
+            userTag: 1,
+            'userProfile.avatar': 1,
+            'userProfile.university': 1,
+            'userProfile.rep_points': 1,
+            'userProfile.followers': 1,
+            'userProfile.bio': 1,
+          },
+          { limit: 50, skip: offset },
+        );
+
+        return {
+          success: true,
+          data: users,
+          meta: {
+            total: users.length,
+            limit,
+            page: offset,
+            computedAt: newComputedAt,
+            source: 'db',
+          },
+        };
+
+      }
 
       const enriched = await this.enrichSuggestions(newSuggestions);
       return {
@@ -72,7 +110,7 @@ export class FollowerSuggestionsService {
         meta: {
           total: newTotal,
           limit,
-          offset,
+          page: offset,
           computedAt: newComputedAt,
           source: 'db',
         },
@@ -96,10 +134,12 @@ export class FollowerSuggestionsService {
   /**
    * Core algorithm: compute suggestions for a user
    */
-  async computeSuggestionsForUser(userId: string): Promise<ISuggestionItem[]> {
+  async computeSuggestionsForUser(user: IUser): Promise<ISuggestionItem[]> {
+    const userId = user._id.toString();
     // 1. Get user's current followings
     const followings = await this.followerRepo.getFollowings(userId);
 
+    //TODO: If no suggestions, first return list of users closest which would be same campus
     if (followings.length === 0) {
       // No followings = no suggestions yet
       await this.suggestionsRepo.saveSuggestions(userId, []);
@@ -107,11 +147,7 @@ export class FollowerSuggestionsService {
     }
 
     // 2. Get user's campus
-    const currentUser = await this.userRepo.findById(userId);
-    if (!currentUser) {
-      throw new NotFoundError('User not found');
-    }
-    const userCampus = currentUser.userProfile?.university || null;
+    const userCampus = user.userProfile?.university || null;
 
     // 3. Friends-of-Friends aggregation
     const fofCandidates = await this.getFriendsOfFriends(userId, followings);
@@ -319,6 +355,7 @@ export class FollowerSuggestionsService {
     );
 
     // Create a map for fast lookup
+    //TODO: OPTIMISE THIS POS
     const userMap = new Map();
     users.forEach(u => userMap.set(u._id.toString(), u));
 

@@ -58,18 +58,14 @@ export class UsersController {
    * Get follower suggestions
    */
   getSuggestions = async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-
-    if (!userId) {
-      throw new UnauthorizedError('User not authenticated');
-    }
-
+    const user = req.user;
+    
     const limit = parseInt(req.query.limit as string) || 20;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const offset = (parseInt(req.query.page as string) - 1) * limit || 0;
     const refresh = req.query.refresh === 'true';
 
     const result = await this.suggestionsService.getUserSuggestions(
-      userId.toString(),
+      user,
       Math.min(limit, 50), // Cap at 50
       Math.max(offset, 0),
       refresh
