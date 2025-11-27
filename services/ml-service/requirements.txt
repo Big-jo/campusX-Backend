@@ -49,4 +49,10 @@ scipy==1.13.1
 
 trafilatura==1.6.0
 markdown==3.6   # required for trafilatura speed + parser reliability
-charset-normalizer==3.3.2 
+charset-normalizer==3.3.2
+
+# Pipeline & Content Discovery
+# (No additional packages needed - using requests which is already included)
+
+# Content Processing (Phase 2)
+python-dateutil==2.8.2  # Flexible date parsing 

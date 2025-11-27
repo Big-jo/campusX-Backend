@@ -23,9 +23,18 @@
     "docker:test:logs": "docker-compose -f docker-compose.test.yml logs -f",
     "seed:bots": "tsx -r dotenv/config src/seed/bots/seed.ts",
     "seed:bots:fresh": "tsx -r dotenv/config src/seed/bots/seed.ts --fresh",
+    "seed:storyboard": "tsx -r dotenv/config src/seed/storyboard/seed.ts",
+    "seed:storyboard:fresh": "tsx -r dotenv/config src/seed/storyboard/seed.ts --fresh",
+    "k6": "cd k6 && ./run-all.sh",
+    "k6:e2e": "cd k6 && ./run-e2e.sh",
+    "k6:auth": "k6 run -e API_URL=http://localhost:3001 k6/tests/auth.test.js",
+    "k6:posts": "k6 run -e API_URL=http://localhost:3001 k6/tests/posts-fanout.test.js",
+    "k6:interactions": "k6 run -e API_URL=http://localhost:3001 k6/tests/interactions.test.js",
+    "k6:trending": "k6 run -e API_URL=http://localhost:3001 k6/tests/trending.test.js",
     "webstorm": "node src/Start.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@google-cloud/storage": "^7.17.3",
     "@sentry/node": "^5.17.0",
     "array-sort": "^1.0.0",

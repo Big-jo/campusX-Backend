@@ -267,6 +267,17 @@ export class PostsService {
       console.error('Failed to queue like notification:', error);
     }
 
+    // Track interaction for ML service (fire-and-forget)
+    if (natsClient.isConnected() && post.contentId) {
+      natsClient.trackLike(
+        userId,
+        post.contentId.toString(),
+        post._id.toString()
+      ).catch(err => {
+        console.error('Failed to track like interaction:', err);
+      });
+    }
+
     return {
       data: {
         postId: post._id,
@@ -376,8 +387,21 @@ export class PostsService {
       throw new NotFoundError('Post not found');
     }
 
+    const post = posts[0];
+
+    // Track view for ML service (fire-and-forget)
+    if (natsClient.isConnected() && post.contentId) {
+      natsClient.trackView(
+        userId,
+        post.contentId.toString(),
+        post._id.toString()
+      ).catch(err => {
+        console.error('Failed to track view interaction:', err);
+      });
+    }
+
     return {
-      post: posts[0]
+      post
     };
   }
 

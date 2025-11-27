@@ -27,6 +27,8 @@ const PostSchema: Schema = new Schema({
     dislikedBy: [{type: Schema.Types.ObjectId, ref: 'User'}],
     hashTags: [{type: String}],
     mentions:[{type: String}],
+    // Link to ML service scraped content (for bot posts only)
+    contentId: {type: Schema.Types.ObjectId, ref: 'ScrapedContent', required: false, index: true},
     // deleted: {type: Boolean}
 });
 

@@ -1,6 +1,7 @@
 """Qdrant vector database client."""
 
 import logging
+import os
 import uuid
 from typing import List, Dict, Any, Optional
 from qdrant_client import QdrantClient as QC
@@ -35,7 +36,7 @@ def objectid_to_uuid(object_id: str) -> str:
 class QdrantClient:
     """Wrapper for Qdrant vector database operations."""
 
-    def __init__(self, url: str = "http://localhost:6333"):
+    def __init__(self, url: str = os.getenv("QDRANT_URL", "http://localhost:6333")):
         """Initialize Qdrant client."""
         self.client = QC(url=url)
         self.posts_collection = "posts"

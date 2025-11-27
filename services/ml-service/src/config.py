@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # Gemini API - required, must be set via env
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
+    # Serper API - for web search and RSS discovery
+    SERPER_API_KEY: str = os.getenv("SERPER_API_KEY", "")
+
     # Google Cloud Storage - set via env (Railway) or .env (local)
     GCS_PROJECT_ID: str = os.getenv("GCS_PROJECT_ID", "")
     GCS_BUCKET: str = os.getenv("GCS_BUCKET", "")

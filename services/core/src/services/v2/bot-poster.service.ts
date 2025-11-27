@@ -144,7 +144,8 @@ export class BotPosterService {
       hashTags: content.keywords.slice(0, 5), // Use top 5 keywords as hashtags
       likes: 0,
       dislikes: 0,
-      comments: 0
+      comments: 0,
+      contentId: content._id // Link to scraped content for ML tracking
     });
 
     logger.info(`Created bot post ${post._id} from content ${content._id}`);

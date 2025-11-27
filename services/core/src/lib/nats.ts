@@ -70,6 +70,14 @@ interface PostCreatedEvent {
   hashtags?: string[];
 }
 
+interface UserInteractionEvent {
+  user_id: string;
+  content_id: string;
+  post_id?: string;
+  interaction_type: 'view' | 'like' | 'comment' | 'bookmark' | 'share';
+  timestamp: string;
+}
+
 class NATSClient {
   private nc: NatsConnection | null = null;
   private connected: boolean = false;
@@ -142,6 +150,79 @@ class NATSClient {
 
     this.nc.publish('ml.post.created', codec.encode(event));
     logger.debug(`Published ml.post.created for post ${event.post_id}`);
+  }
+
+  /**
+   * Publish user interaction event (fire-and-forget)
+   * Used by ML service to track user interests and personalize content
+   */
+  async publishUserInteraction(event: UserInteractionEvent): Promise<void> {
+    if (!this.nc || !this.connected) {
+      logger.warn('NATS not connected, skipping interaction event');
+      return; // Graceful degradation - don't throw
+    }
+
+    try {
+      const subject = `user.interaction.${event.interaction_type}`;
+      this.nc.publish(subject, codec.encode(event));
+      logger.debug(`Published ${subject} for user ${event.user_id}`);
+    } catch (error) {
+      logger.error('Failed to publish interaction event:', error);
+      // Don't throw - interactions are fire-and-forget
+    }
+  }
+
+  /**
+   * Convenience methods for common interactions
+   */
+  async trackView(userId: string, contentId: string, postId?: string): Promise<void> {
+    await this.publishUserInteraction({
+      user_id: userId,
+      content_id: contentId,
+      post_id: postId,
+      interaction_type: 'view',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async trackLike(userId: string, contentId: string, postId?: string): Promise<void> {
+    await this.publishUserInteraction({
+      user_id: userId,
+      content_id: contentId,
+      post_id: postId,
+      interaction_type: 'like',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async trackComment(userId: string, contentId: string, postId?: string): Promise<void> {
+    await this.publishUserInteraction({
+      user_id: userId,
+      content_id: contentId,
+      post_id: postId,
+      interaction_type: 'comment',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async trackBookmark(userId: string, contentId: string, postId?: string): Promise<void> {
+    await this.publishUserInteraction({
+      user_id: userId,
+      content_id: contentId,
+      post_id: postId,
+      interaction_type: 'bookmark',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async trackShare(userId: string, contentId: string, postId?: string): Promise<void> {
+    await this.publishUserInteraction({
+      user_id: userId,
+      content_id: contentId,
+      post_id: postId,
+      interaction_type: 'share',
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**

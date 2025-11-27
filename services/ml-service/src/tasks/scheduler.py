@@ -94,6 +94,33 @@ def setup_periodic_tasks(sender, **kwargs):
         )
         print("✅ Scheduled trending posts pre-computation (every 15 minutes)")
 
+        # Schedule feed validation (daily at 2 AM)
+        from src.tasks.pipeline_task import validate_all_feeds_task
+        sender.add_periodic_task(
+            crontab(hour=2, minute=0),
+            validate_all_feeds_task.s(),
+            name='validate-feeds-daily',
+        )
+        print("✅ Scheduled daily feed validation (2:00 AM)")
+
+        # Schedule auto-discovery (weekly on Sunday at 3 AM)
+        from src.tasks.pipeline_task import auto_discovery_task
+        sender.add_periodic_task(
+            crontab(day_of_week=0, hour=3, minute=0),
+            auto_discovery_task.s(),
+            name='auto-discovery-weekly',
+        )
+        print("✅ Scheduled weekly auto-discovery (Sunday 3:00 AM)")
+
+        # Schedule content gap analysis (daily at 4 AM)
+        from src.tasks.pipeline_task import analyze_content_gaps_task
+        sender.add_periodic_task(
+            crontab(hour=4, minute=0),
+            analyze_content_gaps_task.s(),
+            name='analyze-gaps-daily',
+        )
+        print("✅ Scheduled daily content gap analysis (4:00 AM)")
+
     except Exception as e:
         print(f"❌ Failed to setup periodic tasks: {e}")
 

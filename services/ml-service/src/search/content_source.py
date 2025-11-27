@@ -14,7 +14,8 @@ class SourceType(str, Enum):
     """Available content source types"""
     RSS = "rss"
     GEMINI = "gemini"
-    GOOGLE = "google"  # Future
+    SERPER = "serper"
+    GOOGLE = "google"  # Future (deprecated in favor of SERPER)
 
 
 class ContentSource:
@@ -57,6 +58,10 @@ def get_content_source(source_type: SourceType = SourceType.RSS) -> ContentSourc
     elif source_type == SourceType.GEMINI:
         from src.search.gemini_searcher import get_searcher
         return get_searcher()
+
+    elif source_type == SourceType.SERPER:
+        from src.search.serper_searcher import get_serper_searcher
+        return get_serper_searcher()
 
     else:
         raise ValueError(f"Unknown source type: {source_type}")

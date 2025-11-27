@@ -43,7 +43,7 @@ def scrape_by_interest(self, bot_id: str, interest_category: str):
 
         # 1. Get bot config
         # TODO: We alredy got this in first connection (optimise)
-        bot = db[COLLECTIONS["bots"]].find_one({"user_id": bot_id})
+        bot = db[COLLECTIONS["bots"]].find_one({"user_id": ObjectId(bot_id)})
         if not bot:
             logger.error(f"Bot not found: {bot_id}")
             return {"status": "error", "message": "Bot not found"}

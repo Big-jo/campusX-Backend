@@ -67,6 +67,34 @@ class ScrapedContentMetadata(BaseModel):
     wordCount: int = 0
 
 
+class EnrichedContentData(BaseModel):
+    """Enriched content data from LLM"""
+
+    summary: str = ""
+    caption: str = ""
+    insights: List[str] = []
+    context: str = ""
+    conversation_starter: str = ""
+    hashtags: List[str] = []
+
+
+class ContentQualityMetrics(BaseModel):
+    """Content quality metrics"""
+
+    score: float = 0.0
+    word_count: int = 0
+    readability: Optional[float] = None
+    source_reputation: Optional[float] = None
+
+
+class ContentDeduplication(BaseModel):
+    """Deduplication metadata"""
+
+    fingerprint: Optional[str] = None
+    canonical_url: Optional[str] = None
+    duplicate_of: Optional[PyObjectId] = None
+
+
 class ScrapedContent(BaseModel):
     """Scraped content model (matches TypeScript ScrapedContent schema)"""
 
@@ -83,6 +111,98 @@ class ScrapedContent(BaseModel):
     status: str = "pending"  # 'pending', 'posted', 'rejected'
     usedByBots: List[PyObjectId] = []
     metadata: ScrapedContentMetadata = ScrapedContentMetadata()
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+
+class EnrichedContent(BaseModel):
+    """Enriched content model with pipeline metadata"""
+
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+
+    # Original scraped data
+    url: str
+    title: str
+    content: str  # Markdown from scraper
+    images: List[str] = []  # Raw URLs or GCS URLs
+    keywords: List[str] = []
+    sourceDomain: str
+    interestCategory: str
+
+    # Enriched data (from LLM)
+    enriched: Optional[EnrichedContentData] = None
+
+    # Quality metrics
+    quality: ContentQualityMetrics = ContentQualityMetrics()
+
+    # Deduplication
+    dedup: ContentDeduplication = ContentDeduplication()
+
+    # Metadata
+    scrapedAt: datetime = Field(default_factory=datetime.utcnow)
+    enrichedAt: Optional[datetime] = None
+    sourceType: str = "rss"  # 'rss', 'serper', 'gemini'
+    discoveredTitle: str = ""
+
+    # Status tracking
+    status: str = "pending"  # 'pending', 'processing', 'enriched', 'published', 'rejected', 'failed'
+
+    # Usage tracking
+    usedByBots: List[PyObjectId] = []
+    images_processed: bool = False
+
+    # Original metadata
+    metadata: ScrapedContentMetadata = ScrapedContentMetadata()
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+
+class RSSSource(BaseModel):
+    """RSS feed source"""
+
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    url: str
+    category: str  # Category or topic name
+    category_id: Optional[str] = None  # Links to InterestCategory.id
+    topic_id: Optional[str] = None  # Links to InterestCategory.topics[].id if applicable
+    discovered_via: str = "manual"  # 'manual', 'serper', 'gemini'
+    quality_score: float = 0.0
+    last_fetched: Optional[datetime] = None
+    active: bool = True
+    metadata: Dict = {}
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+
+class UserInterest(BaseModel):
+    """User interest tracking"""
+
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    user_id: PyObjectId
+
+    # Interest vector (category → weight)
+    interest_vector: Dict[str, float] = {}
+
+    # Interest transitions over time
+    transitions: List[Dict] = []  # [{from, to, timestamp}]
+
+    # Link to Qdrant vector store
+    qdrant_point_id: Optional[str] = None
+
+    # Timestamps
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
         populate_by_name = True

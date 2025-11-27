@@ -34,6 +34,8 @@ export interface IPost {
     circleID?: string;
     hashTags?: string[];
     mentions?: string[];
+    // Link to ML service scraped content (for bot posts only)
+    contentId?: any; // mongoose.Types.ObjectId | string
 }
 
 export interface ICommentModel extends IPostModel {

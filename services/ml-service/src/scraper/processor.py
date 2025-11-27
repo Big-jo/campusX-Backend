@@ -53,12 +53,13 @@ class ContentProcessor:
     - Calculate quality score
     """
 
-    def __init__(self):
+    def __init__(self, enable_gcs: bool = False):
         self.html_converter = html2text.HTML2Text()
         self.html_converter.ignore_links = False
         self.html_converter.ignore_images = False
         self.html_converter.body_width = 0  # No wrapping
         self.stop_words = set(stopwords.words("english"))
+        self.enable_gcs = enable_gcs  # Feature flag for GCS upload
 
     def process(self, scraped_data: Dict) -> Dict:
         """
@@ -74,8 +75,15 @@ class ContentProcessor:
             # Convert HTML to Markdown
             markdown = self._html_to_markdown(scraped_data["content_html"])
 
-            # Upload images to GCS
-            # gcs_image_urls = self._upload_images(scraped_data["images"], scraped_data["url"])
+            # Upload images to GCS (if enabled)
+            if self.enable_gcs:
+                gcs_image_urls = self._upload_images(scraped_data["images"], scraped_data["url"])
+                images = gcs_image_urls
+                images_processed = True
+            else:
+                # Keep raw URLs
+                images = scraped_data.get("images", [])
+                images_processed = False
 
             # Extract keywords
             keywords = self._extract_keywords(markdown)
@@ -90,7 +98,8 @@ class ContentProcessor:
                 "url": scraped_data["url"],
                 "title": scraped_data["title"],
                 "content": markdown,
-                # "images": gcs_image_urls,
+                "images": images,
+                "images_processed": images_processed,
                 "keywords": keywords,
                 "qualityScore": quality_score,
                 "metadata": {
@@ -258,9 +267,9 @@ class ContentProcessor:
 _processor = None
 
 
-def get_processor() -> ContentProcessor:
+def get_processor(enable_gcs: bool = False) -> ContentProcessor:
     """Get or create ContentProcessor singleton"""
     global _processor
     if _processor is None:
-        _processor = ContentProcessor()
+        _processor = ContentProcessor(enable_gcs=enable_gcs)
     return _processor
