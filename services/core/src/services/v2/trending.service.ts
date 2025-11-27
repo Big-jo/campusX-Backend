@@ -57,7 +57,7 @@ export class TrendingService {
   constructor() {
     this.postRepo = new PostRepository();
     // Use Redis DB 2 (ML service database)
-    this.redis = RedisClient.getInstance(1);
+    this.redis = RedisClient.getInstance(0);
   }
 
   /**
