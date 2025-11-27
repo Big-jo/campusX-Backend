@@ -126,7 +126,7 @@ export class UserGenerator {
     const email = `${userTag}@${campus.acronym.toLowerCase()}.edu.ng`;
 
     // Phone number - Nigerian format
-    const phoneNumber = faker.phone.number('+234 ### ### ####');
+    const phoneNumber = faker.phone.number({ style: 'national' });
 
     // Bio
     const bio = this.generateBio(department, userInterests);

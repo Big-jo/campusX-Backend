@@ -5,7 +5,7 @@ import Post from '../../models/Post.model';
 import Follower from '../../models/Follower.model';
 import { getUserGenerator } from './generators/user.generator';
 import { getPostGenerator } from './generators/post.generator';
-import { getInteractionGenerator } from './generators/interaction.generator';
+import { getInteractionGenerator, InteractionGenerator } from './generators/interaction.generator';
 import {
   generateSmallWorldNetwork,
   addInfluencers,
@@ -13,6 +13,7 @@ import {
   calculateNetworkStats,
   type FollowRelationship
 } from './utils/social-graph';
+import { IPostModel } from '../../interfaces';
 
 config();
 
@@ -179,7 +180,7 @@ async function seedStoryboard(options: SeedOptions = {}) {
       else lurkerPosts += userPosts.length;
     }
 
-    const savedPosts = await Post.insertMany(allPosts);
+    const savedPosts = await Post.insertMany(allPosts) as unknown as IPostModel[];
 
     console.log(`Generated ${savedPosts.length} posts`);
     console.log(`  - From active users: ${activePosts}`);
@@ -210,10 +211,12 @@ async function seedStoryboard(options: SeedOptions = {}) {
       _id: p._id.toString(),
       userId: p.author.toString(),
       content: p.text,
+      hashTags: p.hashTags,
       createdAt: new Date(p.createdAt)
     }));
 
     const interactions = interactionGenerator.generateAllInteractions(
+      //@ts-ignore
       postsWithIds,
       userIds,
       followsMap
@@ -279,7 +282,7 @@ async function seedStoryboard(options: SeedOptions = {}) {
     }
 
     // Calculate interaction stats
-    const interactionStats = getInteractionGenerator().constructor.calculateStats(interactions);
+    const interactionStats = InteractionGenerator.calculateStats(interactions);
     console.log('📊 Interaction Statistics:');
     console.log(`  - Total: ${interactionStats.totalInteractions}`);
     console.log(`  - Views: ${interactionStats.byType.view || 0}`);
