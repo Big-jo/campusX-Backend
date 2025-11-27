@@ -383,18 +383,18 @@ export class FollowerSuggestionsService {
   /**
    * Batch compute suggestions for multiple users
    */
-  async batchComputeSuggestions(userIds: string[]): Promise<void> {
+  async batchComputeSuggestions(users: IUser[]): Promise<void> {
     const batchSize = 10;
 
-    for (let i = 0; i < userIds.length; i += batchSize) {
-      const batch = userIds.slice(i, i + batchSize);
+    for (let i = 0; i < users.length; i += batchSize) {
+      const batch = users.slice(i, i + batchSize);
 
       await Promise.all(
-        batch.map(async userId => {
+        batch.map(async user => {
           try {
-            await this.computeSuggestionsForUser(userId);
+            await this.computeSuggestionsForUser(user);
           } catch (error) {
-            console.error(`Failed to compute suggestions for user ${userId}:`, error);
+            console.error(`Failed to compute suggestions for user ${user._id.toString()}:`, error);
           }
         })
       );

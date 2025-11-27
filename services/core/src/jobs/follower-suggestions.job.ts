@@ -35,7 +35,7 @@ export async function handler(job: Job) {
 
     // Process in batches
     const userIds = users.map(u => u._id.toString());
-    await service.batchComputeSuggestions(userIds);
+    await service.batchComputeSuggestions(users);
 
     logger.info(`Follower suggestions job completed. Processed ${users.length} users`);
 
