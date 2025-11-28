@@ -7,10 +7,7 @@ export const createPostSchema = z.object({
     mentions: z.array(z.string()).optional(),
     parentPost: z.string().optional(), // For comments
     circleID: z.string().optional(), // For circle posts
-  }).refine(
-    (data) => data.text || data.parentPost || data.circleID,
-    { message: "Post must have text, or be a comment/circle post" }
-  ),
+  }),
   params: z.object({}).optional(),
   query: z.object({}).optional(),
 });
