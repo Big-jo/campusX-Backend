@@ -94,14 +94,14 @@ def setup_periodic_tasks(sender, **kwargs):
         )
         print("✅ Scheduled trending posts pre-computation (every 15 minutes)")
 
-        # Schedule feed validation (daily at 2 AM)
-        from src.tasks.pipeline_task import validate_all_feeds_task
+        # Schedule query validation (daily at 2 AM)
+        from src.tasks.pipeline_task import validate_all_queries_task
         sender.add_periodic_task(
             crontab(hour=2, minute=0),
-            validate_all_feeds_task.s(),
-            name='validate-feeds-daily',
+            validate_all_queries_task.s(),
+            name='validate-queries-daily',
         )
-        print("✅ Scheduled daily feed validation (2:00 AM)")
+        print("✅ Scheduled daily query validation (2:00 AM)")
 
         # Schedule auto-discovery (weekly on Sunday at 3 AM)
         from src.tasks.pipeline_task import auto_discovery_task

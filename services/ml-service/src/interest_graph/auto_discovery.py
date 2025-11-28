@@ -10,7 +10,9 @@ from bson import ObjectId
 from src.db.mongodb import get_sync_db, COLLECTIONS
 from src.interest_graph.topic_detector import get_topic_detector
 from src.interest_graph.query_generator import get_query_generator
-from src.search.serper_searcher import get_serper_searcher
+from src.search.gemini_query_generator import get_gemini_query_generator
+from src.search.query_manager import get_query_manager
+from src.search.query_tracker import get_query_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -24,15 +26,17 @@ class AutoDiscovery:
         self.db = get_sync_db()
         self.topic_detector = get_topic_detector()
         self.query_generator = get_query_generator()
-        self.serper_searcher = get_serper_searcher()
+        self.gemini_query_gen = get_gemini_query_generator()
+        self.query_manager = get_query_manager()
+        self.query_tracker = get_query_tracker()
         self.categories_collection = self.db[COLLECTIONS.get("interest_categories", "interestcategories")]
-        self.rss_collection = self.db[COLLECTIONS.get("rss_sources", "rsssources")]
+        self.queries_collection = self.db[COLLECTIONS.get("search_queries", "searchqueries")]
 
     async def run_discovery_cycle(
         self,
         min_users: int = 5,
         max_new_categories: int = 5,
-        feeds_per_topic: int = 3
+        queries_per_topic: int = 1
     ) -> Dict:
         """
         Run complete auto-discovery cycle.
@@ -40,7 +44,7 @@ class AutoDiscovery:
         Args:
             min_users: Minimum users to detect emerging topic
             max_new_categories: Max new categories to create
-            feeds_per_topic: RSS feeds to discover per topic
+            queries_per_topic: Search queries to generate per topic
 
         Returns:
             Summary of discovery cycle
@@ -57,7 +61,7 @@ class AutoDiscovery:
 
             if not emerging_topics:
                 logger.info("No emerging topics detected")
-                return {"status": "success", "new_categories": 0, "new_feeds": 0}
+                return {"status": "success", "new_categories": 0, "new_queries": 0}
 
             logger.info(f"Detected {len(emerging_topics)} emerging topics")
 
@@ -73,8 +77,8 @@ class AutoDiscovery:
                         new_categories.append({"name": topic, "id": category_id})
                         logger.info(f"Created new category: {topic}")
 
-            # Step 3: Discover RSS feeds for all emerging topics (new or existing)
-            total_feeds = 0
+            # Step 3: Generate search queries for all emerging topics
+            total_queries = 0
             for topic_data in emerging_topics:
                 topic = topic_data["topic"]
 
@@ -86,26 +90,21 @@ class AutoDiscovery:
 
                 category_id = str(category["_id"])
 
-                # Generate queries
-                queries = self.query_generator.generate_rss_search_queries(topic)
+                # Generate optimized query using Gemini
+                query_text = self.gemini_query_gen.generate_query_for_category(topic)
 
-                # Discover feeds for each query
-                for query in queries[:2]:  # Limit to 2 queries per topic
-                    feeds = self.serper_searcher.discover_rss_feeds(query, limit=feeds_per_topic)
+                # Store query
+                stored = await self._store_query(query_text, topic, category_id)
+                if stored:
+                    total_queries += 1
 
-                    # Store feeds
-                    for feed in feeds:
-                        stored = await self._store_feed(feed, topic, category_id)
-                        if stored:
-                            total_feeds += 1
-
-            logger.info(f"Discovery cycle complete: {len(new_categories)} categories, {total_feeds} feeds")
+            logger.info(f"Discovery cycle complete: {len(new_categories)} categories, {total_queries} queries")
 
             return {
                 "status": "success",
                 "new_categories": len(new_categories),
                 "categories": new_categories,
-                "new_feeds": total_feeds,
+                "new_queries": total_queries,
                 "timestamp": datetime.utcnow()
             }
 
@@ -139,8 +138,8 @@ class AutoDiscovery:
                 if not cat_doc:
                     continue
 
-                # Check existing feed count
-                feed_count = self.rss_collection.count_documents({
+                # Check existing query count
+                query_count = self.queries_collection.count_documents({
                     "category": category,
                     "active": True
                 })
@@ -149,10 +148,10 @@ class AutoDiscovery:
                     "category": category,
                     "gap_score": gap["gap_score"],
                     "priority": gap["priority"],
-                    "current_feeds": feed_count,
+                    "current_queries": query_count,
                     "current_content": gap["content_count"],
                     "user_interest": gap["interest_weight"],
-                    "recommended_action": "discover_feeds" if feed_count < 3 else "increase_scraping"
+                    "recommended_action": "generate_query" if query_count < 1 else "refine_query"
                 })
 
             logger.info(f"Prioritized {len(priorities)} content gaps")
@@ -195,15 +194,39 @@ class AutoDiscovery:
             logger.error(f"Failed to create category {topic}: {e}")
             return None
 
-    async def _store_feed(self, feed: Dict, category: str, category_id: str) -> bool:
-        """Store discovered RSS feed"""
+    async def _store_query(self, query_text: str, category: str, category_id: str) -> bool:
+        """Store generated search query"""
+        try:
+            if not query_text:
+                return False
+
+            # Use query manager to store
+            stored = self.query_manager.store_query(
+                query_text=query_text,
+                category=category,
+                category_id=category_id,
+                generated_via="auto_discovery"
+            )
+
+            if stored:
+                logger.info(f"Stored query for {category}: {query_text}")
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Failed to store query for {category}: {e}")
+            return False
+
+    async def _store_feed_legacy(self, feed: Dict, category: str, category_id: str) -> bool:
+        """Store discovered RSS feed (LEGACY - kept for migration reference)"""
         try:
             url = feed.get("url", "")
             if not url:
                 return False
 
             # Check if exists
-            existing = self.rss_collection.find_one({"url": url})
+            existing = self.queries_collection.find_one({"url": url})
             if existing:
                 logger.info(f"Feed already exists: {url}")
                 return False

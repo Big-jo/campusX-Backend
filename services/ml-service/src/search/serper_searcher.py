@@ -58,37 +58,31 @@ class SerperSearcher(ContentSource):
             logger.error(f"Serper search failed: {e}", exc_info=True)
             return []
 
-    def discover_rss_feeds(
-        self, interest_category: str, limit: int = 10
-    ) -> List[Dict[str, str]]:
+    def execute_query(self, query_text: str, limit: int = 10) -> List[Dict[str, str]]:
         """
-        Discover RSS feeds for a given interest category.
+        Execute pre-generated search query directly.
 
         Args:
-            interest_category: Interest category name
-            limit: Max feeds to discover
+            query_text: The search query to execute
+            limit: Max results to return
 
         Returns:
-            List of dicts with 'url' (RSS feed URL) and 'title' keys
+            List of dicts with 'url' and 'title' keys
         """
         try:
-            # Generate RSS-specific query targeting actual feed content
-            query = f'"{interest_category}" (inurl:feed OR inurl:rss OR inurl:atom) filetype:xml'
-            logger.info(f"RSS discovery query: {query}")
+            logger.info(f"Executing query: {query_text}")
 
             # Search
-            results = self._search_web(query, limit)
+            results = self._search_web(query_text, limit)
 
-            # Extract RSS URLs
-            rss_feeds = self._extract_rss_urls(results)
+            # Extract and filter URLs
+            urls = self._extract_urls(results)
 
-            logger.info(
-                f"Discovered {len(rss_feeds)} RSS feeds for '{interest_category}'"
-            )
-            return rss_feeds
+            logger.info(f"Query returned {len(urls)} results")
+            return urls[:limit]
 
         except Exception as e:
-            logger.error(f"RSS discovery failed: {e}", exc_info=True)
+            logger.error(f"Query execution failed: {e}", exc_info=True)
             return []
 
     def _generate_query(self, interest_category: str, keywords: List[str]) -> str:
@@ -172,32 +166,6 @@ class SerperSearcher(ContentSource):
 
         return urls
 
-    def _extract_rss_urls(self, results: Dict) -> List[Dict[str, str]]:
-        """
-        Extract RSS feed URLs from Serper results.
-
-        Args:
-            results: Serper API response
-
-        Returns:
-            List of dicts with RSS 'url' and 'title'
-        """
-        rss_feeds = []
-
-        for item in results.get("organic", []):
-            url = item.get("link")
-            title = item.get("title", "")
-
-            # Check if URL looks like RSS feed
-            if url and self._is_rss_url(url):
-                rss_feeds.append({
-                    "url": url,
-                    "title": title,
-                    "source": item.get("displayedLink", "")
-                })
-
-        return rss_feeds
-
     def _is_valid_url(self, url: str) -> bool:
         """Check if URL is valid and not blocked"""
         blocked_domains = [
@@ -214,13 +182,6 @@ class SerperSearcher(ContentSource):
                 return False
 
         return url.startswith("http")
-
-    def _is_rss_url(self, url: str) -> bool:
-        """Check if URL looks like an RSS feed"""
-        rss_indicators = [".rss", ".xml", "/rss", "/feed", "/atom"]
-        url_lower = url.lower()
-
-        return any(indicator in url_lower for indicator in rss_indicators)
 
 
 # Singleton

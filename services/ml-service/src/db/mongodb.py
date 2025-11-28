@@ -55,4 +55,7 @@ COLLECTIONS = {
     "bots": "bots",
     "scraped_content": "scrapedcontents",  # Mongoose pluralizes as 'scrapedcontents'
     "posts": "posts",  # For trending posts
+    "search_queries": "searchqueries",  # Search queries for content discovery
+    "user_interests": "userinterests",
+    "interest_categories": "interestcategories",
 }

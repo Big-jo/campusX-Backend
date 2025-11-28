@@ -144,7 +144,7 @@ class EnrichedContent(BaseModel):
     # Metadata
     scrapedAt: datetime = Field(default_factory=datetime.utcnow)
     enrichedAt: Optional[datetime] = None
-    sourceType: str = "rss"  # 'rss', 'serper', 'gemini'
+    sourceType: str = "search"  # 'search', 'serper', 'gemini'
     discoveredTitle: str = ""
 
     # Status tracking
@@ -163,19 +163,18 @@ class EnrichedContent(BaseModel):
         json_encoders = {ObjectId: str}
 
 
-class RSSSource(BaseModel):
-    """RSS feed source"""
+class SearchQuery(BaseModel):
+    """Search query for content discovery"""
 
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    url: str
+    query_text: str
     category: str  # Category or topic name
     category_id: Optional[str] = None  # Links to InterestCategory.id
-    topic_id: Optional[str] = None  # Links to InterestCategory.topics[].id if applicable
-    discovered_via: str = "manual"  # 'manual', 'serper', 'gemini'
+    generated_via: str = "manual"  # 'manual', 'gemini', 'auto_discovery'
     quality_score: float = 0.0
-    last_fetched: Optional[datetime] = None
+    last_used: Optional[datetime] = None
     active: bool = True
-    metadata: Dict = {}
+    metadata: dict = {}
     createdAt: datetime = Field(default_factory=datetime.utcnow)
     updatedAt: datetime = Field(default_factory=datetime.utcnow)
 

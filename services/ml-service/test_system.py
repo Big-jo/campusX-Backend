@@ -28,8 +28,8 @@ async def test_infrastructure():
     try:
         from src.db.mongodb import get_sync_db, COLLECTIONS
         db = get_sync_db()
-        feed_count = db[COLLECTIONS.get("rss_sources", "rsssources")].count_documents({"active": True})
-        logger.info(f"✅ MongoDB: {feed_count} active feeds")
+        query_count = db[COLLECTIONS.get("search_queries", "searchqueries")].count_documents({"active": True})
+        logger.info(f"✅ MongoDB: {query_count} active search queries")
         results['mongodb'] = True
     except Exception as e:
         logger.error(f"❌ MongoDB failed: {e}")
@@ -523,12 +523,15 @@ async def test_category_tree_expansion():
         logger.warning(f"⚠️  Category naming skipped (API key needed): {e}")
         category_name = emerging_topic
 
-    # Test RSS query generation
-    logger.info("Generating RSS feed queries...")
-    queries = query_generator.generate_rss_search_queries(emerging_topic)
-    logger.info(f"✅ Generated {len(queries)} RSS queries:")
-    for i, query in enumerate(queries[:3], 1):
-        logger.info(f"  {i}. {query}")
+    # Test search query generation
+    logger.info("Generating search queries...")
+    from src.search.gemini_query_generator import get_gemini_query_generator
+    gemini_gen = get_gemini_query_generator()
+    try:
+        query = gemini_gen.generate_query_for_category(emerging_topic)
+        logger.info(f"✅ Generated query: {query}")
+    except Exception as e:
+        logger.warning(f"⚠️  Query generation skipped (API key needed): {e}")
 
     # Test discovery cycle (dry run - won't actually call Serper without API)
     logger.info("Testing discovery cycle structure...")
@@ -566,6 +569,52 @@ async def test_category_tree_expansion():
 # PIPELINE TESTS
 # ============================================================================
 
+async def test_search_query_system():
+    """Test search query generation and tracking"""
+    logger.info("\n" + "="*60)
+    logger.info("SEARCH QUERY SYSTEM")
+    logger.info("="*60)
+
+    try:
+        from src.search.gemini_query_generator import get_gemini_query_generator
+        from src.search.query_manager import get_query_manager
+        from src.search.query_tracker import get_query_tracker
+
+        query_gen = get_gemini_query_generator()
+        query_mgr = get_query_manager()
+        query_tracker = get_query_tracker()
+
+        # Test query generation
+        test_category = "Technology"
+        logger.info(f"Generating query for '{test_category}'...")
+
+        query_text = query_gen.generate_query_for_category(test_category)
+        logger.info(f"✅ Generated: {query_text}")
+
+        # Test query storage
+        stored = query_mgr.store_query(
+            query_text=query_text,
+            category=test_category,
+            generated_via="test"
+        )
+        logger.info(f"✅ Stored: {stored}")
+
+        # Test query retrieval
+        retrieved = query_mgr.get_query_for_category(test_category)
+        logger.info(f"✅ Retrieved: {retrieved}")
+
+        # Test tracking
+        query_tracker.track_search_success(query_text, 10)
+        logger.info("✅ Tracked search success")
+
+        # Cleanup
+        query_mgr.disable_query(query_text)
+        logger.info("✅ Cleaned up test query")
+
+    except Exception as e:
+        logger.error(f"❌ Search query system test failed: {e}")
+
+
 async def test_pipeline():
     """Test content pipeline"""
     logger.info("\n" + "="*60)
@@ -577,7 +626,7 @@ async def test_pipeline():
     try:
         result = await run_content_pipeline(
             interest_category="Technology",
-            source_type="rss",
+            source_type="search",
             limit=5
         )
         logger.info(f"✅ Pipeline result: {result}")
@@ -654,6 +703,9 @@ async def main():
 
     # Category Tree Expansion
     await test_category_tree_expansion()
+
+    # Search Query System
+    await test_search_query_system()
 
     # Pipeline
     await test_pipeline()

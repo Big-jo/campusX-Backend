@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # Gemini Search
     GEMINI_SEARCH_MAX_RESULTS: int = 10
 
+    # Query Generation
+    QUERY_GENERATION_MODEL: str = "gemini-2.0-flash-exp"
+    DEFAULT_CONTENT_SOURCE: str = "search"
+    MIN_QUERY_QUALITY_SCORE: float = 0.3
+
     # NATS Configuration
     NATS_URL: str = os.getenv("NATS_URL", "nats://localhost:4222")
 

@@ -12,10 +12,9 @@ logger = logging.getLogger(__name__)
 
 class SourceType(str, Enum):
     """Available content source types"""
-    RSS = "rss"
+    SEARCH = "search"  # Gemini-generated queries + Serper
     GEMINI = "gemini"
     SERPER = "serper"
-    GOOGLE = "google"  # Future (deprecated in favor of SERPER)
 
 
 class ContentSource:
@@ -41,7 +40,7 @@ class ContentSource:
         raise NotImplementedError
 
 
-def get_content_source(source_type: SourceType = SourceType.RSS) -> ContentSource:
+def get_content_source(source_type: SourceType = SourceType.SEARCH) -> ContentSource:
     """
     Factory function to get content source by type
 
@@ -51,9 +50,9 @@ def get_content_source(source_type: SourceType = SourceType.RSS) -> ContentSourc
     Returns:
         ContentSource instance
     """
-    if source_type == SourceType.RSS:
-        from src.search.rss_aggregator import get_rss_aggregator
-        return get_rss_aggregator()
+    if source_type == SourceType.SEARCH:
+        from src.search.search_source import get_search_source
+        return get_search_source()
 
     elif source_type == SourceType.GEMINI:
         from src.search.gemini_searcher import get_searcher
@@ -67,5 +66,5 @@ def get_content_source(source_type: SourceType = SourceType.RSS) -> ContentSourc
         raise ValueError(f"Unknown source type: {source_type}")
 
 
-# Default source (can be changed via config later)
-DEFAULT_SOURCE = SourceType.RSS
+# Default source
+DEFAULT_SOURCE = SourceType.SEARCH

@@ -42,7 +42,7 @@ class ContentPipeline:
         self,
         interest_category: str,
         keywords: List[str] = None,
-        source_type: SourceType = SourceType.RSS,
+        source_type: SourceType = SourceType.SEARCH,
         limit: int = 10,
     ) -> List[Dict]:
         """
