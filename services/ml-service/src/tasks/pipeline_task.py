@@ -269,22 +269,22 @@ async def discover_rss_feeds(interest_category: str, limit: int = 10):
 
 
 @app.task(base=PipelineCallbackTask)
-def validate_all_feeds_task():
+def validate_all_queries_task():
     """
-    Celery task to validate all RSS feeds.
-    Runs health check and disables broken feeds.
+    Celery task to validate all search queries.
+    Runs health check and disables stale queries.
     """
-    logger.info("Running scheduled feed validation")
+    logger.info("Running scheduled query validation")
 
     try:
-        from src.feed_manager.feed_tracker import get_feed_tracker
+        from src.search.query_tracker import get_query_tracker
 
-        tracker = get_feed_tracker()
+        tracker = get_query_tracker()
 
         # Run health check
         result = tracker.health_check_all(max_age_days=7)
 
-        logger.info(f"Feed validation complete: {result['disabled_count']} feeds disabled")
+        logger.info(f"Query validation complete: {result['disabled_count']} queries disabled")
 
         return {
             "status": "success",
@@ -292,7 +292,7 @@ def validate_all_feeds_task():
         }
 
     except Exception as e:
-        logger.error(f"Feed validation failed: {e}")
+        logger.error(f"Query validation failed: {e}")
         return {"status": "error", "message": str(e)}
 
 
