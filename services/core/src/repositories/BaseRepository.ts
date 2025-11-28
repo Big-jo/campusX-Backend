@@ -31,8 +31,8 @@ export abstract class BaseRepository<T extends Document> {
   /**
    * Find all documents (no filter)
    */
-  async findAll(projection?: any, options?: QueryOptions): Promise<T[]> {
-    return this.model.find({}, projection, options).exec();
+  async findAll(filter: FilterQuery<T>, projection?: any, options?: QueryOptions): Promise<T[]> {
+    return this.model.find(filter, projection, options).exec();
   }
 
   /**

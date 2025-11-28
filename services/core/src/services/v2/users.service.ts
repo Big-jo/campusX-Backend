@@ -4,6 +4,7 @@ import { NotFoundError, ValidationError, AppError } from '../../errors';
 import { User } from '../../entities/User';
 import { botTypes } from '../../types/types';
 import Bot from '../../models/bots';
+import { count } from 'console';
 
 export class UsersService {
   private interestRepository: InterestRepository;
@@ -126,6 +127,41 @@ export class UsersService {
       throw new NotFoundError('User not found');
     }
     return user;
+  }
+
+  async searchUsers(search: string, limit: number, page: number) {
+    const skip = (page - 1) * limit;
+    const query = search ? {
+      $or: [{
+        name: { $regex: `^${search}`, $options: 'i' },
+        userTag: { $regex: `^${search}`, $options: 'i' }
+      }]
+    } : {}; 
+
+    const[items, total] = await Promise.all([
+      this.userRepository.findAll(query, {
+        _id: 1,
+        name: 1,
+        userTag: 1,
+        'userProfile.avatar': 1,
+        'userProfile.university': 1,
+        'userProfile.rep_points': 1,
+        'userProfile.followers': 1,
+        'userProfile.bio': 1,
+      }, {
+         limit, skip
+      }),
+      this.userRepository.count(query)
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users: items,
+      total,
+      limit,
+      page,
+    }
   }
 
   /**

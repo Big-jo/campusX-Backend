@@ -39,6 +39,16 @@ export const saveUserInterestsSchema = z.object({
   query: z.object({}).optional(),
 });
 
+export const userSearchSchema = z.object({
+  query: z.object({
+    q: z.string().min(1, 'Search query cannot be empty').optional(),
+    limit: z.string().optional(),
+    offset: z.string().optional(),
+  }),
+  params: z.object({}).optional(),
+  body: z.object({}).optional(),
+});
+
 export type GetUserInterestsInput = z.infer<typeof getUserInterestsSchema>;
 export type UpdateUserProfileInput = z.infer<typeof updateUserProfileSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;

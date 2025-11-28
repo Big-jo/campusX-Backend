@@ -73,4 +73,14 @@ export class UsersController {
 
     return res.status(200).json(result);
   };
+
+  userSearch = async (req: Request, res: Response) => {
+    const { q, limit, page = 1 } = req.query;
+    
+    const parsedLimit = limit ? Math.min(parseInt(limit as string), 50) : 20;
+    const skip = page ? Math.max(parseInt(page as string), 0) : 1;
+    
+    const result = await this.usersService.searchUsers(q as string, parsedLimit, skip);
+    return res.status(200).json({result});
+  };
 }
