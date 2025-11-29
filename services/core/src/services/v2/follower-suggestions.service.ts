@@ -404,11 +404,14 @@ export class FollowerSuggestionsService {
       return statusMap;
     }
 
+    // Convert string IDs to ObjectIds
+    const targetObjectIds = targetUserIds.map(id => mongoose.Types.ObjectId(id));
+
     // Query all relationships in one go
     const following = await this.followerRepo.find(
       {
         follower: mongoose.Types.ObjectId(currentUserId),
-        target: { $in: targetUserIds.map(id => mongoose.Types.ObjectId(id)) }
+        target: { $in: targetObjectIds } as any
       },
       { target: 1, _id: 0 }
     );
