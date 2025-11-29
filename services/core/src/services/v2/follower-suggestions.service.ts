@@ -1,11 +1,10 @@
 import mongoose from 'mongoose';
+import { IUser } from '../../interfaces';
+import RedisClient from '../../lib/redis';
+import { ISuggestionItem } from '../../models/FollowerSuggestion.model';
 import { FollowerRepository } from '../../repositories/FollowerRepository';
 import { FollowerSuggestionsRepository } from '../../repositories/FollowerSuggestionsRepository';
 import { UserRepository } from '../../repositories/UserRepository';
-import { ISuggestionItem } from '../../models/FollowerSuggestion.model';
-import RedisClient from '../../lib/redis';
-import { NotFoundError } from '../../errors';
-import { IUser } from '../../interfaces';
 
 export class FollowerSuggestionsService {
   private followerRepo: FollowerRepository;
@@ -39,7 +38,7 @@ export class FollowerSuggestionsService {
     if (offset === 0 && limit <= 20) {
       const cached = await this.getCachedSuggestions(userId, limit);
       if (cached.length > 0) {
-        const enriched = await this.enrichSuggestions(cached);
+        const enriched = await this.enrichSuggestions(cached, userId);
         return {
           success: true,
           data: enriched,
@@ -89,9 +88,12 @@ export class FollowerSuggestionsService {
           { limit: 50, skip: offset },
         );
 
+        // Add isFollowing flag to fallback users
+        const enrichedFallback = await this.addFollowingStatus(users, userId);
+
         return {
           success: true,
-          data: users,
+          data: enrichedFallback,
           meta: {
             total: users.length,
             limit,
@@ -103,7 +105,7 @@ export class FollowerSuggestionsService {
 
       }
 
-      const enriched = await this.enrichSuggestions(newSuggestions);
+      const enriched = await this.enrichSuggestions(newSuggestions, userId);
       return {
         success: true,
         data: enriched,
@@ -117,7 +119,7 @@ export class FollowerSuggestionsService {
       };
     }
 
-    const enriched = await this.enrichSuggestions(suggestions);
+    const enriched = await this.enrichSuggestions(suggestions, userId);
     return {
       success: true,
       data: enriched,
@@ -332,9 +334,9 @@ export class FollowerSuggestionsService {
   }
 
   /**
-   * Enrich suggestions with full user data
+   * Enrich suggestions with full user data and following status
    */
-  private async enrichSuggestions(suggestions: ISuggestionItem[]): Promise<any[]> {
+  private async enrichSuggestions(suggestions: ISuggestionItem[], currentUserId: string): Promise<any[]> {
     if (suggestions.length === 0) {
       return [];
     }
@@ -354,6 +356,12 @@ export class FollowerSuggestionsService {
       }
     );
 
+    // Get following status for all suggested users in batch
+    const followingStatuses = await this.getFollowingStatusBatch(
+      currentUserId,
+      userIds.map(id => id.toString())
+    );
+
     // Create a map for fast lookup
     //TODO: OPTIMISE THIS POS
     const userMap = new Map();
@@ -364,6 +372,8 @@ export class FollowerSuggestionsService {
         const user = userMap.get(s.userId.toString());
         if (!user) return null;
 
+        const isFollowing = followingStatuses.get(s.userId.toString()) || false;
+
         return {
           user: {
             _id: user._id,
@@ -371,6 +381,7 @@ export class FollowerSuggestionsService {
             userTag: user.userTag,
             userProfile: user.userProfile,
           },
+          isFollowing,
           score: s.score,
           mutualFollowers: s.mutualCount,
           reasons: s.reasons,
@@ -378,6 +389,60 @@ export class FollowerSuggestionsService {
         };
       })
       .filter(s => s !== null);
+  }
+
+  /**
+   * Get following status for multiple users in a single query
+   */
+  private async getFollowingStatusBatch(
+    currentUserId: string,
+    targetUserIds: string[]
+  ): Promise<Map<string, boolean>> {
+    const statusMap = new Map<string, boolean>();
+
+    if (!currentUserId || targetUserIds.length === 0) {
+      return statusMap;
+    }
+
+    // Query all relationships in one go
+    const following = await this.followerRepo.find(
+      {
+        follower: mongoose.Types.ObjectId(currentUserId),
+        target: { $in: targetUserIds.map(id => mongoose.Types.ObjectId(id)) }
+      },
+      { target: 1, _id: 0 }
+    );
+
+    // Mark users that are being followed
+    following.forEach(f => {
+      statusMap.set(f.target.toString(), true);
+    });
+
+    // Ensure all target users have an entry (false if not following)
+    targetUserIds.forEach(id => {
+      if (!statusMap.has(id)) {
+        statusMap.set(id, false);
+      }
+    });
+
+    return statusMap;
+  }
+
+  /**
+   * Add following status to user objects (for fallback users)
+   */
+  private async addFollowingStatus(users: any[], currentUserId: string): Promise<any[]> {
+    if (users.length === 0) {
+      return [];
+    }
+
+    const userIds = users.map(u => u._id.toString());
+    const followingStatuses = await this.getFollowingStatusBatch(currentUserId, userIds);
+
+    return users.map(user => ({
+      ...user.toObject ? user.toObject() : user,
+      isFollowing: followingStatuses.get(user._id.toString()) || false,
+    }));
   }
 
   /**

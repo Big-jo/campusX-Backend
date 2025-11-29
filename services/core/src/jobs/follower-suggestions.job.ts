@@ -1,7 +1,7 @@
-import { Job } from 'bullmq';
-import { FollowerSuggestionsService } from '../services/v2/follower-suggestions.service';
 import { logger } from '@shared';
+import { Job } from 'bullmq';
 import User from '../models/User.model';
+import { FollowerSuggestionsService } from '../services/v2/follower-suggestions.service';
 
 export const name = 'follower-suggestions';
 
