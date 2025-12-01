@@ -83,6 +83,7 @@ export class FollowerSuggestionsService {
             'userProfile.university': 1,
             'userProfile.rep_points': 1,
             'userProfile.followers': 1,
+            'userProfile.followings': 1,
             'userProfile.bio': 1,
           },
           { limit: 50, skip: offset },

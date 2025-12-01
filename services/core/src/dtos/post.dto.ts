@@ -44,7 +44,7 @@ export abstract class BasePostDTO {
     this._id = data._id?.toString();
     this.type = data.type;
     this.text = data.text;
-    this.images = data.image ? [data.image] : data.images || [];
+    this.images = data.images;
     this.videos = data.videos;
     this.image = data.image;
     this.video = data.video;
@@ -89,6 +89,10 @@ export class PostDTO extends BasePostDTO {
     this.campus = data.campus;
     this.trash = data.trash || 0;
     this.top_comments = data.top_comments?.map((c: any) => new CommentDTO(c));
+
+    if (data.image && data.images?.length === 0) {
+      this.images = [data.image];
+    }
   }
 }
 

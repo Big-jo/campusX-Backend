@@ -89,8 +89,6 @@ export class PostsService {
       text: postData.text || '',
       images: imageUrls,
       videos: videoUrls,
-      image: imageUrls[0] || postData.image || null, // Legacy
-      video: videoUrls[0] || postData.video || null, // Legacy
       campus: user.userProfile.university,
       parentPost: postData.parentPost || undefined,
       circleID: postData.circleID ? mongoose.Types.ObjectId(postData.circleID) : undefined,
