@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { IUser } from '../../interfaces';
 import RedisClient from '../../lib/redis';
 import { ISuggestionItem } from '../../models/FollowerSuggestion.model';
@@ -411,7 +411,7 @@ export class FollowerSuggestionsService {
     // Query all relationships in one go
     const following = await this.followerRepo.find(
       {
-        follower: mongoose.Types.ObjectId(currentUserId),
+        follower: mongoose.Types.ObjectId(currentUserId) as Types.ObjectId,
         target: { $in: targetObjectIds } as any
       },
       { target: 1, _id: 0 }
