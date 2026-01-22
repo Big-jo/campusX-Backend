@@ -54,7 +54,7 @@
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^8.5.1",
     "keyword-extractor": "0.0.19",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.23",
     "mention-hashtag": "^1.1.1",
     "moment": "^2.24.0",
     "mongoose": "^5.7.5",
