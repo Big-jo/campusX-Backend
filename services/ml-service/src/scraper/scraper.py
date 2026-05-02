@@ -1,3 +1,5 @@
+import asyncio
+import concurrent.futures
 import logging
 from typing import Dict, Optional
 from urllib.parse import urlparse, urljoin
@@ -109,7 +111,20 @@ class ContentScraper:
             return self._scrape_with_playwright(url)
 
     def _scrape_with_playwright(self, url: str) -> Optional[Dict]:
-        """Scrape using Playwright (for JavaScript-heavy sites)"""
+        """Scrape using Playwright (for JavaScript-heavy sites).
+        Runs in a thread pool if an asyncio loop is already running."""
+        try:
+            asyncio.get_running_loop()
+            # Inside an async loop — offload to thread so sync_playwright works
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(self._playwright_worker, url)
+                return future.result(timeout=settings.SCRAPER_TIMEOUT + 15)
+        except RuntimeError:
+            # No running loop — call directly
+            return self._playwright_worker(url)
+
+    def _playwright_worker(self, url: str) -> Optional[Dict]:
+        """Sync Playwright scraping — must run outside any asyncio event loop."""
         browser = None
         try:
             with sync_playwright() as p:
@@ -180,7 +195,7 @@ class ContentScraper:
             if browser:
                 try:
                     browser.close()
-                except:
+                except Exception:
                     pass
             return None
 
