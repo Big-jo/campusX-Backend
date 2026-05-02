@@ -134,18 +134,23 @@ export class BotPosterService {
     // Format content for post
     const postText = this.formatContentAsPost(content);
 
+    // Prefer enriched hashtags from ML pipeline, fall back to keywords
+    const hashTags = content.enriched?.hashtags?.length
+      ? content.enriched.hashtags.slice(0, 5)
+      : content.keywords.slice(0, 5);
+
     const post = await Post.create({
       author: botUserId,
       text: postText,
       image: content.images.length > 0 ? content.images[0] : null,
-      campus: 'global', // Bots post to global campus
+      campus: 'global',
       type: 'post',
       createdAt: Date.now(),
-      hashTags: content.keywords.slice(0, 5), // Use top 5 keywords as hashtags
+      hashTags,
       likes: 0,
       dislikes: 0,
       comments: 0,
-      contentId: content._id // Link to scraped content for ML tracking
+      contentId: content._id
     });
 
     logger.info(`Created bot post ${post._id} from content ${content._id}`);
@@ -153,18 +158,40 @@ export class BotPosterService {
     return post;
   }
 
-  /**
-   * Format scraped content as a post (truncate, add source attribution)
-   */
   private formatContentAsPost(content: IScrapedContent): string {
-    // Use title + excerpt from content
-    const maxLength = 500;
-    const excerpt = content.content.slice(0, maxLength);
+    const enriched = content.enriched;
 
-    // Add source attribution
-    const source = content.sourceDomain;
+    if (enriched?.caption) {
+      const parts: string[] = [enriched.caption];
 
-    return `${content.title}\n\n${excerpt}${excerpt.length >= maxLength ? '...' : ''}\n\n📰 Source: ${source}`;
+      if (enriched.insights?.length) {
+        parts.push('\n💡 Key Takeaways:');
+        enriched.insights.slice(0, 3).forEach(i => parts.push(`• ${i}`));
+      }
+
+      if (enriched.conversation_starter) {
+        parts.push(`\n🤔 ${enriched.conversation_starter}`);
+      }
+
+      const readingTime = Math.ceil((content.metadata?.wordCount || 300) / 200);
+      parts.push(`\n📰 ${content.sourceDomain}  ·  ${content.interestCategory}  ·  ${readingTime} min read`);
+
+      return parts.join('\n');
+    }
+
+    // Fallback: strip markdown, use clean excerpt
+    const clean = content.content
+      .replace(/#{1,6}\s+/g, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    const excerpt = clean.slice(0, 300);
+    const readingTime = Math.ceil((content.metadata?.wordCount || 300) / 200);
+
+    return `${content.title}\n\n${excerpt}${clean.length > 300 ? '...' : ''}\n\n📰 ${content.sourceDomain}  ·  ${content.interestCategory}  ·  ${readingTime} min read`;
   }
 
   /**

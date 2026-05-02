@@ -94,6 +94,53 @@ export class AggregationPipelines {
   }
 
   /**
+   * Lookup scraped content details for bot posts (only when contentId present)
+   */
+  static scrapedContentLookup() {
+    return {
+      $lookup: {
+        from: 'scrapedcontents',
+        let: { cid: '$contentId' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$cid'] } } },
+          {
+            $project: {
+              title: 1,
+              url: 1,
+              sourceDomain: 1,
+              interestCategory: 1,
+              images: 1,
+              keywords: 1,
+              'enriched.summary': 1,
+              'enriched.caption': 1,
+              'enriched.insights': 1,
+              'enriched.conversation_starter': 1,
+              'enriched.hashtags': 1,
+              'metadata.author': 1,
+              'metadata.publishedAt': 1,
+              'metadata.wordCount': 1,
+              qualityScore: 1,
+              scrapedAt: 1,
+            }
+          }
+        ],
+        as: 'scrapedContent'
+      }
+    };
+  }
+
+  /**
+   * Flatten scrapedContent array to single object (null when absent)
+   */
+  static addScrapedContentField() {
+    return {
+      $addFields: {
+        scrapedContent: { $ifNull: [{ $arrayElemAt: ['$scrapedContent', 0] }, null] }
+      }
+    };
+  }
+
+  /**
    * Complete post pipeline with author and like fields
    */
   static postPipeline(userId: string | null, options: { includeTopComments?: boolean; topCommentsLimit?: number } = {}) {
@@ -101,7 +148,9 @@ export class AggregationPipelines {
       this.addLikeFields(userId),
       this.projectSensitiveFields(),
       this.authorLookup(),
-      { $unwind: '$author' }
+      { $unwind: '$author' },
+      this.scrapedContentLookup(),
+      this.addScrapedContentField(),
     ];
 
     if (options.includeTopComments && userId) {

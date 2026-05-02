@@ -6,11 +6,20 @@ export interface IScrapedContentMetadata {
   wordCount: number;
 }
 
+export interface IEnrichedContent {
+  summary?: string;
+  caption?: string;
+  insights?: string[];
+  context?: string;
+  conversation_starter?: string;
+  hashtags?: string[];
+}
+
 export interface IScrapedContent extends Document {
   url: string;
   title: string;
   content: string; // Markdown
-  images: string[]; // GCS URLs
+  images: string[];
   keywords: string[];
   sourceDomain: string;
   interestCategory: string;
@@ -19,6 +28,7 @@ export interface IScrapedContent extends Document {
   status: 'pending' | 'posted' | 'rejected';
   usedByBots: mongoose.Types.ObjectId[];
   metadata: IScrapedContentMetadata;
+  enriched?: IEnrichedContent;
 }
 
 const ScrapedContentMetadataSchema = new Schema({
@@ -78,6 +88,17 @@ const ScrapedContentSchema: Schema = new Schema({
   metadata: {
     type: ScrapedContentMetadataSchema,
     default: () => ({})
+  },
+  enriched: {
+    type: {
+      summary: String,
+      caption: String,
+      insights: [String],
+      context: String,
+      conversation_starter: String,
+      hashtags: [String],
+    },
+    default: null,
   }
 });
 
