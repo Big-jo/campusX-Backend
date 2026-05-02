@@ -165,16 +165,16 @@ export class BotPosterService {
       const parts: string[] = [enriched.caption];
 
       if (enriched.insights?.length) {
-        parts.push('\n💡 Key Takeaways:');
-        enriched.insights.slice(0, 3).forEach(i => parts.push(`• ${i}`));
+        parts.push('\nKey Takeaways:');
+        enriched.insights.slice(0, 3).forEach(i => parts.push(`- ${i}`));
       }
 
       if (enriched.conversation_starter) {
-        parts.push(`\n🤔 ${enriched.conversation_starter}`);
+        parts.push(`\n${enriched.conversation_starter}`);
       }
 
       const readingTime = Math.ceil((content.metadata?.wordCount || 300) / 200);
-      parts.push(`\n📰 ${content.sourceDomain}  ·  ${content.interestCategory}  ·  ${readingTime} min read`);
+      parts.push(`\n${content.sourceDomain} · ${content.interestCategory} · ${readingTime} min read`);
 
       return parts.join('\n');
     }
@@ -191,7 +191,7 @@ export class BotPosterService {
     const excerpt = clean.slice(0, 300);
     const readingTime = Math.ceil((content.metadata?.wordCount || 300) / 200);
 
-    return `${content.title}\n\n${excerpt}${clean.length > 300 ? '...' : ''}\n\n📰 ${content.sourceDomain}  ·  ${content.interestCategory}  ·  ${readingTime} min read`;
+    return `${content.title}\n\n${excerpt}${clean.length > 300 ? '...' : ''}\n\n${content.sourceDomain} · ${content.interestCategory} · ${readingTime} min read`;
   }
 
   /**
