@@ -55,8 +55,8 @@ def get_content_source(source_type: SourceType = SourceType.SEARCH) -> ContentSo
         return get_search_source()
 
     elif source_type == SourceType.GEMINI:
-        from src.search.gemini_searcher import get_searcher
-        return get_searcher()
+        from src.search.llm_searcher import get_llm_searcher
+        return get_llm_searcher()
 
     elif source_type == SourceType.SERPER:
         from src.search.serper_searcher import get_serper_searcher

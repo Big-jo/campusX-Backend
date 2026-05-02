@@ -6,8 +6,7 @@ Transforms raw articles into social-media-ready content.
 import logging
 import re
 from typing import Dict, Optional
-import google.generativeai as genai
-from src.config import settings
+from src.llm.deepseek_client import generate as llm_generate
 from src.enrichment.prompts import (
     ENRICHMENT_PROMPT_TEMPLATE,
     CATEGORY_REFINEMENT_PROMPT,
@@ -16,18 +15,14 @@ from src.enrichment.prompts import (
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini
-genai.configure(api_key=settings.GEMINI_API_KEY)
-
 
 class ContentEnricher:
     """
-    Enriches content using Gemini LLM.
+    Enriches content using DeepSeek LLM.
     Generates summaries, captions, insights, and more.
     """
 
-    def __init__(self, model_name: str = "gemini-2.0-flash-exp"):
-        self.model = genai.GenerativeModel(model_name)
+    def __init__(self):
         self.generation_config = {
             "temperature": 0.7,
             "top_p": 0.9,
@@ -57,13 +52,13 @@ class ContentEnricher:
                 title=title, url=url, content=content_preview
             )
 
-            # Call Gemini
-            response = self.model.generate_content(
-                prompt, generation_config=self.generation_config
+            response_text = llm_generate(
+                prompt,
+                temperature=self.generation_config["temperature"],
+                max_tokens=self.generation_config["max_output_tokens"],
+                top_p=self.generation_config.get("top_p", 1.0),
             )
-
-            # Parse markdown response
-            enrichment = self._parse_enrichment_response(response.text)
+            enrichment = self._parse_enrichment_response(response_text)
 
             logger.info(f"Enriched content: {title[:50]}...")
             return enrichment
@@ -146,13 +141,14 @@ class ContentEnricher:
                 title=title, content=content_preview
             )
 
-            response = self.model.generate_content(
-                prompt, generation_config={**self.generation_config, "temperature": 0.3}
+            response_text = llm_generate(
+                prompt,
+                temperature=0.3,
+                max_tokens=self.generation_config["max_output_tokens"],
             )
 
-            # Parse JSON response
             import json
-            assessment = json.loads(response.text)
+            assessment = json.loads(response_text)
 
             return assessment
 
@@ -183,13 +179,14 @@ class ContentEnricher:
                 content_preview=content_preview,
             )
 
-            response = self.model.generate_content(
-                prompt, generation_config={**self.generation_config, "temperature": 0.5}
+            response_text = llm_generate(
+                prompt,
+                temperature=0.5,
+                max_tokens=self.generation_config["max_output_tokens"],
             )
 
-            # Parse JSON response
             import json
-            refinement = json.loads(response.text)
+            refinement = json.loads(response_text)
 
             return refinement
 
@@ -202,9 +199,9 @@ class ContentEnricher:
 _enricher = None
 
 
-def get_enricher(model_name: str = "gemini-2.0-flash-exp") -> ContentEnricher:
+def get_enricher() -> ContentEnricher:
     """Get or create enricher singleton"""
     global _enricher
     if _enricher is None:
-        _enricher = ContentEnricher(model_name)
+        _enricher = ContentEnricher()
     return _enricher

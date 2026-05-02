@@ -266,10 +266,10 @@ export class PostsService {
     }
 
     // Track interaction for ML service (fire-and-forget)
-    if (natsClient.isConnected() && post.contentId) {
+    if (natsClient.isConnected()) {
       natsClient.trackLike(
         userId,
-        post.contentId.toString(),
+        post.contentId?.toString() ?? '',
         post._id.toString()
       ).catch(err => {
         console.error('Failed to track like interaction:', err);
@@ -388,10 +388,10 @@ export class PostsService {
     const post = posts[0];
 
     // Track view for ML service (fire-and-forget)
-    if (natsClient.isConnected() && post.contentId) {
+    if (natsClient.isConnected()) {
       natsClient.trackView(
         userId,
-        post.contentId.toString(),
+        post.contentId?.toString() ?? '',
         post._id.toString()
       ).catch(err => {
         console.error('Failed to track view interaction:', err);

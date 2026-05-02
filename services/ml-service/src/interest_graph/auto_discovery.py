@@ -10,7 +10,7 @@ from bson import ObjectId
 from src.db.mongodb import get_sync_db, COLLECTIONS
 from src.interest_graph.topic_detector import get_topic_detector
 from src.interest_graph.query_generator import get_query_generator
-from src.search.gemini_query_generator import get_gemini_query_generator
+from src.search.query_generator import get_query_generator as get_search_query_generator
 from src.search.query_manager import get_query_manager
 from src.search.query_tracker import get_query_tracker
 
@@ -26,7 +26,7 @@ class AutoDiscovery:
         self.db = get_sync_db()
         self.topic_detector = get_topic_detector()
         self.query_generator = get_query_generator()
-        self.gemini_query_gen = get_gemini_query_generator()
+        self.search_query_gen = get_search_query_generator()
         self.query_manager = get_query_manager()
         self.query_tracker = get_query_tracker()
         self.categories_collection = self.db[COLLECTIONS.get("interest_categories", "interestcategories")]
@@ -91,7 +91,7 @@ class AutoDiscovery:
                 category_id = str(category["_id"])
 
                 # Generate optimized query using Gemini
-                query_text = self.gemini_query_gen.generate_query_for_category(topic)
+                query_text = self.search_query_gen.generate_query_for_category(topic)
 
                 # Store query
                 stored = await self._store_query(query_text, topic, category_id)

@@ -34,25 +34,33 @@ class InterestTracker:
         user_id: str,
         content_id: str,
         interaction_type: str,
-        weight: float = 1.0
+        weight: float = 1.0,
+        category_override: Optional[str] = None,
     ):
         """
         Track user interaction with content.
 
         Args:
             user_id: User ID
-            content_id: Content ID
+            content_id: Content ID (may be empty for user-generated posts)
             interaction_type: "view", "like", "share", "comment"
             weight: Interaction weight (view=0.1, like=0.5, share=1.0)
+            category_override: Use this category instead of looking up content (for user posts)
         """
         try:
-            # Get content
-            content = self.content_collection.find_one({"_id": ObjectId(content_id)})
-            if not content:
-                logger.warning(f"Content not found: {content_id}")
+            # Resolve category from scraped content or override
+            content = None
+            if content_id:
+                content = self.content_collection.find_one({"_id": ObjectId(content_id)})
+
+            if content:
+                category = content.get("interestCategory", "")
+            elif category_override:
+                category = category_override
+            else:
+                logger.warning(f"Content not found and no category override: {content_id}")
                 return
 
-            category = content.get("interestCategory", "")
             if not category:
                 logger.warning(f"No category for content: {content_id}")
                 return

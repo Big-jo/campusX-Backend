@@ -6,7 +6,7 @@ Generates Gemini queries for existing categories and drops rsssources collection
 import asyncio
 import logging
 from src.db.mongodb import get_sync_db, COLLECTIONS
-from src.search.gemini_query_generator import get_gemini_query_generator
+from src.search.query_generator import get_query_generator as get_gemini_query_generator
 from src.search.query_manager import get_query_manager
 
 logging.basicConfig(level=logging.INFO)

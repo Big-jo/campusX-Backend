@@ -8,7 +8,7 @@ from typing import List, Dict
 from src.search.content_source import ContentSource
 from src.search.query_manager import get_query_manager
 from src.search.query_tracker import get_query_tracker
-from src.search.gemini_query_generator import get_gemini_query_generator
+from src.search.query_generator import get_query_generator
 from src.search.serper_searcher import get_serper_searcher
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class SearchSource(ContentSource):
     def __init__(self):
         self.query_manager = get_query_manager()
         self.query_tracker = get_query_tracker()
-        self.query_generator = get_gemini_query_generator()
+        self.query_generator = get_query_generator()
         self.serper_searcher = get_serper_searcher()
 
     def search(
@@ -53,7 +53,7 @@ class SearchSource(ContentSource):
                 self.query_manager.store_query(
                     query_text=query_text,
                     category=interest_category,
-                    generated_via="gemini"
+                    generated_via="deepseek"
                 )
 
             logger.info(f"Using query for '{interest_category}': {query_text}")

@@ -1,6 +1,7 @@
 import {server} from './Server';
 import { logger } from '@shared';
 import { natsClient } from './lib/nats';
+import { startWorker } from './worker';
 
 
 // Initialize NATS connection
@@ -24,6 +25,9 @@ server.listen(port, async () => {
 
     // Initialize services after server starts
     await initializeServices();
+
+    // Start BullMQ workers (bot poster, cron jobs, feed reminders, etc.)
+    startWorker();
 });
 
 // Graceful shutdown

@@ -15,8 +15,9 @@ class Settings(BaseSettings):
     # Redis - set via env (Railway) or .env (local)
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 
-    # Gemini API - required, must be set via env
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    # DeepSeek API - required, must be set via env
+    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
+    DEEPSEEK_MODEL: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
     # Serper API - for web search and RSS discovery
     SERPER_API_KEY: str = os.getenv("SERPER_API_KEY", "")
@@ -37,11 +38,10 @@ class Settings(BaseSettings):
     MIN_WORD_COUNT: int = 100
     MIN_QUALITY_SCORE: float = 0.5
 
-    # Gemini Search
-    GEMINI_SEARCH_MAX_RESULTS: int = 10
+    # LLM Search
+    GEMINI_SEARCH_MAX_RESULTS: int = 10  # kept for result limit usage
 
     # Query Generation
-    QUERY_GENERATION_MODEL: str = "gemini-2.0-flash-exp"
     DEFAULT_CONTENT_SOURCE: str = "search"
     MIN_QUERY_QUALITY_SCORE: float = 0.3
 
@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = str(ENV_FILE)
         case_sensitive = True
+        extra = "ignore"  # tolerate deprecated env vars (e.g. GEMINI_API_KEY)
 
 
 settings = Settings()

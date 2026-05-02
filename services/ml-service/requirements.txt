@@ -12,8 +12,8 @@ playwright==1.40.0
 lxml==4.9.3
 html2text==2020.1.16
 
-# Google Gemini
-google-generativeai==0.3.2
+# DeepSeek (OpenAI-compatible)
+openai>=1.30.0
 
 # GCS (Google Cloud Storage)
 google-cloud-storage==2.14.0

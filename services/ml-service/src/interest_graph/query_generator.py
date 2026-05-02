@@ -4,20 +4,18 @@ Generate search queries for content discovery using LLM.
 
 import logging
 from typing import List, Dict
-import google.generativeai as genai
-from src.config import settings
+from src.llm.deepseek_client import generate as llm_generate
 
 logger = logging.getLogger(__name__)
 
 
 class QueryGenerator:
     """
-    Generates search queries and RSS feed discovery queries using Gemini.
+    Generates search queries and RSS feed discovery queries using DeepSeek.
     """
 
     def __init__(self):
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        pass  # no state needed — llm_generate uses module-level singleton
 
     def generate_queries_for_topic(self, topic: str, count: int = 5) -> List[str]:
         """
@@ -43,8 +41,7 @@ Topic: {topic}
 
 Queries:"""
 
-            response = self.model.generate_content(prompt)
-            text = response.text.strip()
+            text = llm_generate(prompt, temperature=0.7, max_tokens=300)
 
             # Parse queries (one per line)
             queries = [q.strip() for q in text.split('\n') if q.strip() and not q.strip().startswith('#')]
@@ -107,8 +104,7 @@ Requirements:
 
 Category name:"""
 
-            response = self.model.generate_content(prompt)
-            category_name = response.text.strip().strip('"').strip("'")
+            category_name = llm_generate(prompt, temperature=0.5, max_tokens=20).strip('"').strip("'")
 
             logger.info(f"Suggested category: {category_name} for topic: {topic}")
             return category_name

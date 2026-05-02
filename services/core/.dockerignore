@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+.env.*
+coverage
+.nyc_output
+src/spec
+**/*.test.ts
+**/*.spec.ts
+**/*.e2e.test.ts
+k6
+.DS_Store
+*.log
