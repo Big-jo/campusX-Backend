@@ -36,11 +36,12 @@ const envSchema = z.object({
   VISITED_CIRCLE_CLEAN_UP_INTERVAL: z.string().transform(Number).default(86400000),
   TIMELINE_CLEAN_UP_INTERVAL: z.string().transform(Number).default(3600000),
 
-  // Google Cloud Storage
-  GCS_PROJECT_ID: z.string(),
-  GCS_BUCKET: z.string(),
-  GCS_SERVICE_ACCOUNT_KEY: z.string().optional(), // Path to JSON file or stringified JSON
-  GCS_PUBLIC_URL: z.string().optional(), // For custom domains
+  // AWS S3
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  AWS_REGION: z.string().default('us-east-1'),
+  S3_BUCKET: z.string(),
+  S3_PUBLIC_URL: z.string().optional(), // CDN or custom domain
 
   // Sentry
   // DSN: z.string().url().optional(),

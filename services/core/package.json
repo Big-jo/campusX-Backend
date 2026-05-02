@@ -34,8 +34,8 @@
     "webstorm": "node src/Start.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1041.0",
     "@faker-js/faker": "^10.1.0",
-    "@google-cloud/storage": "^7.17.3",
     "@sentry/node": "^5.17.0",
     "array-sort": "^1.0.0",
     "bcrypt": "^5.0.0",
