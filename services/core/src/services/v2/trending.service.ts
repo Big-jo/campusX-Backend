@@ -70,6 +70,7 @@ export class TrendingService {
     const campus = options.campus || user?.userProfile?.university || 'all';
     const timeWindow = options.timeWindow || '6h';
     const limit = Math.min(options.limit || 10, 20);
+    const userId = user?._id?.toString();
 
     try {
       // Request trending from ML service via NATS
@@ -79,7 +80,7 @@ export class TrendingService {
         // Enrich each topic's posts with full data
         const enrichedTopics = await Promise.all(
           response.topics.map(async (topic) => {
-            const posts = await this.enrichPosts(topic.post_ids);
+            const posts = await this.enrichPosts(topic.post_ids, userId);
             return {
               topic: topic.topic,
               score: topic.score,
@@ -187,16 +188,27 @@ export class TrendingService {
 
   /**
    * Enrich post IDs with full post data from MongoDB
+   * Includes isLiked and isDisliked fields when userId is provided
    */
-  private async enrichPosts(postIds: string[]): Promise<any[]> {
+  private async enrichPosts(postIds: string[], userId?: string): Promise<any[]> {
     try {
       if (!postIds || postIds.length === 0) {
         return [];
       }
 
-      const posts = await this.postRepo.findByIds(postIds);
+      // Use findWithAuthor when userId is available to include isLiked/isDisliked
+      if (userId) {
+        const posts = await this.postRepo.findWithAuthor(postIds, userId);
+        
+        // Maintain order from ML service (sorted by relevance)
+        const postMap = new Map(posts.map(p => [p._id.toString(), p]));
+        return postIds
+          .map(id => postMap.get(id))
+          .filter(p => p !== undefined);
+      }
 
-      // Populate author data
+      // Fallback to simple population when no userId
+      const posts = await this.postRepo.findByIds(postIds);
       const enriched = await this.postRepo.populateAuthor(posts);
 
       // Maintain order from ML service (sorted by relevance)
